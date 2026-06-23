@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../student/student_login_page.dart';
+import '../teacher/teacher_login_page.dart';
 
 class LoginPage extends StatelessWidget {
   const LoginPage({super.key});
@@ -56,6 +57,13 @@ class LoginPage extends StatelessWidget {
                   child: ElevatedButton(
                     onPressed: () {
 
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) =>
+                          const TeacherLoginPage(),
+                        ),
+                      );
                     },
                     child: const Text("Teacher Login"),
                   ),
