@@ -56,7 +56,6 @@ class LoginPage extends StatelessWidget {
                   width: 150,
                   child: ElevatedButton(
                     onPressed: () {
-
                       Navigator.push(
                         context,
                         MaterialPageRoute(

@@ -33,12 +33,12 @@ class ProfileCard extends StatelessWidget {
             ),
 
             Text(
-              "Register No : 22CS001",
+              "Register No : 24SC036",
               style: TextStyle(fontSize: 18),
             ),
 
             Text(
-              "Department : CSE",
+              "Department : CSE-CS",
               style: TextStyle(fontSize: 18),
             ),
           ],
