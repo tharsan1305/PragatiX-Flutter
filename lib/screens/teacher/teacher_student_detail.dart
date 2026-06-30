@@ -1,9 +1,12 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 
 class TeacherStudentDetail extends StatefulWidget {
   final Map<String, dynamic> student;
+  final String token;
 
-  const TeacherStudentDetail({super.key, required this.student});
+  const TeacherStudentDetail({super.key, required this.student, required this.token});
 
   @override
   State<TeacherStudentDetail> createState() => _TeacherStudentDetailState();
@@ -11,26 +14,105 @@ class TeacherStudentDetail extends StatefulWidget {
 
 class _TeacherStudentDetailState extends State<TeacherStudentDetail> {
   int currentScore = 0;
+  List<dynamic> historyLogs = [];
+  List<dynamic> stagesList = [];
+  bool isLoadingHistory = true;
 
   @override
   void initState() {
     super.initState();
-    currentScore = widget.student['score'] ?? 0;
+    currentScore = widget.student['score'] ?? 100;
+    _fetchHistoryLogs();
+    _fetchStages();
   }
 
-  void _changeScore(int points, String reason) {
+  Future<void> _fetchHistoryLogs() async {
+    try {
+      final response = await http.get(
+        Uri.parse("http://10.0.2.2:8080/api/v1/students/${widget.student['id']}/discipline-logs"),
+        headers: {"Authorization": "Bearer ${widget.token}"},
+      );
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data["success"] == true) {
+          setState(() {
+            historyLogs = data["data"] ?? [];
+            isLoadingHistory = false;
+          });
+          return;
+        }
+      }
+    } catch (e) {
+      // Catch
+    }
     setState(() {
-      currentScore += points;
+      isLoadingHistory = false;
     });
+  }
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          '${points > 0 ? "Added" : "Deducted"} $points points - $reason',
+  Future<void> _fetchStages() async {
+    try {
+      final response = await http.get(
+        Uri.parse("http://10.0.2.2:8080/api/v1/admin/stages"),
+        headers: {"Authorization": "Bearer ${widget.token}"},
+      );
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data["success"] == true) {
+          setState(() {
+            stagesList = data["data"] ?? [];
+          });
+        }
+      }
+    } catch (e) {
+      // Catch
+    }
+  }
+
+  Future<void> _changeScore(int points, String reason, int? subgroupId) async {
+    try {
+      final response = await http.post(
+        Uri.parse("http://10.0.2.2:8080/api/v1/students/${widget.student['id']}/adjust-points"),
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer ${widget.token}",
+        },
+        body: jsonEncode({
+          "points": points,
+          "reason": reason,
+          "subgroupId": subgroupId
+        }),
+      );
+
+      final data = jsonDecode(response.body);
+      if (response.statusCode == 200 && data["success"] == true) {
+        setState(() {
+          currentScore = data["data"]["score"] ?? currentScore;
+          isLoadingHistory = true;
+        });
+        _fetchHistoryLogs();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${points > 0 ? "Added" : "Deducted"} $points points successfully!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(data["message"] ?? 'Failed to adjust points'),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Network error adjusting points'),
+          backgroundColor: Colors.orange,
         ),
-        backgroundColor: points > 0 ? Colors.green : Colors.red,
-      ),
-    );
+      );
+    }
   }
 
   void _showAddPointsSheet() {
@@ -61,6 +143,22 @@ class _TeacherStudentDetailState extends State<TeacherStudentDetail> {
             "Severe Misconduct (-100)"
           ];
 
+    int? selectedSubgroupId;
+    String? selectedReason = reasons.first;
+    final TextEditingController customReasonController = TextEditingController();
+
+    // Flatten all subgroups across stages for the dropdown
+    List<Map<String, dynamic>> allSubgroups = [];
+    for (var stage in stagesList) {
+      final List<dynamic> subs = stage["subgroups"] ?? [];
+      for (var sub in subs) {
+        allSubgroups.add({
+          "id": sub["id"],
+          "name": "${stage["name"]} - ${sub["name"]}",
+        });
+      }
+    }
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -69,7 +167,12 @@ class _TeacherStudentDetailState extends State<TeacherStudentDetail> {
       ),
       builder: (context) {
         return Padding(
-          padding: const EdgeInsets.all(20.0),
+          padding: EdgeInsets.only(
+            top: 20.0,
+            left: 20.0,
+            right: 20.0,
+            bottom: MediaQuery.of(context).viewInsets.bottom + 20.0,
+          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -79,18 +182,96 @@ class _TeacherStudentDetailState extends State<TeacherStudentDetail> {
                 style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 16),
-              ...reasons.map((reason) {
-                return ListTile(
-                  title: Text(reason),
-                  onTap: () {
-                    final points = int.parse(
-                      reason.split(RegExp(r'[()]'))[1].replaceAll('+', '').replaceAll('-', '').trim(),
-                    ) * (isAdding ? 1 : -1);
-                    _changeScore(points, reason);
+              
+              // Activity Assignment Dropdown
+              DropdownButtonFormField<int?>(
+                value: selectedSubgroupId,
+                decoration: const InputDecoration(
+                  labelText: "Activity / Stage Assignment",
+                  border: OutlineInputBorder(),
+                ),
+                items: [
+                  const DropdownMenuItem<int?>(
+                    value: null,
+                    child: Text("General (No Activity Group)"),
+                  ),
+                  ...allSubgroups.map((sub) {
+                    return DropdownMenuItem<int?>(
+                      value: sub["id"],
+                      child: Text(sub["name"]),
+                    );
+                  })
+                ],
+                onChanged: (val) {
+                  selectedSubgroupId = val;
+                },
+              ),
+              const SizedBox(height: 16),
+              
+              const Text("Select Reason & Value:", style: TextStyle(fontWeight: FontWeight.bold)),
+              const SizedBox(height: 8),
+              
+              // Reasons List
+              SizedBox(
+                height: 150,
+                child: ListView.builder(
+                  shrinkWrap: true,
+                  itemCount: reasons.length,
+                  itemBuilder: (context, index) {
+                    final r = reasons[index];
+                    return RadioListTile<String>(
+                      title: Text(r),
+                      value: r,
+                      groupValue: selectedReason,
+                      dense: true,
+                      contentPadding: EdgeInsets.zero,
+                      onChanged: (val) {
+                        setState(() {
+                          selectedReason = val;
+                        });
+                      },
+                    );
+                  },
+                ),
+              ),
+              
+              const SizedBox(height: 12),
+              TextField(
+                controller: customReasonController,
+                decoration: const InputDecoration(
+                  labelText: "Custom Reason (Overrides selected reason description)",
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 20),
+              
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () {
+                    final finalReason = customReasonController.text.trim().isNotEmpty
+                        ? customReasonController.text.trim()
+                        : selectedReason!;
+                    
+                    // Parse points value from selectedReason
+                    final int val = int.parse(
+                      selectedReason!.split(RegExp(r'[()]'))[1].replaceAll('+', '').replaceAll('-', '').trim(),
+                    );
+                    final points = val * (isAdding ? 1 : -1);
+
+                    _changeScore(points, finalReason, selectedSubgroupId);
                     Navigator.pop(context);
                   },
-                );
-              }).toList(),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: isAdding ? Colors.green : Colors.red,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                  ),
+                  child: Text(
+                    isAdding ? "Add Points" : "Deduct Points",
+                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ),
             ],
           ),
         );
@@ -102,7 +283,7 @@ class _TeacherStudentDetailState extends State<TeacherStudentDetail> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Student Profile"),
+        title: const Text("Student Details"),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.pop(context),
@@ -113,7 +294,6 @@ class _TeacherStudentDetailState extends State<TeacherStudentDetail> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Student Info Card (Same style as your friend's)
             Center(
               child: Card(
                 elevation: 4,
@@ -128,12 +308,12 @@ class _TeacherStudentDetailState extends State<TeacherStudentDetail> {
                       ),
                       const SizedBox(height: 16),
                       Text(
-                        widget.student['name'],
+                        widget.student['name'] ?? '',
                         style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
                       ),
                       const SizedBox(height: 8),
-                      Text("Reg No: ${widget.student['regNo']}"),
-                      Text("Department: ${widget.student['dept']}"),
+                      Text("Reg No: ${widget.student['regNo'] ?? ''}"),
+                      Text("Department: ${widget.student['dept'] ?? ''}"),
                     ],
                   ),
                 ),
@@ -142,7 +322,6 @@ class _TeacherStudentDetailState extends State<TeacherStudentDetail> {
 
             const SizedBox(height: 30),
 
-            // Current Score
             Center(
               child: Column(
                 children: [
@@ -160,7 +339,6 @@ class _TeacherStudentDetailState extends State<TeacherStudentDetail> {
 
             const SizedBox(height: 40),
 
-            // Action Buttons
             Row(
               children: [
                 Expanded(
@@ -193,12 +371,53 @@ class _TeacherStudentDetailState extends State<TeacherStudentDetail> {
 
             const Text("Score History", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
             const SizedBox(height: 10),
-            const Card(
-              child: Padding(
-                padding: EdgeInsets.all(16.0),
-                child: Text("Score history will appear here after connecting backend..."),
-              ),
-            ),
+            isLoadingHistory
+                ? const Center(child: CircularProgressIndicator())
+                : historyLogs.isEmpty
+                    ? const Card(
+                        child: Padding(
+                          padding: EdgeInsets.all(16.0),
+                          child: Text("No discipline history logged for this student yet."),
+                        ),
+                      )
+                    : ListView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemCount: historyLogs.length,
+                        itemBuilder: (context, index) {
+                          final log = historyLogs[index];
+                          final int pts = log["points"] ?? 0;
+                          final String reason = log["reason"] ?? "No reason given";
+                          final String recordedBy = log["recordedByName"] ?? "Faculty";
+                          final String actName = log["subgroupName"] ?? "General";
+                          final String dtStr = log["createdAt"] != null 
+                              ? log["createdAt"].toString().replaceAll("T", " ").substring(0, 16) 
+                              : "";
+
+                          return Card(
+                            margin: const EdgeInsets.only(bottom: 10),
+                            child: ListTile(
+                              leading: CircleAvatar(
+                                backgroundColor: pts >= 0 ? Colors.green.withOpacity(0.1) : Colors.red.withOpacity(0.1),
+                                child: Icon(
+                                  pts >= 0 ? Icons.add_circle : Icons.remove_circle,
+                                  color: pts >= 0 ? Colors.green : Colors.red,
+                                ),
+                              ),
+                              title: Text(reason, style: const TextStyle(fontWeight: FontWeight.bold)),
+                              subtitle: Text("By: $recordedBy • Act: $actName\nDate: $dtStr"),
+                              trailing: Text(
+                                pts >= 0 ? "+$pts" : "$pts",
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: pts >= 0 ? Colors.green : Colors.red,
+                                  fontSize: 16
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
           ],
         ),
       ),
