@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import '../stage_details_page.dart';
 
 class ActivityTab extends StatefulWidget {
   final String token;
@@ -52,102 +53,7 @@ class _ActivityTabState extends State<ActivityTab> {
     }
   }
 
-  Future<void> _assignFaculty(int subId, int? userId) async {
-    try {
-      final response = await http.put(
-        Uri.parse("http://10.0.2.2:8080/api/v1/admin/subgroups/$subId/assign-faculty"),
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": "Bearer ${widget.token}",
-        },
-        body: jsonEncode({"userId": userId}),
-      );
-      final data = jsonDecode(response.body);
-      if (response.statusCode == 200 && data["success"] == true) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Faculty assigned successfully!"), backgroundColor: Colors.green),
-        );
-        _fetchStages();
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(data["message"] ?? "Failed to assign faculty")),
-        );
-      }
-    } catch (e) {
-      setState(() {
-        for (var stage in stagesList) {
-          for (var sub in stage["subgroups"]) {
-            if (sub["id"] == subId) {
-              if (userId == null) {
-                sub["assignedFacultyId"] = null;
-                sub["assignedFacultyName"] = null;
-              } else {
-                final teacher = teachersList.firstWhere((t) => t["id"] == userId, orElse: () => null);
-                sub["assignedFacultyId"] = userId;
-                sub["assignedFacultyName"] = teacher != null ? teacher["fullName"] : "Assigned";
-              }
-            }
-          }
-        }
-      });
-    }
-  }
 
-  void _showAssignFacultyDialog(int subId, int? currentFacultyId) {
-    int? selectedFacultyId = currentFacultyId;
-    showDialog(
-      context: context,
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setDialogState) {
-            return AlertDialog(
-              title: const Text("Assign Faculty to Activity", style: TextStyle(fontWeight: FontWeight.bold)),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text("Select a faculty member who will be solely responsible for points allocation on this activity:"),
-                  const SizedBox(height: 15),
-                  DropdownButtonFormField<int?>(
-                    value: selectedFacultyId,
-                    decoration: const InputDecoration(labelText: "Faculty Member"),
-                    items: [
-                      const DropdownMenuItem<int?>(
-                        value: null,
-                        child: Text("Unassigned (All teachers can adjust points)"),
-                      ),
-                      ...teachersList.map((t) {
-                        return DropdownMenuItem<int?>(
-                          value: t["id"],
-                          child: Text("${t["fullName"]} (${t["username"]})"),
-                        );
-                      })
-                    ],
-                    onChanged: (value) {
-                      setDialogState(() {
-                        selectedFacultyId = value;
-                      });
-                    },
-                  )
-                ],
-              ),
-              actions: [
-                TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancel")),
-                ElevatedButton(
-                  onPressed: () {
-                    Navigator.pop(context);
-                    _assignFaculty(subId, selectedFacultyId);
-                  },
-                  style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFEA4335)),
-                  child: const Text("Save", style: TextStyle(color: Colors.white)),
-                )
-              ],
-            );
-          },
-        );
-      },
-    );
-  }
 
   Future<void> _fetchStages() async {
     try {
@@ -240,150 +146,7 @@ class _ActivityTabState extends State<ActivityTab> {
     }
   }
 
-  Future<void> _createSubgroup(int stageId) async {
-    if (subNameController.text.trim().isEmpty || subThreshController.text.trim().isEmpty) return;
-    try {
-      final response = await http.post(
-        Uri.parse("http://10.0.2.2:8080/api/v1/admin/stages/$stageId/subgroups"),
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": "Bearer ${widget.token}",
-        },
-        body: jsonEncode({
-          "name": subNameController.text.trim(),
-          "threshold": int.parse(subThreshController.text.trim()),
-        }),
-      );
 
-      if (!mounted) return;
-      final data = jsonDecode(response.body);
-
-      if (response.statusCode == 201 || (response.statusCode == 200 && data["success"] == true)) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Subgroup created successfully!"), backgroundColor: Colors.green),
-        );
-        subNameController.clear();
-        subThreshController.clear();
-        Navigator.pop(context);
-        setState(() => isLoading = true);
-        _fetchStages();
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(data["message"] ?? "Failed to create subgroup")),
-        );
-      }
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Subgroup added locally"), backgroundColor: Colors.orange),
-      );
-      setState(() {
-        final stage = stagesList.firstWhere((element) => element["id"] == stageId);
-        stage["subgroups"].add({
-          "id": 999 + stage["subgroups"].length,
-          "name": subNameController.text,
-          "threshold": int.parse(subThreshController.text),
-        });
-      });
-      subNameController.clear();
-      subThreshController.clear();
-      Navigator.pop(context);
-    }
-  }
-
-  Future<void> _editSubgroup(int subId, String currentName, int currentThresh) async {
-    subNameController.text = currentName;
-    subThreshController.text = currentThresh.toString();
-
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text("Edit Subgroup", style: TextStyle(fontWeight: FontWeight.bold)),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(controller: subNameController, decoration: const InputDecoration(labelText: "Subgroup Name *")),
-              TextField(controller: subThreshController, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: "Threshold Value *")),
-            ],
-          ),
-          actions: [
-            TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancel")),
-            ElevatedButton(
-              onPressed: () async {
-                final messenger = ScaffoldMessenger.of(context);
-                final navigator = Navigator.of(context);
-                try {
-                  final res = await http.put(
-                    Uri.parse("http://10.0.2.2:8080/api/v1/admin/subgroups/$subId"),
-                    headers: {
-                      "Content-Type": "application/json",
-                      "Authorization": "Bearer ${widget.token}",
-                    },
-                    body: jsonEncode({
-                      "name": subNameController.text.trim(),
-                      "threshold": int.parse(subThreshController.text.trim()),
-                    }),
-                  );
-                  if (!mounted) return;
-                  if (res.statusCode == 200) {
-                    messenger.showSnackBar(
-                      const SnackBar(content: Text("Subgroup updated"), backgroundColor: Colors.green),
-                    );
-                    navigator.pop();
-                    setState(() => isLoading = true);
-                    _fetchStages();
-                  }
-                } catch (e) {
-                  if (!mounted) return;
-                  navigator.pop();
-                  setState(() {
-                    for (var stage in stagesList) {
-                      for (var sub in stage["subgroups"]) {
-                        if (sub["id"] == subId) {
-                          sub["name"] = subNameController.text;
-                          sub["threshold"] = int.parse(subThreshController.text);
-                        }
-                      }
-                    }
-                  });
-                }
-              },
-              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFEA4335)),
-              child: const Text("Save", style: TextStyle(color: Colors.white)),
-            )
-          ],
-        );
-      },
-    );
-  }
-
-  Future<void> _deleteSubgroup(int subId) async {
-    try {
-      final response = await http.delete(
-        Uri.parse("http://10.0.2.2:8080/api/v1/admin/subgroups/$subId"),
-        headers: {
-          "Authorization": "Bearer ${widget.token}",
-        },
-      );
-
-      if (!mounted) return;
-      if (response.statusCode == 200) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Subgroup deleted"), backgroundColor: Colors.green),
-        );
-        setState(() => isLoading = true);
-        _fetchStages();
-      }
-    } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        for (var stage in stagesList) {
-          stage["subgroups"].removeWhere((s) => s["id"] == subId);
-        }
-      });
-    }
-  }
 
   Future<void> _deleteStage(int stageId) async {
     try {
@@ -438,33 +201,7 @@ class _ActivityTabState extends State<ActivityTab> {
     );
   }
 
-  void _showAddSubgroupDialog(int stageId) {
-    subNameController.clear();
-    subThreshController.clear();
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text("Add Subgroup to Stage", style: TextStyle(fontWeight: FontWeight.bold)),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(controller: subNameController, decoration: const InputDecoration(labelText: "Subgroup Name * (e.g. must (individual))")),
-              TextField(controller: subThreshController, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: "Threshold Value * (e.g. 30)")),
-            ],
-          ),
-          actions: [
-            TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancel")),
-            ElevatedButton(
-              onPressed: () => _createSubgroup(stageId),
-              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFEA4335)),
-              child: const Text("Add", style: TextStyle(color: Colors.white)),
-            )
-          ],
-        );
-      },
-    );
-  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -519,147 +256,91 @@ class _ActivityTabState extends State<ActivityTab> {
                           elevation: 3,
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                           margin: const EdgeInsets.only(bottom: 20),
-                          child: Padding(
-                            padding: const EdgeInsets.all(16.0),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            name,
-                                            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
-                                          ),
-                                          const SizedBox(height: 4),
-                                          Text(
-                                            desc,
-                                            style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    Row(
+                          child: InkWell(
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => StageDetailsPage(
+                                    token: widget.token,
+                                    stageId: stage["id"],
+                                    stageName: name,
+                                    stageDescription: desc,
+                                    teachersList: teachersList,
+                                  ),
+                                ),
+                              ).then((_) {
+                                setState(() => isLoading = true);
+                                _fetchStages();
+                              });
+                            },
+                            borderRadius: BorderRadius.circular(16),
+                            child: Padding(
+                              padding: const EdgeInsets.all(20.0),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
-                                        TextButton.icon(
-                                          onPressed: () => _showAddSubgroupDialog(stage["id"]),
-                                          icon: const Icon(Icons.add, size: 16, color: Colors.blue),
-                                          label: const Text("Subgroup", style: TextStyle(fontSize: 12, color: Colors.blue)),
+                                        Text(
+                                          name,
+                                          style: const TextStyle(
+                                            fontSize: 20,
+                                            fontWeight: FontWeight.bold,
+                                            color: Color(0xFF1E293B),
+                                          ),
                                         ),
-                                        IconButton(
-                                          icon: const Icon(Icons.delete_outline, color: Colors.red),
-                                          onPressed: () {
-                                            showDialog(
-                                              context: context,
-                                              builder: (context) => AlertDialog(
-                                                title: const Text("Delete Stage"),
-                                                content: Text("Are you sure you want to delete $name and all its subgroups?"),
-                                                actions: [
-                                                  TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancel")),
-                                                  TextButton(
-                                                    onPressed: () {
-                                                      Navigator.pop(context);
-                                                      _deleteStage(stage["id"]);
-                                                    },
-                                                    child: const Text("Delete", style: TextStyle(color: Colors.red)),
-                                                  ),
-                                                ],
-                                              ),
-                                            );
-                                          },
+                                        const SizedBox(height: 6),
+                                        Text(
+                                          desc,
+                                          style: TextStyle(
+                                            fontSize: 14,
+                                            color: Colors.grey.shade600,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 10),
+                                        Text(
+                                          "${subgroups.length} sub-branches configured",
+                                          style: const TextStyle(
+                                            fontSize: 13,
+                                            color: Colors.blue,
+                                            fontWeight: FontWeight.bold,
+                                          ),
                                         ),
                                       ],
                                     ),
-                                  ],
-                                ),
-                                const Divider(height: 24),
-                                if (subgroups.isEmpty)
-                                  Padding(
-                                    padding: const EdgeInsets.symmetric(vertical: 8.0),
-                                    child: Text(
-                                      "No subgroups configured for this stage yet.",
-                                      style: TextStyle(fontSize: 13, fontStyle: FontStyle.italic, color: Colors.grey.shade500),
-                                    ),
-                                  )
-                                else
-                                  ListView.builder(
-                                    shrinkWrap: true,
-                                    physics: const NeverScrollableScrollPhysics(),
-                                    itemCount: subgroups.length,
-                                    itemBuilder: (context, subIndex) {
-                                      final sub = subgroups[subIndex];
-                                      final String subName = sub["name"] ?? '';
-                                      final int threshold = sub["threshold"] ?? 0;
-
-                                      return Container(
-                                        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-                                        margin: const EdgeInsets.only(bottom: 8),
-                                        decoration: BoxDecoration(
-                                          color: Colors.grey.shade100,
-                                          borderRadius: BorderRadius.circular(10),
-                                        ),
-                                        child: Row(
-                                          children: [
-                                            Expanded(
-                                              child: Column(
-                                                crossAxisAlignment: CrossAxisAlignment.start,
-                                                children: [
-                                                  Text(subName, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
-                                                  const SizedBox(height: 2),
-                                                  Text("Threshold: $threshold pts", style: TextStyle(color: Colors.grey.shade600, fontSize: 12)),
-                                                  const SizedBox(height: 2),
-                                                  Text(
-                                                    "Faculty: ${sub["assignedFacultyName"] ?? "All Teachers"}",
-                                                    style: TextStyle(
-                                                      color: sub["assignedFacultyName"] != null ? Colors.teal : Colors.grey.shade500,
-                                                      fontSize: 12,
-                                                      fontWeight: sub["assignedFacultyName"] != null ? FontWeight.bold : FontWeight.normal
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                            IconButton(
-                                              icon: const Icon(Icons.assignment_ind_outlined, color: Colors.teal, size: 18),
-                                              tooltip: "Assign Faculty",
-                                              onPressed: () => _showAssignFacultyDialog(sub["id"], sub["assignedFacultyId"]),
-                                            ),
-                                            IconButton(
-                                              icon: const Icon(Icons.edit_outlined, color: Colors.blue, size: 18),
-                                              onPressed: () => _editSubgroup(sub["id"], subName, threshold),
-                                            ),
-                                            IconButton(
-                                              icon: const Icon(Icons.delete_outline, color: Colors.red, size: 18),
-                                              onPressed: () {
-                                                showDialog(
-                                                  context: context,
-                                                  builder: (context) => AlertDialog(
-                                                    title: const Text("Delete Subgroup"),
-                                                    content: Text("Are you sure you want to delete subgroup $subName?"),
-                                                    actions: [
-                                                      TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancel")),
-                                                      TextButton(
-                                                        onPressed: () {
-                                                          Navigator.pop(context);
-                                                          _deleteSubgroup(sub["id"]);
-                                                        },
-                                                        child: const Text("Delete", style: TextStyle(color: Colors.red)),
-                                                      ),
-                                                    ],
-                                                  ),
-                                                );
-                                              },
-                                            ),
-                                          ],
-                                        ),
-                                      );
-                                    },
                                   ),
-                              ],
+                                  Row(
+                                    children: [
+                                      IconButton(
+                                        icon: const Icon(Icons.delete_outline, color: Colors.red),
+                                        onPressed: () {
+                                          showDialog(
+                                            context: context,
+                                            builder: (context) => AlertDialog(
+                                              title: const Text("Delete Stage"),
+                                              content: Text("Are you sure you want to delete $name and all its subgroups?"),
+                                              actions: [
+                                                TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancel")),
+                                                TextButton(
+                                                  onPressed: () {
+                                                    Navigator.pop(context);
+                                                    _deleteStage(stage["id"]);
+                                                  },
+                                                  child: const Text("Delete", style: TextStyle(color: Colors.red)),
+                                                ),
+                                              ],
+                                            ),
+                                          );
+                                        },
+                                      ),
+                                      const Icon(Icons.chevron_right_rounded, color: Colors.grey),
+                                    ],
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
                         );
