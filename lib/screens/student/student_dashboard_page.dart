@@ -1,75 +1,75 @@
 import 'package:flutter/material.dart';
-import 'profile_card.dart';
-import 'attendance_page.dart';
-import 'marks_page.dart';
-import 'discipline_page.dart';
-import 'leaderboard_page.dart';
+import 'tabs/dashboard_tab.dart';
+import 'tabs/point_review_tab.dart';
+import 'tabs/leaderboard_tab.dart';
+import 'tabs/activities_tab.dart';
+import 'tabs/profile_tab.dart';
 
-class StudentDashboardPage extends StatelessWidget {
-  const StudentDashboardPage({super.key});
+class StudentDashboardPage extends StatefulWidget {
+  final String token;
+  const StudentDashboardPage({super.key, required this.token});
+
+  @override
+  State<StudentDashboardPage> createState() => _StudentDashboardPageState();
+}
+
+class _StudentDashboardPageState extends State<StudentDashboardPage> {
+  int _currentIndex = 0;
+  late final List<Widget> _screens;
+
+  @override
+  void initState() {
+    super.initState();
+    _screens = [
+      DashboardTab(token: widget.token),
+      PointReviewTab(token: widget.token),
+      LeaderboardTab(token: widget.token),
+      ActivitiesTab(token: widget.token),
+      ProfileTab(token: widget.token),
+    ];
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text("Student Dashboard"),
+    const activeColor = Color(0xFF4F46E5); // Student portal brand color: Indigo
+
+    final List<BottomNavigationBarItem> barItems = [
+      const BottomNavigationBarItem(
+        icon: Icon(Icons.dashboard_rounded),
+        label: 'Dashboard',
       ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const ProfileCard(),
+      const BottomNavigationBarItem(
+        icon: Icon(Icons.history_edu_rounded),
+        label: 'Point Review',
+      ),
+      const BottomNavigationBarItem(
+        icon: Icon(Icons.leaderboard_rounded),
+        label: 'Leaderboard',
+      ),
+      const BottomNavigationBarItem(
+        icon: Icon(Icons.local_activity_rounded),
+        label: 'Activities',
+      ),
+      const BottomNavigationBarItem(
+        icon: Icon(Icons.person_rounded),
+        label: 'Profile',
+      ),
+    ];
 
-            const SizedBox(height: 20),
-
-            ElevatedButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const AttendancePage(),
-                  ),
-                );
-              },
-              child: const Text("Attendance"),
-            ),
-            const SizedBox(height: 10),
-
-            ElevatedButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const MarksPage(),
-                  ),
-                );
-              },
-              child: const Text("Marks"),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const DisciplinePage(),
-                  ),
-                );
-              },
-              child: const Text("Discipline"),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const LeaderboardPage(),
-                  ),
-                );
-              },
-              child: const Text("Leader Board"),
-            ),
-          ],
-        ),
+    return Scaffold(
+      body: IndexedStack(
+        index: _currentIndex,
+        children: _screens,
+      ),
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _currentIndex,
+        onTap: (index) => setState(() => _currentIndex = index),
+        selectedItemColor: activeColor,
+        unselectedItemColor: Colors.grey.shade500,
+        type: BottomNavigationBarType.fixed,
+        items: barItems,
+        backgroundColor: Colors.white,
+        elevation: 8,
       ),
     );
   }

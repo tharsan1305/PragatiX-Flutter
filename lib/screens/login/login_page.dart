@@ -91,6 +91,9 @@ class _LoginPageState extends State<LoginPage> {
       setState(() => _isLoading = false);
 
       if (studentResponse.statusCode == 200 && studentData["success"] == true) {
+        final Map<String, dynamic> responseData = studentData["data"] ?? {};
+        final String token = responseData["token"] ?? "";
+
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text("Login Successful! Welcome to Student Portal."),
@@ -100,7 +103,7 @@ class _LoginPageState extends State<LoginPage> {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
-            builder: (context) => const StudentDashboardPage(),
+            builder: (context) => StudentDashboardPage(token: token),
           ),
         );
       } else {
