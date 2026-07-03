@@ -137,21 +137,6 @@ class _LoginPageState extends State<LoginPage> {
                   style: TextStyle(fontSize: 12),
                 ),
               ),
-              TextButton(
-                onPressed: () {
-                  ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const TeacherDashboard(token: "debug_token"),
-                    ),
-                  );
-                },
-                child: const Text(
-                  "DEBUG",
-                  style: TextStyle(color: Colors.amber, fontWeight: FontWeight.bold),
-                ),
-              )
             ],
           ),
           backgroundColor: Colors.redAccent,
