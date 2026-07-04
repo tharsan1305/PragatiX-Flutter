@@ -69,6 +69,41 @@ class _TeacherStudentDetailState extends State<TeacherStudentDetail> {
     }
   }
 
+  Future<void> _makeCaptain() async {
+    try {
+      final response = await http.post(
+        Uri.parse("http://10.0.2.2:8080/api/v1/students/${widget.student['id']}/make-captain"),
+        headers: {
+          "Authorization": "Bearer ${widget.token}",
+          "Content-Type": "application/json",
+        },
+      );
+
+      if (response.statusCode == 200) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Student successfully promoted to Captain!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to promote: ${jsonDecode(response.body)['message'] ?? response.statusCode}'),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Network error: Could not connect to backend.'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+    }
+  }
+
   Future<void> _changeScore(int points, String reason, int? subgroupId) async {
     try {
       final response = await http.post(
@@ -366,6 +401,24 @@ class _TeacherStudentDetailState extends State<TeacherStudentDetail> {
                 ),
               ],
             ),
+
+            // --- PROMOTE TO CAPTAIN BUTTON IS RIGHT HERE ---
+            const SizedBox(height: 12), 
+
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: _makeCaptain,
+                icon: const Icon(Icons.star_rounded, color: Colors.white),
+                label: const Text("Promote to Captain"),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.amber.shade700,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                ),
+              ),
+            ),
+            // --- END OF NEW BUTTON ---
 
             const SizedBox(height: 30),
 

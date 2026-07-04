@@ -6,6 +6,8 @@ import 'tabs/activity_tab.dart';
 import 'tabs/leaderboard_tab.dart';
 import 'tabs/profile_tab.dart';
 import 'tabs/hod_performance_tab.dart';
+import 'tabs/removal_requests_tab.dart';
+import 'tabs/teacher_group_management_tab.dart';
 
 class TeacherDashboard extends StatefulWidget {
   final String token;
@@ -68,6 +70,8 @@ class _TeacherDashboardState extends State<TeacherDashboard> {
         StudentsTab(token: widget.token, subRoles: subRoles),
         ActivityTab(token: widget.token),
         LeaderboardTab(token: widget.token),
+        RemovalRequestsTab(token: widget.token),
+        TeacherGroupManagementTab(token: widget.token),
         if (subRoles.contains("HOD"))
           HodPerformanceTab(token: widget.token),
         ProfileTab(token: widget.token),
@@ -95,6 +99,14 @@ class _TeacherDashboardState extends State<TeacherDashboard> {
       const BottomNavigationBarItem(
         icon: Icon(Icons.leaderboard_rounded),
         label: 'Leaderboard',
+      ),
+      const BottomNavigationBarItem(
+        icon: Icon(Icons.pending_actions_rounded),
+        label: 'Requests',
+      ),
+      const BottomNavigationBarItem(
+        icon: Icon(Icons.groups_rounded),
+        label: 'Groups',
       ),
       if (subRoles.contains("HOD"))
         const BottomNavigationBarItem(

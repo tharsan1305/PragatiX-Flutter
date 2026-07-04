@@ -5,7 +5,8 @@ import 'tabs/teachers_tab.dart';
 import 'tabs/departments_tab.dart';
 import 'tabs/activity_tab.dart';
 import 'tabs/profile_tab.dart';
-
+import '../teacher/tabs/removal_requests_tab.dart';
+import '../teacher/tabs/teacher_group_management_tab.dart';
 class AdminDashboard extends StatefulWidget {
   final String token;
   const AdminDashboard({super.key, required this.token});
@@ -27,7 +28,10 @@ class _AdminDashboardState extends State<AdminDashboard> {
       TeachersTab(token: widget.token),
       DepartmentsTab(token: widget.token),
       ActivityTab(token: widget.token),
+      TeacherGroupManagementTab(token: widget.token),
+      RemovalRequestsTab(token: widget.token),
       ProfileTab(token: widget.token),
+      
     ];
   }
 
@@ -61,6 +65,14 @@ class _AdminDashboardState extends State<AdminDashboard> {
           BottomNavigationBarItem(
             icon: Icon(Icons.local_activity_rounded),
             label: 'Activity',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.groups_rounded),
+            label: 'Groups',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.pending_actions_rounded),
+            label: 'Requests',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.admin_panel_settings_rounded),

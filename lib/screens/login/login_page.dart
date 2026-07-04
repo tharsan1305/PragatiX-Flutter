@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import '../student/student_dashboard_page.dart';
 import '../teacher/teacher_dashboard.dart';
 import '../admin/admin_dashboard.dart';
+import '../captain/captain_dashboard_page.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -103,22 +104,40 @@ class _LoginPageState extends State<LoginPage> {
         if (!mounted) return;
         setState(() => _isLoading = false);
 
-        if (studentResponse.statusCode == 200 && studentData["success"] == true) {
+                if (studentResponse.statusCode == 200 && studentData["success"] == true) {
           final Map<String, dynamic> responseData = studentData["data"] ?? {};
           final String token = responseData["token"] ?? "";
+          final List<dynamic> roles = responseData["roles"] ?? []; // <-- Added this
 
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text("Login Successful! Welcome to Student Portal."),
-              backgroundColor: Colors.green,
-            ),
-          );
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder: (context) => StudentDashboardPage(token: token),
-            ),
-          );
+          // Check if they are a captain!
+          if (roles.contains("ROLE_CAPTAIN")) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text("Welcome Captain!"),
+                backgroundColor: Colors.green,
+              ),
+            );
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (context) => CaptainDashboardPage(token: token), // Go to Captain page
+              ),
+            );
+          } else {
+            // Normal Student
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text("Login Successful! Welcome to Student Portal."),
+                backgroundColor: Colors.green,
+              ),
+            );
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (context) => StudentDashboardPage(token: token), // Go to Student page
+              ),
+            );
+          }
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
