@@ -18,6 +18,9 @@ class _LoginPageState extends State<LoginPage> {
   final TextEditingController _passwordController = TextEditingController();
   bool _isLoading = false;
   bool _obscurePassword = true;
+  String _selectedRole = 'Student'; // Added role state
+
+
 
   Future<void> _handleLogin() async {
     if (!_formKey.currentState!.validate()) return;
@@ -27,99 +30,103 @@ class _LoginPageState extends State<LoginPage> {
     final String password = _passwordController.text;
 
     try {
-      // Step 1: Attempt Staff (Teacher/Admin) Login
-      final staffResponse = await http.post(
-        Uri.parse("http://10.0.2.2:8080/api/v1/auth/login"),
-        headers: {"Content-Type": "application/json"},
-        body: jsonEncode({"username": identity, "password": password}),
-      );
+      if (_selectedRole == 'Admin' || _selectedRole == 'Teacher') {
+        // Step 1: Attempt Staff (Teacher/Admin) Login
+        final staffResponse = await http.post(
+          Uri.parse("http://10.0.2.2:8080/api/v1/auth/login"),
+          headers: {"Content-Type": "application/json"},
+          body: jsonEncode({"username": identity, "password": password}),
+        );
 
-      final staffData = jsonDecode(staffResponse.body);
+        final staffData = jsonDecode(staffResponse.body);
 
-      if (staffResponse.statusCode == 200 && staffData["success"] == true) {
-        final Map<String, dynamic> responseData = staffData["data"] ?? {};
-        final String userType = responseData["userType"] ?? "";
-        final List<dynamic> roles = responseData["roles"] ?? [];
-        final String token = responseData["token"] ?? "";
+        if (staffResponse.statusCode == 200 && staffData["success"] == true) {
+          final Map<String, dynamic> responseData = staffData["data"] ?? {};
+          final String userType = responseData["userType"] ?? "";
+          final List<dynamic> roles = responseData["roles"] ?? [];
+          final String token = responseData["token"] ?? "";
 
-        if (roles.contains("ROLE_ADMIN")) {
-          if (!mounted) return;
-          setState(() => _isLoading = false);
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text("Admin Access Granted. Welcome!"),
-              backgroundColor: Colors.green,
-            ),
-          );
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder: (context) => AdminDashboard(token: token),
-            ),
-          );
-          return;
-        } else if (userType == "TEACHER" ||
-            roles.contains("ROLE_TEACHER") ||
-            roles.contains("ROLE_DISCIPLINE_COMMITTEE")) {
-          if (!mounted) return;
-          setState(() => _isLoading = false);
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text("Welcome to Teacher Portal!"),
-              backgroundColor: Colors.green,
-            ),
-          );
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder: (context) => TeacherDashboard(token: token),
-            ),
-          );
-          return;
+          if (roles.contains("ROLE_ADMIN")) {
+            if (!mounted) return;
+            setState(() => _isLoading = false);
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text("Admin Access Granted. Welcome!"),
+                backgroundColor: Colors.green,
+              ),
+            );
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (context) => AdminDashboard(token: token),
+              ),
+            );
+            return;
+          } else if (userType == "TEACHER" ||
+              roles.contains("ROLE_TEACHER") ||
+              roles.contains("ROLE_DISCIPLINE_COMMITTEE")) {
+            if (!mounted) return;
+            setState(() => _isLoading = false);
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text("Welcome to Teacher Portal!"),
+                backgroundColor: Colors.green,
+              ),
+            );
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (context) => TeacherDashboard(token: token),
+              ),
+            );
+            return;
+          }
         }
-      }
 
-      // Step 2: Attempt Student Login since staff login wasn't successful/applicable
-      final studentResponse = await http.post(
-        Uri.parse("http://10.0.2.2:8080/api/v1/auth/student-login"),
-        headers: {"Content-Type": "application/json"},
-        body: jsonEncode({"identity": identity, "password": password}),
-      );
-
-      final studentData = jsonDecode(studentResponse.body);
-      if (!mounted) return;
-      setState(() => _isLoading = false);
-
-      if (studentResponse.statusCode == 200 && studentData["success"] == true) {
-        final Map<String, dynamic> responseData = studentData["data"] ?? {};
-        final String token = responseData["token"] ?? "";
-
+        if (!mounted) return;
+        setState(() => _isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text("Login Successful! Welcome to Student Portal."),
-            backgroundColor: Colors.green,
-          ),
-        );
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (context) => StudentDashboardPage(token: token),
-          ),
-        );
-      } else {
-        // Both failed, show the most relevant error message
-        String errorMsg = "Invalid credentials. Please check your username and password.";
-        if (studentData["message"] != null && studentData["message"] != "Invalid student ID or email") {
-          errorMsg = studentData["message"];
-        } else if (staffData["message"] != null && staffData["message"] != "Invalid username or password") {
-          errorMsg = staffData["message"];
-        }
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(errorMsg),
+            content: Text("Invalid username or password"),
             backgroundColor: Colors.redAccent,
           ),
         );
+      } else {
+        // Step 2: Attempt Student Login
+        final studentResponse = await http.post(
+          Uri.parse("http://10.0.2.2:8080/api/v1/auth/student-login"),
+          headers: {"Content-Type": "application/json"},
+          body: jsonEncode({"identity": identity, "password": password}),
+        );
+
+        final studentData = jsonDecode(studentResponse.body);
+        if (!mounted) return;
+        setState(() => _isLoading = false);
+
+        if (studentResponse.statusCode == 200 && studentData["success"] == true) {
+          final Map<String, dynamic> responseData = studentData["data"] ?? {};
+          final String token = responseData["token"] ?? "";
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text("Login Successful! Welcome to Student Portal."),
+              backgroundColor: Colors.green,
+            ),
+          );
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => StudentDashboardPage(token: token),
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text("Invalid username or password"),
+              backgroundColor: Colors.redAccent,
+            ),
+          );
+        }
       }
     } catch (e) {
       if (!mounted) return;
@@ -221,7 +228,38 @@ class _LoginPageState extends State<LoginPage> {
                           ),
                           textAlign: TextAlign.center,
                         ),
-                        const SizedBox(height: 32),
+                        const SizedBox(height: 24),
+
+                        // Role Selector Dropdown
+                        DropdownButtonFormField<String>(
+                          value: _selectedRole,
+                          decoration: InputDecoration(
+                            labelText: "Select Role",
+                            prefixIcon: const Icon(Icons.admin_panel_settings_outlined),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(16),
+                              borderSide: const BorderSide(
+                                color: primaryColor,
+                                width: 2.0,
+                              ),
+                            ),
+                          ),
+                          items: ['Student', 'Teacher', 'Admin']
+                              .map((role) => DropdownMenuItem(
+                                    value: role,
+                                    child: Text(role),
+                                  ))
+                              .toList(),
+                          onChanged: (value) {
+                            if (value != null) {
+                              setState(() => _selectedRole = value);
+                            }
+                          },
+                        ),
+                        const SizedBox(height: 24),
 
                         // Username / Identity Field
                         TextFormField(

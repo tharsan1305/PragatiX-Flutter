@@ -34,7 +34,7 @@ class _DepartmentsTabState extends State<DepartmentsTab> {
 
   final TextEditingController nameController = TextEditingController();
   final TextEditingController codeController = TextEditingController();
-  final TextEditingController descController = TextEditingController();
+  //final TextEditingController descController = TextEditingController();
 
   @override
   void initState() {
@@ -72,7 +72,7 @@ class _DepartmentsTabState extends State<DepartmentsTab> {
         body: jsonEncode({
           "name": nameController.text.trim(),
           "code": codeController.text.trim().toUpperCase(),
-          "description": descController.text.trim(),
+          //"description": descController.text.trim(),
         }),
       );
 
@@ -85,7 +85,7 @@ class _DepartmentsTabState extends State<DepartmentsTab> {
         );
         nameController.clear();
         codeController.clear();
-        descController.clear();
+       // descController.clear();
         Navigator.pop(context);
         setState(() => isLoading = true);
         _fetchDepartments();
@@ -104,12 +104,12 @@ class _DepartmentsTabState extends State<DepartmentsTab> {
           "id": departments.length + 1,
           "name": nameController.text,
           "code": codeController.text.toUpperCase(),
-          "description": descController.text,
+          //"description": descController.text,
         });
       });
       nameController.clear();
       codeController.clear();
-      descController.clear();
+     // descController.clear();
       Navigator.pop(context);
     }
   }
@@ -132,7 +132,7 @@ class _DepartmentsTabState extends State<DepartmentsTab> {
         body: jsonEncode({
           "name": nameController.text.trim(),
           "code": codeController.text.trim().toUpperCase(),
-          "description": descController.text.trim(),
+          //"description": descController.text.trim(),
         }),
       );
 
@@ -145,7 +145,7 @@ class _DepartmentsTabState extends State<DepartmentsTab> {
         );
         nameController.clear();
         codeController.clear();
-        descController.clear();
+        //descController.clear();
         Navigator.pop(context);
         setState(() => isLoading = true);
         _fetchDepartments();
@@ -164,12 +164,12 @@ class _DepartmentsTabState extends State<DepartmentsTab> {
         if (idx != -1) {
           departments[idx]["name"] = nameController.text;
           departments[idx]["code"] = codeController.text.toUpperCase();
-          departments[idx]["description"] = descController.text;
+        //  departments[idx]["description"] = descController.text;
         }
       });
       nameController.clear();
       codeController.clear();
-      descController.clear();
+      //descController.clear();
       Navigator.pop(context);
     }
   }
@@ -209,7 +209,7 @@ class _DepartmentsTabState extends State<DepartmentsTab> {
   void _showAddDeptDialog() {
     nameController.clear();
     codeController.clear();
-    descController.clear();
+    //descController.clear();
     showDialog(
       context: context,
       builder: (context) {
@@ -221,7 +221,7 @@ class _DepartmentsTabState extends State<DepartmentsTab> {
               children: [
                 TextField(controller: nameController, decoration: const InputDecoration(labelText: "Department Name *")),
                 TextField(controller: codeController, decoration: const InputDecoration(labelText: "Department Code * (e.g. IT)")),
-                TextField(controller: descController, decoration: const InputDecoration(labelText: "Description")),
+                //TextField(controller: descController, decoration: const InputDecoration(labelText: "Description")),
               ],
             ),
           ),
@@ -241,7 +241,7 @@ class _DepartmentsTabState extends State<DepartmentsTab> {
   void _showEditDeptDialog(Map<String, dynamic> dept) {
     nameController.text = dept["name"] ?? '';
     codeController.text = dept["code"] ?? '';
-    descController.text = dept["description"] ?? '';
+   // descController.text = dept["description"] ?? '';
 
     showDialog(
       context: context,
@@ -254,7 +254,7 @@ class _DepartmentsTabState extends State<DepartmentsTab> {
               children: [
                 TextField(controller: nameController, decoration: const InputDecoration(labelText: "Department Name *")),
                 TextField(controller: codeController, decoration: const InputDecoration(labelText: "Department Code *")),
-                TextField(controller: descController, decoration: const InputDecoration(labelText: "Description")),
+               // TextField(controller: descController, decoration: const InputDecoration(labelText: "Description")),
               ],
             ),
           ),
@@ -324,13 +324,13 @@ class _DepartmentsTabState extends State<DepartmentsTab> {
                                     color: Colors.grey.shade600,
                                   ),
                                 ),
-                                if (dept["description"] != null && dept["description"].toString().isNotEmpty) ...[
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    dept["description"],
-                                    style: const TextStyle(fontSize: 12, color: Colors.grey),
-                                  ),
-                                ],
+                                //if (dept["description"] != null && dept["description"].toString().isNotEmpty) ...[
+                                 // const SizedBox(height: 4),
+                                 // Text(
+                                 //   dept["description"],
+                                //    style: const TextStyle(fontSize: 12, color: Colors.grey),
+                                 // ),
+                                //],
                               ],
                             ),
                           ),
