@@ -306,7 +306,15 @@ class _StudentsTabState extends State<StudentsTab> {
                     TextField(controller: nameController, decoration: const InputDecoration(labelText: "Full Name *")),
                     TextField(controller: emailController, decoration: const InputDecoration(labelText: "Email *")),
                     TextField(controller: passwordController, obscureText: true, decoration: const InputDecoration(labelText: "Password *")),
-                    TextField(controller: phoneController, decoration: const InputDecoration(labelText: "Phone")),
+TextField(
+  controller: phoneController,
+  keyboardType: TextInputType.phone,
+  maxLength: 10,
+  decoration: const InputDecoration(
+    labelText: "Phone",
+    counterText: "",
+  ),
+),
                     TextField(controller: genderController, decoration: const InputDecoration(labelText: "Gender (MALE/FEMALE)")),
                     const SizedBox(height: 10),
                     DropdownButtonFormField<int>(
@@ -369,7 +377,15 @@ class _StudentsTabState extends State<StudentsTab> {
                   children: [
                     TextField(controller: nameController, decoration: const InputDecoration(labelText: "Full Name *")),
                     TextField(controller: emailController, decoration: const InputDecoration(labelText: "Email *")),
-                    TextField(controller: phoneController, decoration: const InputDecoration(labelText: "Phone")),
+TextField(
+  controller: phoneController,
+  keyboardType: TextInputType.phone,
+  maxLength: 10,
+  decoration: const InputDecoration(
+    labelText: "Phone",
+    counterText: "",
+  ),
+),
                     TextField(controller: genderController, decoration: const InputDecoration(labelText: "Gender (MALE/FEMALE)")),
                     const SizedBox(height: 10),
                     DropdownButtonFormField<int>(

@@ -62,6 +62,7 @@ class _StudentsTabState extends State<StudentsTab> {
   final TextEditingController editSemesterController = TextEditingController();
   final TextEditingController editYearController = TextEditingController();
   int? editSelectedDeptId;
+  DateTime? editSelectedDob;
 
   @override
   void dispose() {
@@ -404,7 +405,15 @@ try {
                     TextField(controller: regNoController, decoration: const InputDecoration(labelText: "Register Number * (reg_no)")),
                     TextField(controller: sprNoController, decoration: const InputDecoration(labelText: "SPR Number (spr_no)")),
                     TextField(controller: emailController, decoration: const InputDecoration(labelText: "Email *")),
-                    TextField(controller: phoneController, decoration: const InputDecoration(labelText: "Phone Number")),
+TextField(
+  controller: phoneController,
+  keyboardType: TextInputType.phone,
+  maxLength: 10,
+  decoration: const InputDecoration(
+    labelText: "Phone Number",
+    counterText: "",
+  ),
+),
                     const SizedBox(height: 12),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -856,7 +865,10 @@ try {
           "semester": editSemesterController.text.isEmpty ? "1" : editSemesterController.text,
           "academicYear": editYearController.text.isEmpty ? "2024-2025" : editYearController.text,
           "sprNo": editSprNoController.text.trim(),
-          "active": true
+          "active": true,
+          "dateOfBirth": editSelectedDob != null 
+              ? "${editSelectedDob!.year}-${editSelectedDob!.month.toString().padLeft(2, '0')}-${editSelectedDob!.day.toString().padLeft(2, '0')}" 
+              : null,
         }),
       );
 
@@ -921,6 +933,16 @@ try {
     editYearController.text = student["academicYear"] ?? '2024-2025';
     editSprNoController.text = student["sprNo"] ?? '';
     
+    if (student["dateOfBirth"] != null) {
+      try {
+        editSelectedDob = DateTime.parse(student["dateOfBirth"]);
+      } catch (_) {
+        editSelectedDob = null;
+      }
+    } else {
+      editSelectedDob = null;
+    }
+    
     final deptName = student["departmentName"];
     final match = departments.firstWhere((d) => d["name"] == deptName, orElse: () => {"id": departments.isNotEmpty ? departments.first["id"] : null});
     editSelectedDeptId = match["id"];
@@ -938,7 +960,15 @@ try {
                   children: [
                     TextField(controller: editNameController, decoration: const InputDecoration(labelText: "Full Name *")),
                     TextField(controller: editEmailController, decoration: const InputDecoration(labelText: "Email *")),
-                    TextField(controller: editPhoneController, decoration: const InputDecoration(labelText: "Phone")),
+                    TextField(
+                      controller: editPhoneController,
+                      keyboardType: TextInputType.phone,
+                      maxLength: 10,
+                      decoration: const InputDecoration(
+                        labelText: "Phone",
+                        counterText: "",
+                      ),
+                    ),
                     TextField(controller: editGenderController, decoration: const InputDecoration(labelText: "Gender (MALE/FEMALE)")),
                     TextField(controller: editSprNoController, decoration: const InputDecoration(labelText: "SPR No")),
                     const SizedBox(height: 10),
@@ -959,6 +989,35 @@ try {
                     ),
                     TextField(controller: editSemesterController, decoration: const InputDecoration(labelText: "Semester")),
                     TextField(controller: editYearController, decoration: const InputDecoration(labelText: "Academic Year")),
+                    const SizedBox(height: 16),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          editSelectedDob == null
+                              ? "Select Date of Birth *"
+                              : "DOB: ${editSelectedDob!.year}-${editSelectedDob!.month.toString().padLeft(2, '0')}-${editSelectedDob!.day.toString().padLeft(2, '0')}",
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        TextButton.icon(
+                          onPressed: () async {
+                            final picked = await showDatePicker(
+                              context: context,
+                              initialDate: editSelectedDob ?? DateTime(2004),
+                              firstDate: DateTime(1995),
+                              lastDate: DateTime.now(),
+                            );
+                            if (picked != null) {
+                              setDialogState(() {
+                                editSelectedDob = picked;
+                              });
+                            }
+                          },
+                          icon: const Icon(Icons.calendar_month),
+                          label: const Text("Select"),
+                        )
+                      ],
+                    ),
                   ],
                 ),
               ),
@@ -1552,7 +1611,15 @@ class _EditStudentDialogState extends State<EditStudentDialog> {
             TextField(controller: regCtrl, decoration: const InputDecoration(labelText: "Register No (reg_no)")),
             TextField(controller: sprCtrl, decoration: const InputDecoration(labelText: "SPR No (spr_no)")),
             TextField(controller: emailCtrl, decoration: const InputDecoration(labelText: "Email")),
-            TextField(controller: phoneCtrl, decoration: const InputDecoration(labelText: "Phone")),
+TextField(
+  controller: phoneCtrl,
+  keyboardType: TextInputType.phone,
+  maxLength: 10,
+  decoration: const InputDecoration(
+    labelText: "Phone",
+    counterText: "",
+  ),
+),
             TextField(controller: deptCtrl, decoration: const InputDecoration(labelText: "Department")),
             const SizedBox(height: 16),
             Row(

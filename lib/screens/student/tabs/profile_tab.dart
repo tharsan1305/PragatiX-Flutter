@@ -244,12 +244,17 @@ class _ProfileTabState extends State<ProfileTab> {
             fontWeight: FontWeight.w500,
           ),
         ),
-        Text(
-          value,
-          style: const TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.bold,
-            color: Color(0xFF1E293B),
+        const SizedBox(width: 16),
+        Expanded(
+          child: Text(
+            value,
+            textAlign: TextAlign.end,
+            style: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF1E293B),
+            ),
+            overflow: TextOverflow.ellipsis,
           ),
         ),
       ],
