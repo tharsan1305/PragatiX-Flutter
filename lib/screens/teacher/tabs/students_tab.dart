@@ -53,6 +53,35 @@ class _StudentsTabState extends State<StudentsTab> {
   DateTime? selectedDob;
   int? selectedDeptId;
 
+  // Student Edit controllers
+  final TextEditingController editNameController = TextEditingController();
+  final TextEditingController editEmailController = TextEditingController();
+  final TextEditingController editPhoneController = TextEditingController();
+  final TextEditingController editSprNoController = TextEditingController();
+  final TextEditingController editGenderController = TextEditingController();
+  final TextEditingController editSemesterController = TextEditingController();
+  final TextEditingController editYearController = TextEditingController();
+  int? editSelectedDeptId;
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    filterSectionController.dispose();
+    nameController.dispose();
+    emailController.dispose();
+    phoneController.dispose();
+    sprNoController.dispose();
+    regNoController.dispose();
+    editNameController.dispose();
+    editEmailController.dispose();
+    editPhoneController.dispose();
+    editSprNoController.dispose();
+    editGenderController.dispose();
+    editSemesterController.dispose();
+    editYearController.dispose();
+    super.dispose();
+  }
+
   @override
   void initState() {
     super.initState();
@@ -178,27 +207,30 @@ class _StudentsTabState extends State<StudentsTab> {
 
     final formattedDob = "${selectedDob!.year}-${selectedDob!.month.toString().padLeft(2, '0')}-${selectedDob!.day.toString().padLeft(2, '0')}";
 
-    try {
-      final response = await http.post(
-        Uri.parse("http://10.0.2.2:8080/api/v1/students"),
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": "Bearer ${widget.token}",
-        },
-        body: jsonEncode({
-          "studentId": regNoController.text.trim(),
-          "fullName": nameController.text.trim(),
-          "email": emailController.text.trim(),
-          "password": formattedDob, 
-          "phone": phoneController.text.trim(),
-          "gender": "MALE",
-          "dateOfBirth": formattedDob,
-          "departmentId": selectedDeptId,
-          "sprNo": sprNoController.text.trim(),
-          "semester": "1",
-          "academicYear": "2024-2025"
-        }),
-      );
+// Generates DOB as ddmmyyyy (e.g. 15102004)
+final passwordDob = "${selectedDob!.day.toString().padLeft(2, '0')}${selectedDob!.month.toString().padLeft(2, '0')}${selectedDob!.year}";
+
+try {
+  final response = await http.post(
+    Uri.parse("http://10.0.2.2:8080/api/v1/students"),
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer ${widget.token}",
+    },
+    body: jsonEncode({
+      "studentId": regNoController.text.trim(),
+      "fullName": nameController.text.trim(),
+      "email": emailController.text.trim(),
+      "password": passwordDob, // <-- Now sends ddmmyyyy (e.g. 15102004)
+      "phone": phoneController.text.trim(),
+      "gender": "MALE",
+      "dateOfBirth": formattedDob, // <-- Keeps YYYY-MM-DD for database parsing
+      "departmentId": selectedDeptId,
+      "sprNo": sprNoController.text.trim(),
+      "semester": "1",
+      "academicYear": "2024-2025"
+    }),
+  );
 
       if (!mounted) return;
       final data = jsonDecode(response.body);
@@ -800,6 +832,151 @@ class _StudentsTabState extends State<StudentsTab> {
     );
   }
 
+  Future<void> _editStudent(int id) async {
+    if (editNameController.text.trim().isEmpty || editEmailController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Name and Email are required.")),
+      );
+      return;
+    }
+
+    try {
+      final response = await http.put(
+        Uri.parse("http://10.0.2.2:8080/api/v1/students/$id"),
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer ${widget.token}",
+        },
+        body: jsonEncode({
+          "fullName": editNameController.text.trim(),
+          "email": editEmailController.text.trim(),
+          "phone": editPhoneController.text.trim(),
+          "gender": editGenderController.text.toUpperCase().isEmpty ? "MALE" : editGenderController.text.toUpperCase(),
+          "departmentId": editSelectedDeptId,
+          "semester": editSemesterController.text.isEmpty ? "1" : editSemesterController.text,
+          "academicYear": editYearController.text.isEmpty ? "2024-2025" : editYearController.text,
+          "sprNo": editSprNoController.text.trim(),
+          "active": true
+        }),
+      );
+
+      if (!mounted) return;
+      final data = jsonDecode(response.body);
+
+      if (response.statusCode == 200 && data["success"] == true) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Student details updated successfully!"), backgroundColor: Colors.green),
+        );
+        Navigator.pop(context);
+        setState(() => isLoading = true);
+        _fetchStudents();
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(data["message"] ?? "Failed to update student"), backgroundColor: Colors.redAccent),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Network/Server error updating student details."), backgroundColor: Colors.redAccent),
+      );
+    }
+  }
+
+  Future<void> _deleteStudent(int id) async {
+    try {
+      final response = await http.delete(
+        Uri.parse("http://10.0.2.2:8080/api/v1/students/$id"),
+        headers: {
+          "Authorization": "Bearer ${widget.token}",
+        },
+      );
+
+      if (!mounted) return;
+      if (response.statusCode == 200) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Student deleted successfully"), backgroundColor: Colors.green),
+        );
+        setState(() => isLoading = true);
+        _fetchStudents();
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Delete failed on server"), backgroundColor: Colors.redAccent),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Network error deleting student"), backgroundColor: Colors.redAccent),
+      );
+    }
+  }
+
+  void _showEditStudentDialog(Map<String, dynamic> student) {
+    editNameController.text = student["fullName"] ?? '';
+    editEmailController.text = student["email"] ?? '';
+    editPhoneController.text = student["phone"] ?? '';
+    editGenderController.text = student["gender"] ?? 'MALE';
+    editSemesterController.text = student["semester"] ?? '1';
+    editYearController.text = student["academicYear"] ?? '2024-2025';
+    editSprNoController.text = student["sprNo"] ?? '';
+    
+    final deptName = student["departmentName"];
+    final match = departments.firstWhere((d) => d["name"] == deptName, orElse: () => {"id": departments.isNotEmpty ? departments.first["id"] : null});
+    editSelectedDeptId = match["id"];
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              title: Text("Edit Student: ${student["studentId"]}", style: const TextStyle(fontWeight: FontWeight.bold)),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextField(controller: editNameController, decoration: const InputDecoration(labelText: "Full Name *")),
+                    TextField(controller: editEmailController, decoration: const InputDecoration(labelText: "Email *")),
+                    TextField(controller: editPhoneController, decoration: const InputDecoration(labelText: "Phone")),
+                    TextField(controller: editGenderController, decoration: const InputDecoration(labelText: "Gender (MALE/FEMALE)")),
+                    TextField(controller: editSprNoController, decoration: const InputDecoration(labelText: "SPR No")),
+                    const SizedBox(height: 10),
+                    DropdownButtonFormField<int>(
+                      value: editSelectedDeptId,
+                      decoration: const InputDecoration(labelText: "Department"),
+                      items: departments.map((d) {
+                        return DropdownMenuItem<int>(
+                          value: d["id"],
+                          child: Text(d["code"] ?? d["name"]),
+                        );
+                      }).toList(),
+                      onChanged: (value) {
+                        setDialogState(() {
+                          editSelectedDeptId = value;
+                        });
+                      },
+                    ),
+                    TextField(controller: editSemesterController, decoration: const InputDecoration(labelText: "Semester")),
+                    TextField(controller: editYearController, decoration: const InputDecoration(labelText: "Academic Year")),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancel")),
+                ElevatedButton(
+                  onPressed: () => _editStudent(student["id"]),
+                  style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF11998e)),
+                  child: const Text("Save Changes", style: TextStyle(color: Colors.white)),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -949,16 +1126,51 @@ class _StudentsTabState extends State<StudentsTab> {
                             ),
                             title: Text(name, style: const TextStyle(fontWeight: FontWeight.bold)),
                             subtitle: Text("Reg No: $sId • SPR: $spr$yearStr$sectionStr\nDept: $deptName"),
-                            trailing: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: Colors.orange.withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Text(
-                                "$score pts",
-                                style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.orangeAccent),
-                              ),
+                            trailing: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: Colors.orange.withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Text(
+                                    "$score pts",
+                                    style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.orangeAccent),
+                                  ),
+                                ),
+                                if (widget.subRoles.contains("CC")) ...[
+                                  IconButton(
+                                    icon: const Icon(Icons.edit_outlined, color: Colors.blue),
+                                    onPressed: () => _showEditStudentDialog(s),
+                                    tooltip: "Edit student",
+                                  ),
+                                  IconButton(
+                                    icon: const Icon(Icons.delete_outline, color: Colors.red),
+                                    onPressed: () {
+                                      showDialog(
+                                        context: context,
+                                        builder: (context) => AlertDialog(
+                                          title: const Text("Delete Student"),
+                                          content: Text("Are you sure you want to delete student $name?"),
+                                          actions: [
+                                            TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancel")),
+                                            TextButton(
+                                              onPressed: () {
+                                                Navigator.pop(context);
+                                                _deleteStudent(s["id"]);
+                                              },
+                                              child: const Text("Delete", style: TextStyle(color: Colors.red)),
+                                            ),
+                                          ],
+                                        ),
+                                      );
+                                    },
+                                    tooltip: "Delete student",
+                                  ),
+                                ],
+                              ],
                             ),
                             onTap: () {
                               final mappedStudent = {
@@ -1034,104 +1246,16 @@ class _BulkVerificationScreenState extends State<BulkVerificationScreen> {
   }
 
   Future<void> _editStudent(int index) async {
-    final s = _students[index];
-    final nameCtrl = TextEditingController(text: s["fullName"] ?? "");
-    final regCtrl = TextEditingController(text: s["studentId"] ?? "");
-    final sprCtrl = TextEditingController(text: s["sprNo"] ?? "");
-    final emailCtrl = TextEditingController(text: s["email"] ?? "");
-    final phoneCtrl = TextEditingController(text: s["phone"] ?? "");
-    final deptCtrl = TextEditingController(text: s["departmentName"] ?? "");
-    
-    DateTime? dob;
-    if (s["dateOfBirth"] != null) {
-      try {
-        dob = DateTime.parse(s["dateOfBirth"]);
-      } catch (_) {}
-    }
-
-    final updated = await showDialog<bool>(
+    final updatedStudent = await showDialog<Map<String, dynamic>>(
       context: context,
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setDialogState) {
-            return AlertDialog(
-              title: const Text("Edit Student Details", style: TextStyle(fontWeight: FontWeight.bold)),
-              content: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: "Full Name")),
-                    TextField(controller: regCtrl, decoration: const InputDecoration(labelText: "Register No (reg_no)")),
-                    TextField(controller: sprCtrl, decoration: const InputDecoration(labelText: "SPR No (spr_no)")),
-                    TextField(controller: emailCtrl, decoration: const InputDecoration(labelText: "Email")),
-                    TextField(controller: phoneCtrl, decoration: const InputDecoration(labelText: "Phone")),
-                    TextField(controller: deptCtrl, decoration: const InputDecoration(labelText: "Department")),
-                    const SizedBox(height: 16),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          dob == null
-                              ? "No DOB Selected"
-                              : "DOB: ${dob!.year}-${dob!.month.toString().padLeft(2, '0')}-${dob!.day.toString().padLeft(2, '0')}",
-                          style: const TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                        TextButton.icon(
-                          onPressed: () async {
-                            final picked = await showDatePicker(
-                              context: context,
-                              initialDate: dob ?? DateTime(2004),
-                              firstDate: DateTime(1995),
-                              lastDate: DateTime.now(),
-                            );
-                            if (picked != null) {
-                              setDialogState(() {
-                                dob = picked;
-                              });
-                            }
-                          },
-                          icon: const Icon(Icons.calendar_month),
-                          label: const Text("Select"),
-                        )
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              actions: [
-                TextButton(onPressed: () => Navigator.pop(context, false), child: const Text("Cancel")),
-                ElevatedButton(
-                  onPressed: () => Navigator.pop(context, true),
-                  style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF11998e)),
-                  child: const Text("Apply", style: TextStyle(color: Colors.white)),
-                ),
-              ],
-            );
-          },
-        );
-      },
+      builder: (context) => EditStudentDialog(student: _students[index]),
     );
 
-    if (updated == true) {
+    if (updatedStudent != null) {
       setState(() {
-        _students[index]["fullName"] = nameCtrl.text.trim();
-        _students[index]["studentId"] = regCtrl.text.trim();
-        _students[index]["sprNo"] = sprCtrl.text.trim();
-        _students[index]["email"] = emailCtrl.text.trim();
-        _students[index]["phone"] = phoneCtrl.text.trim();
-        _students[index]["departmentName"] = deptCtrl.text.trim();
-        if (dob != null) {
-          _students[index]["dateOfBirth"] = "${dob!.year}-${dob!.month.toString().padLeft(2, '0')}-${dob!.day.toString().padLeft(2, '0')}";
-        }
+        _students[index] = updatedStudent;
       });
     }
-
-    nameCtrl.dispose();
-    regCtrl.dispose();
-    sprCtrl.dispose();
-    emailCtrl.dispose();
-    phoneCtrl.dispose();
-    deptCtrl.dispose();
   }
 
   void _removeStudent(int index) {
@@ -1368,6 +1492,120 @@ class _BulkVerificationScreenState extends State<BulkVerificationScreen> {
           ],
         ),
       ),
+    );
+  }
+}
+
+class EditStudentDialog extends StatefulWidget {
+  final Map<String, dynamic> student;
+  const EditStudentDialog({super.key, required this.student});
+
+  @override
+  State<EditStudentDialog> createState() => _EditStudentDialogState();
+}
+
+class _EditStudentDialogState extends State<EditStudentDialog> {
+  late final TextEditingController nameCtrl;
+  late final TextEditingController regCtrl;
+  late final TextEditingController sprCtrl;
+  late final TextEditingController emailCtrl;
+  late final TextEditingController phoneCtrl;
+  late final TextEditingController deptCtrl;
+  DateTime? dob;
+
+  @override
+  void initState() {
+    super.initState();
+    nameCtrl = TextEditingController(text: widget.student["fullName"] ?? "");
+    regCtrl = TextEditingController(text: widget.student["studentId"] ?? "");
+    sprCtrl = TextEditingController(text: widget.student["sprNo"] ?? "");
+    emailCtrl = TextEditingController(text: widget.student["email"] ?? "");
+    phoneCtrl = TextEditingController(text: widget.student["phone"] ?? "");
+    deptCtrl = TextEditingController(text: widget.student["departmentName"] ?? "");
+    if (widget.student["dateOfBirth"] != null) {
+      try {
+        dob = DateTime.parse(widget.student["dateOfBirth"]);
+      } catch (_) {}
+    }
+  }
+
+  @override
+  void dispose() {
+    nameCtrl.dispose();
+    regCtrl.dispose();
+    sprCtrl.dispose();
+    emailCtrl.dispose();
+    phoneCtrl.dispose();
+    deptCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text("Edit Student Details", style: TextStyle(fontWeight: FontWeight.bold)),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: "Full Name")),
+            TextField(controller: regCtrl, decoration: const InputDecoration(labelText: "Register No (reg_no)")),
+            TextField(controller: sprCtrl, decoration: const InputDecoration(labelText: "SPR No (spr_no)")),
+            TextField(controller: emailCtrl, decoration: const InputDecoration(labelText: "Email")),
+            TextField(controller: phoneCtrl, decoration: const InputDecoration(labelText: "Phone")),
+            TextField(controller: deptCtrl, decoration: const InputDecoration(labelText: "Department")),
+            const SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  dob == null
+                      ? "No DOB Selected"
+                      : "DOB: ${dob!.year}-${dob!.month.toString().padLeft(2, '0')}-${dob!.day.toString().padLeft(2, '0')}",
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+                TextButton.icon(
+                  onPressed: () async {
+                    final picked = await showDatePicker(
+                      context: context,
+                      initialDate: dob ?? DateTime(2004),
+                      firstDate: DateTime(1995),
+                      lastDate: DateTime.now(),
+                    );
+                    if (picked != null) {
+                      setState(() {
+                        dob = picked;
+                      });
+                    }
+                  },
+                  icon: const Icon(Icons.calendar_month),
+                  label: const Text("Select"),
+                )
+              ],
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(context, null), child: const Text("Cancel")),
+        ElevatedButton(
+          onPressed: () {
+            final updatedStudent = Map<String, dynamic>.from(widget.student);
+            updatedStudent["fullName"] = nameCtrl.text.trim();
+            updatedStudent["studentId"] = regCtrl.text.trim();
+            updatedStudent["sprNo"] = sprCtrl.text.trim();
+            updatedStudent["email"] = emailCtrl.text.trim();
+            updatedStudent["phone"] = phoneCtrl.text.trim();
+            updatedStudent["departmentName"] = deptCtrl.text.trim();
+            if (dob != null) {
+              updatedStudent["dateOfBirth"] = "${dob!.year}-${dob!.month.toString().padLeft(2, '0')}-${dob!.day.toString().padLeft(2, '0')}";
+            }
+            Navigator.pop(context, updatedStudent);
+          },
+          style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF11998e)),
+          child: const Text("Apply", style: TextStyle(color: Colors.white)),
+        ),
+      ],
     );
   }
 }
