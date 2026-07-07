@@ -37,6 +37,13 @@ class StudentsTab extends StatefulWidget {
 class _StudentsTabState extends State<StudentsTab> {
   List<dynamic> studentsList = [];
   List<dynamic> departments = [];
+  List<dynamic> academicYears = [];
+  List<dynamic> years = [];
+  List<dynamic> semesters = [];
+  List<dynamic> genders = [];
+  List<dynamic> sections = [];
+  List<dynamic> groups = [];
+  bool isLoadingLookups = true;
   bool isLoading = true;
   String searchQuery = '';
   final TextEditingController _searchController = TextEditingController();
@@ -93,17 +100,40 @@ class _StudentsTabState extends State<StudentsTab> {
     } else {
       isLoading = false;
     }
-    _loadDepartments();
+    _loadAllLookups();
   }
 
-  Future<void> _loadDepartments() async {
-    final list = await _apiGetDepartments(widget.token);
-    setState(() {
-      departments = list;
-      if (departments.isNotEmpty) {
-        selectedDeptId = departments.first["id"];
-      }
-    });
+  Future<void> _loadAllLookups() async {
+    try {
+      final headers = {"Authorization": "Bearer ${widget.token}"};
+      final results = await Future.wait([
+        http.get(Uri.parse("http://10.0.2.2:8080/api/v1/admin/departments"), headers: headers),
+        http.get(Uri.parse("http://10.0.2.2:8080/api/v1/admin/academic-years"), headers: headers),
+        http.get(Uri.parse("http://10.0.2.2:8080/api/v1/admin/years"), headers: headers),
+        http.get(Uri.parse("http://10.0.2.2:8080/api/v1/admin/semesters"), headers: headers),
+        http.get(Uri.parse("http://10.0.2.2:8080/api/v1/admin/genders"), headers: headers),
+        http.get(Uri.parse("http://10.0.2.2:8080/api/v1/admin/sections"), headers: headers),
+        http.get(Uri.parse("http://10.0.2.2:8080/api/v1/groups"), headers: headers),
+      ]);
+
+      if (!mounted) return;
+
+      setState(() {
+        departments = jsonDecode(results[0].body)["data"] ?? [];
+        academicYears = jsonDecode(results[1].body)["data"] ?? [];
+        years = jsonDecode(results[2].body)["data"] ?? [];
+        semesters = jsonDecode(results[3].body)["data"] ?? [];
+        genders = jsonDecode(results[4].body)["data"] ?? [];
+        sections = jsonDecode(results[5].body)["data"] ?? [];
+        groups = jsonDecode(results[6].body)["data"] ?? [];
+        isLoadingLookups = false;
+
+        if (departments.isNotEmpty) selectedDeptId = departments.first["id"];
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => isLoadingLookups = false);
+    }
   }
 
   Future<void> _fetchStudents() async {
@@ -195,7 +225,16 @@ class _StudentsTabState extends State<StudentsTab> {
     });
   }
 
-  Future<void> _addSingleStudent() async {
+  Future<void> _addSingleStudent({
+    required int? departmentId,
+    required int? academicYearId,
+    required int? yearId,
+    required int? semesterId,
+    required int? genderId,
+    required int? sectionId,
+    required int? groupId,
+    required String address,
+  }) async {
     if (nameController.text.trim().isEmpty ||
         regNoController.text.trim().isEmpty ||
         emailController.text.trim().isEmpty ||
@@ -208,30 +247,36 @@ class _StudentsTabState extends State<StudentsTab> {
 
     final formattedDob = "${selectedDob!.year}-${selectedDob!.month.toString().padLeft(2, '0')}-${selectedDob!.day.toString().padLeft(2, '0')}";
 
-// Generates DOB as ddmmyyyy (e.g. 15102004)
-final passwordDob = "${selectedDob!.day.toString().padLeft(2, '0')}${selectedDob!.month.toString().padLeft(2, '0')}${selectedDob!.year}";
+    // Generates DOB as ddMMyyyy (e.g. 15102004)
+    final passwordDob = "${selectedDob!.day.toString().padLeft(2, '0')}${selectedDob!.month.toString().padLeft(2, '0')}${selectedDob!.year}";
 
-try {
-  final response = await http.post(
-    Uri.parse("http://10.0.2.2:8080/api/v1/students"),
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": "Bearer ${widget.token}",
-    },
-    body: jsonEncode({
-      "studentId": regNoController.text.trim(),
-      "fullName": nameController.text.trim(),
-      "email": emailController.text.trim(),
-      "password": passwordDob, // <-- Now sends ddmmyyyy (e.g. 15102004)
-      "phone": phoneController.text.trim(),
-      "gender": "MALE",
-      "dateOfBirth": formattedDob, // <-- Keeps YYYY-MM-DD for database parsing
-      "departmentId": selectedDeptId,
-      "sprNo": sprNoController.text.trim(),
-      "semester": "1",
-      "academicYear": "2024-2025"
-    }),
-  );
+    try {
+      final response = await http.post(
+        Uri.parse("http://10.0.2.2:8080/api/v1/students"),
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer ${widget.token}",
+        },
+        body: jsonEncode({
+          "studentId": regNoController.text.trim(),
+          "fullName": nameController.text.trim(),
+          "email": emailController.text.trim(),
+          "password": passwordDob,
+          "phone": phoneController.text.trim(),
+          "dateOfBirth": formattedDob,
+          "dob": formattedDob,
+          "address": address,
+          "departmentId": departmentId,
+          "academicYearId": academicYearId,
+          "yearId": yearId,
+          "semesterId": semesterId,
+          "genderId": genderId,
+          "sectionId": sectionId,
+          "groupId": groupId,
+          "sprNo": sprNoController.text.trim(),
+          "active": true
+        }),
+      );
 
       if (!mounted) return;
       final data = jsonDecode(response.body);
@@ -261,7 +306,7 @@ try {
           "fullName": nameController.text.trim(),
           "email": emailController.text.trim(),
           "phone": phoneController.text.trim(),
-          "departmentName": departments.firstWhere((d) => d["id"] == selectedDeptId, orElse: () => {"name": "CSE"})["name"],
+          "departmentName": departments.firstWhere((d) => d["id"] == departmentId, orElse: () => {"name": "CSE"})["name"],
           "semester": "1",
           "sprNo": sprNoController.text.trim(),
           "dateOfBirth": formattedDob
@@ -390,11 +435,26 @@ try {
 
   void _showSingleStudentDialog() {
     _clearControllers();
+    int? selectedDeptId = departments.isNotEmpty ? departments.first["id"] : null;
+    int? selectedAcademicYearId = academicYears.isNotEmpty ? academicYears.first["id"] : null;
+    int? selectedYearId = years.isNotEmpty ? years.first["id"] : null;
+    int? selectedSemesterId = semesters.isNotEmpty ? semesters.first["id"] : null;
+    int? selectedGenderId = genders.isNotEmpty ? genders.first["id"] : null;
+    int? selectedSectionId;
+    int? selectedGroupId;
+    final TextEditingController addressController = TextEditingController();
+
     showDialog(
       context: context,
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setDialogState) {
+            // Filter sections by department ID
+            final filteredSections = sections.where((sec) => sec["departmentId"] == selectedDeptId).toList();
+            if (selectedSectionId != null && !filteredSections.any((sec) => sec["id"] == selectedSectionId)) {
+              selectedSectionId = null;
+            }
+
             return AlertDialog(
               title: const Text("Register Single Student", style: TextStyle(fontWeight: FontWeight.bold)),
               content: SingleChildScrollView(
@@ -405,15 +465,16 @@ try {
                     TextField(controller: regNoController, decoration: const InputDecoration(labelText: "Register Number * (reg_no)")),
                     TextField(controller: sprNoController, decoration: const InputDecoration(labelText: "SPR Number (spr_no)")),
                     TextField(controller: emailController, decoration: const InputDecoration(labelText: "Email *")),
-TextField(
-  controller: phoneController,
-  keyboardType: TextInputType.phone,
-  maxLength: 10,
-  decoration: const InputDecoration(
-    labelText: "Phone Number",
-    counterText: "",
-  ),
-),
+                    TextField(
+                      controller: phoneController,
+                      keyboardType: TextInputType.phone,
+                      maxLength: 10,
+                      decoration: const InputDecoration(
+                        labelText: "Phone Number",
+                        counterText: "",
+                      ),
+                    ),
+                    TextField(controller: addressController, decoration: const InputDecoration(labelText: "Address")),
                     const SizedBox(height: 12),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -434,7 +495,7 @@ TextField(
                             );
                             if (picked != null) {
                               setDialogState(() {
-                                    selectedDob = picked;
+                                selectedDob = picked;
                               });
                             }
                           },
@@ -446,7 +507,7 @@ TextField(
                     const SizedBox(height: 10),
                     DropdownButtonFormField<int>(
                       value: selectedDeptId,
-                      decoration: const InputDecoration(labelText: "Department"),
+                      decoration: const InputDecoration(labelText: "Department *"),
                       items: departments.map((d) {
                         return DropdownMenuItem<int>(
                           value: d["id"],
@@ -456,6 +517,109 @@ TextField(
                       onChanged: (value) {
                         setDialogState(() {
                           selectedDeptId = value;
+                          selectedSectionId = null; // Clear Section on department change
+                        });
+                      },
+                    ),
+                    DropdownButtonFormField<int>(
+                      value: selectedAcademicYearId,
+                      decoration: const InputDecoration(labelText: "Academic Year *"),
+                      items: academicYears.map((ay) {
+                        return DropdownMenuItem<int>(
+                          value: ay["id"],
+                          child: Text(ay["academicYear"] ?? ""),
+                        );
+                      }).toList(),
+                      onChanged: (value) {
+                        setDialogState(() {
+                          selectedAcademicYearId = value;
+                        });
+                      },
+                    ),
+                    DropdownButtonFormField<int>(
+                      value: selectedYearId,
+                      decoration: const InputDecoration(labelText: "Year *"),
+                      items: years.map((y) {
+                        return DropdownMenuItem<int>(
+                          value: y["id"],
+                          child: Text(y["yearNo"] != null ? "Year ${y["yearNo"]}" : ""),
+                        );
+                      }).toList(),
+                      onChanged: (value) {
+                        setDialogState(() {
+                          selectedYearId = value;
+                        });
+                      },
+                    ),
+                    DropdownButtonFormField<int>(
+                      value: selectedSemesterId,
+                      decoration: const InputDecoration(labelText: "Semester *"),
+                      items: semesters.map((s) {
+                        return DropdownMenuItem<int>(
+                          value: s["id"],
+                          child: Text(s["semesterNo"] != null ? "Semester ${s["semesterNo"]}" : ""),
+                        );
+                      }).toList(),
+                      onChanged: (value) {
+                        setDialogState(() {
+                          selectedSemesterId = value;
+                        });
+                      },
+                    ),
+                    DropdownButtonFormField<int>(
+                      value: selectedGenderId,
+                      decoration: const InputDecoration(labelText: "Gender *"),
+                      items: genders.map((g) {
+                        return DropdownMenuItem<int>(
+                          value: g["id"],
+                          child: Text(g["genderName"] ?? ""),
+                        );
+                      }).toList(),
+                      onChanged: (value) {
+                        setDialogState(() {
+                          selectedGenderId = value;
+                        });
+                      },
+                    ),
+                    DropdownButtonFormField<int?>(
+                      value: selectedSectionId,
+                      decoration: const InputDecoration(labelText: "Section (Optional)"),
+                      items: [
+                        const DropdownMenuItem<int?>(
+                          value: null,
+                          child: Text("No Section Selected (Optional)"),
+                        ),
+                        ...filteredSections.map((sec) {
+                          return DropdownMenuItem<int?>(
+                            value: sec["id"],
+                            child: Text(sec["sectionName"] ?? ""),
+                          );
+                        })
+                      ],
+                      onChanged: (value) {
+                        setDialogState(() {
+                          selectedSectionId = value;
+                        });
+                      },
+                    ),
+                    DropdownButtonFormField<int?>(
+                      value: selectedGroupId,
+                      decoration: const InputDecoration(labelText: "Group (Optional)"),
+                      items: [
+                        const DropdownMenuItem<int?>(
+                          value: null,
+                          child: Text("No Group Selected (Optional)"),
+                        ),
+                        ...groups.map((grp) {
+                          return DropdownMenuItem<int?>(
+                            value: grp["id"],
+                            child: Text(grp["name"] ?? ""),
+                          );
+                        })
+                      ],
+                      onChanged: (value) {
+                        setDialogState(() {
+                          selectedGroupId = value;
                         });
                       },
                     ),
@@ -465,7 +629,18 @@ TextField(
               actions: [
                 TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancel")),
                 ElevatedButton(
-                  onPressed: _addSingleStudent,
+                  onPressed: () {
+                    _addSingleStudent(
+                      departmentId: selectedDeptId,
+                      academicYearId: selectedAcademicYearId,
+                      yearId: selectedYearId,
+                      semesterId: selectedSemesterId,
+                      genderId: selectedGenderId,
+                      sectionId: selectedSectionId,
+                      groupId: selectedGroupId,
+                      address: addressController.text.trim(),
+                    );
+                  },
                   style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF11998e)),
                   child: const Text("Register", style: TextStyle(color: Colors.white)),
                 ),
@@ -841,8 +1016,25 @@ TextField(
     );
   }
 
-  Future<void> _editStudent(int id) async {
-    if (editNameController.text.trim().isEmpty || editEmailController.text.trim().isEmpty) {
+  Future<void> _editStudent({
+    required int id,
+    required String fullName,
+    required String email,
+    required String phone,
+    required int? genderId,
+    required int? departmentId,
+    required int? academicYearId,
+    required int? yearId,
+    required int? semesterId,
+    required int? sectionId,
+    required int? groupId,
+    required String sprNo,
+    required DateTime? dob,
+    required String address,
+    required bool active,
+    required String password,
+  }) async {
+    if (fullName.isEmpty || email.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Name and Email are required.")),
       );
@@ -857,18 +1049,21 @@ TextField(
           "Authorization": "Bearer ${widget.token}",
         },
         body: jsonEncode({
-          "fullName": editNameController.text.trim(),
-          "email": editEmailController.text.trim(),
-          "phone": editPhoneController.text.trim(),
-          "gender": editGenderController.text.toUpperCase().isEmpty ? "MALE" : editGenderController.text.toUpperCase(),
-          "departmentId": editSelectedDeptId,
-          "semester": editSemesterController.text.isEmpty ? "1" : editSemesterController.text,
-          "academicYear": editYearController.text.isEmpty ? "2024-2025" : editYearController.text,
-          "sprNo": editSprNoController.text.trim(),
-          "active": true,
-          "dateOfBirth": editSelectedDob != null 
-              ? "${editSelectedDob!.year}-${editSelectedDob!.month.toString().padLeft(2, '0')}-${editSelectedDob!.day.toString().padLeft(2, '0')}" 
-              : null,
+          "fullName": fullName,
+          "email": email,
+          "phone": phone,
+          "genderId": genderId,
+          "departmentId": departmentId,
+          "academicYearId": academicYearId,
+          "yearId": yearId,
+          "semesterId": semesterId,
+          "sectionId": sectionId,
+          "groupId": groupId,
+          "sprNo": sprNo,
+          "dob": dob != null ? "${dob.year}-${dob.month.toString().padLeft(2, '0')}-${dob.day.toString().padLeft(2, '0')}" : null,
+          "address": address,
+          "active": active,
+          "password": password.isEmpty ? null : password,
         }),
       );
 
@@ -925,43 +1120,89 @@ TextField(
   }
 
   void _showEditStudentDialog(Map<String, dynamic> student) {
-    editNameController.text = student["fullName"] ?? '';
-    editEmailController.text = student["email"] ?? '';
-    editPhoneController.text = student["phone"] ?? '';
-    editGenderController.text = student["gender"] ?? 'MALE';
-    editSemesterController.text = student["semester"] ?? '1';
-    editYearController.text = student["academicYear"] ?? '2024-2025';
-    editSprNoController.text = student["sprNo"] ?? '';
-    
+    final TextEditingController nameCtrl = TextEditingController(text: student["fullName"] ?? '');
+    final TextEditingController emailCtrl = TextEditingController(text: student["email"] ?? '');
+    final TextEditingController phoneCtrl = TextEditingController(text: student["phone"] ?? '');
+    final TextEditingController sprCtrl = TextEditingController(text: student["sprNo"] ?? '');
+    final TextEditingController addressCtrl = TextEditingController(text: student["address"] ?? '');
+    final TextEditingController passwordCtrl = TextEditingController();
+
+    DateTime? editDob;
     if (student["dateOfBirth"] != null) {
       try {
-        editSelectedDob = DateTime.parse(student["dateOfBirth"]);
-      } catch (_) {
-        editSelectedDob = null;
-      }
-    } else {
-      editSelectedDob = null;
+        editDob = DateTime.parse(student["dateOfBirth"]);
+      } catch (_) {}
     }
-    
-    final deptName = student["departmentName"];
-    final match = departments.firstWhere((d) => d["name"] == deptName, orElse: () => {"id": departments.isNotEmpty ? departments.first["id"] : null});
-    editSelectedDeptId = match["id"];
+
+    int? selectedDeptId = student["departmentId"];
+    if (selectedDeptId == null && student["departmentName"] != null) {
+      final match = departments.firstWhere((d) => d["name"] == student["departmentName"], orElse: () => null);
+      if (match != null) selectedDeptId = match["id"];
+    }
+    if (selectedDeptId == null && departments.isNotEmpty) {
+      selectedDeptId = departments.first["id"];
+    }
+
+    int? selectedAcademicYearId = student["academicYearId"];
+    if (selectedAcademicYearId == null && student["academicYear"] != null) {
+      final match = academicYears.firstWhere((ay) => ay["academicYear"] == student["academicYear"], orElse: () => null);
+      if (match != null) selectedAcademicYearId = match["id"];
+    }
+    if (selectedAcademicYearId == null && academicYears.isNotEmpty) {
+      selectedAcademicYearId = academicYears.first["id"];
+    }
+
+    int? selectedYearId = student["yearId"];
+    if (selectedYearId == null && student["year"] != null) {
+      final match = years.firstWhere((y) => y["yearNo"]?.toString() == student["year"], orElse: () => null);
+      if (match != null) selectedYearId = match["id"];
+    }
+    if (selectedYearId == null && years.isNotEmpty) {
+      selectedYearId = years.first["id"];
+    }
+
+    int? selectedSemesterId = student["semesterId"];
+    if (selectedSemesterId == null && student["semester"] != null) {
+      final match = semesters.firstWhere((s) => s["semesterNo"]?.toString() == student["semester"], orElse: () => null);
+      if (match != null) selectedSemesterId = match["id"];
+    }
+    if (selectedSemesterId == null && semesters.isNotEmpty) {
+      selectedSemesterId = semesters.first["id"];
+    }
+
+    int? selectedGenderId = student["genderId"];
+    if (selectedGenderId == null && student["gender"] != null) {
+      final match = genders.firstWhere((g) => g["genderName"]?.toString().toUpperCase() == student["gender"].toString().toUpperCase(), orElse: () => null);
+      if (match != null) selectedGenderId = match["id"];
+    }
+    if (selectedGenderId == null && genders.isNotEmpty) {
+      selectedGenderId = genders.first["id"];
+    }
+
+    int? selectedSectionId = student["sectionId"];
+    int? selectedGroupId = student["groupId"];
+    bool active = student["active"] ?? true;
 
     showDialog(
       context: context,
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setDialogState) {
+            final filteredSections = sections.where((sec) => sec["departmentId"] == selectedDeptId).toList();
+            if (selectedSectionId != null && !filteredSections.any((sec) => sec["id"] == selectedSectionId)) {
+              selectedSectionId = null;
+            }
+
             return AlertDialog(
               title: Text("Edit Student: ${student["studentId"]}", style: const TextStyle(fontWeight: FontWeight.bold)),
               content: SingleChildScrollView(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    TextField(controller: editNameController, decoration: const InputDecoration(labelText: "Full Name *")),
-                    TextField(controller: editEmailController, decoration: const InputDecoration(labelText: "Email *")),
+                    TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: "Full Name *")),
+                    TextField(controller: emailCtrl, decoration: const InputDecoration(labelText: "Email *")),
                     TextField(
-                      controller: editPhoneController,
+                      controller: phoneCtrl,
                       keyboardType: TextInputType.phone,
                       maxLength: 10,
                       decoration: const InputDecoration(
@@ -969,47 +1210,34 @@ TextField(
                         counterText: "",
                       ),
                     ),
-                    TextField(controller: editGenderController, decoration: const InputDecoration(labelText: "Gender (MALE/FEMALE)")),
-                    TextField(controller: editSprNoController, decoration: const InputDecoration(labelText: "SPR No")),
-                    const SizedBox(height: 10),
-                    DropdownButtonFormField<int>(
-                      value: editSelectedDeptId,
-                      decoration: const InputDecoration(labelText: "Department"),
-                      items: departments.map((d) {
-                        return DropdownMenuItem<int>(
-                          value: d["id"],
-                          child: Text(d["code"] ?? d["name"]),
-                        );
-                      }).toList(),
-                      onChanged: (value) {
-                        setDialogState(() {
-                          editSelectedDeptId = value;
-                        });
-                      },
+                    TextField(controller: sprCtrl, decoration: const InputDecoration(labelText: "SPR No")),
+                    TextField(controller: addressCtrl, decoration: const InputDecoration(labelText: "Address")),
+                    TextField(
+                      controller: passwordCtrl,
+                      obscureText: true,
+                      decoration: const InputDecoration(labelText: "Change Password (leave empty to keep current)"),
                     ),
-                    TextField(controller: editSemesterController, decoration: const InputDecoration(labelText: "Semester")),
-                    TextField(controller: editYearController, decoration: const InputDecoration(labelText: "Academic Year")),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 10),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          editSelectedDob == null
+                          editDob == null
                               ? "Select Date of Birth *"
-                              : "DOB: ${editSelectedDob!.year}-${editSelectedDob!.month.toString().padLeft(2, '0')}-${editSelectedDob!.day.toString().padLeft(2, '0')}",
+                              : "DOB: ${editDob!.year}-${editDob!.month.toString().padLeft(2, '0')}-${editDob!.day.toString().padLeft(2, '0')}",
                           style: const TextStyle(fontWeight: FontWeight.bold),
                         ),
                         TextButton.icon(
                           onPressed: () async {
                             final picked = await showDatePicker(
                               context: context,
-                              initialDate: editSelectedDob ?? DateTime(2004),
+                              initialDate: editDob ?? DateTime(2004),
                               firstDate: DateTime(1995),
                               lastDate: DateTime.now(),
                             );
                             if (picked != null) {
                               setDialogState(() {
-                                editSelectedDob = picked;
+                                editDob = picked;
                               });
                             }
                           },
@@ -1018,13 +1246,160 @@ TextField(
                         )
                       ],
                     ),
+                    const SizedBox(height: 10),
+                    DropdownButtonFormField<int>(
+                      value: departments.any((d) => d["id"] == selectedDeptId) ? selectedDeptId : null,
+                      decoration: const InputDecoration(labelText: "Department *"),
+                      items: departments.map((d) {
+                        return DropdownMenuItem<int>(
+                          value: d["id"],
+                          child: Text(d["code"] ?? d["name"]),
+                        );
+                      }).toList(),
+                      onChanged: (value) {
+                        setDialogState(() {
+                          selectedDeptId = value;
+                          selectedSectionId = null;
+                        });
+                      },
+                    ),
+                    DropdownButtonFormField<int>(
+                      value: academicYears.any((ay) => ay["id"] == selectedAcademicYearId) ? selectedAcademicYearId : null,
+                      decoration: const InputDecoration(labelText: "Academic Year *"),
+                      items: academicYears.map((ay) {
+                        return DropdownMenuItem<int>(
+                          value: ay["id"],
+                          child: Text(ay["academicYear"] ?? ""),
+                        );
+                      }).toList(),
+                      onChanged: (value) {
+                        setDialogState(() {
+                          selectedAcademicYearId = value;
+                        });
+                      },
+                    ),
+                    DropdownButtonFormField<int>(
+                      value: years.any((y) => y["id"] == selectedYearId) ? selectedYearId : null,
+                      decoration: const InputDecoration(labelText: "Year *"),
+                      items: years.map((y) {
+                        return DropdownMenuItem<int>(
+                          value: y["id"],
+                          child: Text(y["yearNo"] != null ? "Year ${y["yearNo"]}" : ""),
+                        );
+                      }).toList(),
+                      onChanged: (value) {
+                        setDialogState(() {
+                          selectedYearId = value;
+                        });
+                      },
+                    ),
+                    DropdownButtonFormField<int>(
+                      value: semesters.any((s) => s["id"] == selectedSemesterId) ? selectedSemesterId : null,
+                      decoration: const InputDecoration(labelText: "Semester *"),
+                      items: semesters.map((s) {
+                        return DropdownMenuItem<int>(
+                          value: s["id"],
+                          child: Text(s["semesterNo"] != null ? "Semester ${s["semesterNo"]}" : ""),
+                        );
+                      }).toList(),
+                      onChanged: (value) {
+                        setDialogState(() {
+                          selectedSemesterId = value;
+                        });
+                      },
+                    ),
+                    DropdownButtonFormField<int>(
+                      value: genders.any((g) => g["id"] == selectedGenderId) ? selectedGenderId : null,
+                      decoration: const InputDecoration(labelText: "Gender *"),
+                      items: genders.map((g) {
+                        return DropdownMenuItem<int>(
+                          value: g["id"],
+                          child: Text(g["genderName"] ?? ""),
+                        );
+                      }).toList(),
+                      onChanged: (value) {
+                        setDialogState(() {
+                          selectedGenderId = value;
+                        });
+                      },
+                    ),
+                    DropdownButtonFormField<int?>(
+                      value: filteredSections.any((sec) => sec["id"] == selectedSectionId) ? selectedSectionId : null,
+                      decoration: const InputDecoration(labelText: "Section (Optional)"),
+                      items: [
+                        const DropdownMenuItem<int?>(
+                          value: null,
+                          child: Text("No Section Selected (Optional)"),
+                        ),
+                        ...filteredSections.map((sec) {
+                          return DropdownMenuItem<int?>(
+                            value: sec["id"],
+                            child: Text(sec["sectionName"] ?? ""),
+                          );
+                        })
+                      ],
+                      onChanged: (value) {
+                        setDialogState(() {
+                          selectedSectionId = value;
+                        });
+                      },
+                    ),
+                    DropdownButtonFormField<int?>(
+                      value: groups.any((grp) => grp["id"] == selectedGroupId) ? selectedGroupId : null,
+                      decoration: const InputDecoration(labelText: "Group (Optional)"),
+                      items: [
+                        const DropdownMenuItem<int?>(
+                          value: null,
+                          child: Text("No Group Selected (Optional)"),
+                        ),
+                        ...groups.map((grp) {
+                          return DropdownMenuItem<int?>(
+                            value: grp["id"],
+                            child: Text(grp["name"] ?? ""),
+                          );
+                        })
+                      ],
+                      onChanged: (value) {
+                        setDialogState(() {
+                          selectedGroupId = value;
+                        });
+                      },
+                    ),
+                    SwitchListTile(
+                      title: const Text("Active"),
+                      value: active,
+                      onChanged: (value) {
+                        setDialogState(() {
+                          active = value;
+                        });
+                      },
+                    ),
                   ],
                 ),
               ),
               actions: [
                 TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancel")),
                 ElevatedButton(
-                  onPressed: () => _editStudent(student["id"]),
+                  onPressed: () {
+                    _editStudent(
+                      id: student["id"],
+                      fullName: nameCtrl.text.trim(),
+                      email: emailCtrl.text.trim(),
+                      phone: phoneCtrl.text.trim(),
+                      genderId: selectedGenderId,
+                      departmentId: selectedDeptId,
+                      academicYearId: selectedAcademicYearId,
+                      yearId: selectedYearId,
+                      semesterId: selectedSemesterId,
+                      sectionId: selectedSectionId,
+                      groupId: selectedGroupId,
+                      sprNo: sprCtrl.text.trim(),
+                      dob: editDob,
+                      address: addressCtrl.text.trim(),
+                      active: active,
+                      password: passwordCtrl.text.trim(),
+                    );
+                  },
                   style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF11998e)),
                   child: const Text("Save Changes", style: TextStyle(color: Colors.white)),
                 ),

@@ -17,13 +17,7 @@ Future<List<dynamic>> _apiGetDepartments(String token) async {
   } catch (e) {
     // Fallback
   }
-  return [
-    {"id": 1, "name": "Computer Science and Engineering", "code": "CSE"},
-    {"name": "Electronics and Communication", "code": "ECE"},
-    {"name": "Mechanical Engineering", "code": "MECH"},
-    {"name": "Civil Engineering", "code": "CIVIL"},
-    {"name": "Business Administration", "code": "MBA"}
-  ];
+  return [];
 }
 
 class StudentsTab extends StatefulWidget {
@@ -37,36 +31,76 @@ class StudentsTab extends StatefulWidget {
 class _StudentsTabState extends State<StudentsTab> {
   List<dynamic> studentsList = [];
   List<dynamic> departments = [];
+  List<dynamic> academicYears = [];
+  List<dynamic> years = [];
+  List<dynamic> semesters = [];
+  List<dynamic> genders = [];
+  List<dynamic> sections = [];
+  List<dynamic> groups = [];
+
   bool isLoading = true;
+  bool isLoadingLookups = true;
   String searchQuery = '';
   final TextEditingController _searchController = TextEditingController();
 
-  // Add/Edit Dialog controllers
-  final TextEditingController studentIdController = TextEditingController();
+  // Controllers
   final TextEditingController nameController = TextEditingController();
   final TextEditingController emailController = TextEditingController();
-  final TextEditingController passwordController = TextEditingController();
   final TextEditingController phoneController = TextEditingController();
-  final TextEditingController genderController = TextEditingController();
-  final TextEditingController semesterController = TextEditingController();
-  final TextEditingController yearController = TextEditingController();
+  final TextEditingController sprNoController = TextEditingController();
+  final TextEditingController regNoController = TextEditingController();
+  DateTime? selectedDob;
   int? selectedDeptId;
 
   @override
   void initState() {
     super.initState();
     _fetchStudents();
-    _loadDepartments();
+    _loadAllLookups();
   }
 
-  Future<void> _loadDepartments() async {
-    final list = await _apiGetDepartments(widget.token);
-    setState(() {
-      departments = list;
-      if (departments.isNotEmpty) {
-        selectedDeptId = departments.first["id"];
-      }
-    });
+  @override
+  void dispose() {
+    _searchController.dispose();
+    nameController.dispose();
+    emailController.dispose();
+    phoneController.dispose();
+    sprNoController.dispose();
+    regNoController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadAllLookups() async {
+    try {
+      final headers = {"Authorization": "Bearer ${widget.token}"};
+      final results = await Future.wait([
+        http.get(Uri.parse("http://10.0.2.2:8080/api/v1/admin/departments"), headers: headers),
+        http.get(Uri.parse("http://10.0.2.2:8080/api/v1/admin/academic-years"), headers: headers),
+        http.get(Uri.parse("http://10.0.2.2:8080/api/v1/admin/years"), headers: headers),
+        http.get(Uri.parse("http://10.0.2.2:8080/api/v1/admin/semesters"), headers: headers),
+        http.get(Uri.parse("http://10.0.2.2:8080/api/v1/admin/genders"), headers: headers),
+        http.get(Uri.parse("http://10.0.2.2:8080/api/v1/admin/sections"), headers: headers),
+        http.get(Uri.parse("http://10.0.2.2:8080/api/v1/groups"), headers: headers),
+      ]);
+
+      if (!mounted) return;
+
+      setState(() {
+        departments = jsonDecode(results[0].body)["data"] ?? [];
+        academicYears = jsonDecode(results[1].body)["data"] ?? [];
+        years = jsonDecode(results[2].body)["data"] ?? [];
+        semesters = jsonDecode(results[3].body)["data"] ?? [];
+        genders = jsonDecode(results[4].body)["data"] ?? [];
+        sections = jsonDecode(results[5].body)["data"] ?? [];
+        groups = jsonDecode(results[6].body)["data"] ?? [];
+        isLoadingLookups = false;
+
+        if (departments.isNotEmpty) selectedDeptId = departments.first["id"];
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => isLoadingLookups = false);
+    }
   }
 
   Future<void> _fetchStudents() async {
@@ -93,33 +127,33 @@ class _StudentsTabState extends State<StudentsTab> {
     }
 
     setState(() {
-      studentsList = [
-        {
-          "id": 1,
-          "studentId": "sharugesh",
-          "fullName": "Sharugesh",
-          "email": "sharugesh@spdms.com",
-          "phone": "9876543210",
-          "gender": "MALE",
-          "departmentName": "Computer Science and Engineering",
-          "semester": "1",
-          "academicYear": "2024-2025"
-        }
-      ];
+      studentsList = [];
       isLoading = false;
     });
   }
 
-  Future<void> _addStudent() async {
-    if (studentIdController.text.isEmpty ||
-        nameController.text.isEmpty ||
-        emailController.text.isEmpty ||
-        passwordController.text.isEmpty) {
+  Future<void> _addStudent({
+    required int? departmentId,
+    required int? academicYearId,
+    required int? yearId,
+    required int? semesterId,
+    required int? genderId,
+    required int? sectionId,
+    required int? groupId,
+    required String address,
+  }) async {
+    if (regNoController.text.trim().isEmpty ||
+        nameController.text.trim().isEmpty ||
+        emailController.text.trim().isEmpty ||
+        selectedDob == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Required fields cannot be empty.")),
       );
       return;
     }
+
+    final formattedDob = "${selectedDob!.year}-${selectedDob!.month.toString().padLeft(2, '0')}-${selectedDob!.day.toString().padLeft(2, '0')}";
+    final passwordDob = "${selectedDob!.day.toString().padLeft(2, '0')}${selectedDob!.month.toString().padLeft(2, '0')}${selectedDob!.year}";
 
     try {
       final response = await http.post(
@@ -129,15 +163,23 @@ class _StudentsTabState extends State<StudentsTab> {
           "Authorization": "Bearer ${widget.token}",
         },
         body: jsonEncode({
-          "studentId": studentIdController.text.trim(),
+          "studentId": regNoController.text.trim(),
           "fullName": nameController.text.trim(),
           "email": emailController.text.trim(),
-          "password": passwordController.text,
+          "password": passwordDob,
           "phone": phoneController.text.trim(),
-          "gender": genderController.text.toUpperCase().isEmpty ? "MALE" : genderController.text.toUpperCase(),
-          "departmentId": selectedDeptId,
-          "semester": semesterController.text.isEmpty ? "1" : semesterController.text,
-          "academicYear": yearController.text.isEmpty ? "2024-2025" : yearController.text,
+          "dateOfBirth": formattedDob,
+          "dob": formattedDob,
+          "address": address,
+          "departmentId": departmentId,
+          "academicYearId": academicYearId,
+          "yearId": yearId,
+          "semesterId": semesterId,
+          "genderId": genderId,
+          "sectionId": sectionId,
+          "groupId": groupId,
+          "sprNo": sprNoController.text.trim(),
+          "active": true
         }),
       );
 
@@ -160,28 +202,30 @@ class _StudentsTabState extends State<StudentsTab> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Failed to submit to backend. Dynamic state updated locally."), backgroundColor: Colors.orange),
+        SnackBar(content: Text("Network Error: $e"), backgroundColor: Colors.redAccent),
       );
-      setState(() {
-        studentsList.add({
-          "id": studentsList.length + 1,
-          "studentId": studentIdController.text,
-          "fullName": nameController.text,
-          "email": emailController.text,
-          "phone": phoneController.text,
-          "gender": genderController.text.toUpperCase().isEmpty ? "MALE" : genderController.text.toUpperCase(),
-          "departmentName": departments.firstWhere((d) => d["id"] == selectedDeptId, orElse: () => {"name": "CSE"})["name"],
-          "semester": semesterController.text,
-          "academicYear": yearController.text,
-        });
-      });
-      _clearControllers();
-      Navigator.pop(context);
     }
   }
 
-  Future<void> _editStudent(int id) async {
-    if (nameController.text.isEmpty || emailController.text.isEmpty) {
+  Future<void> _editStudent({
+    required int id,
+    required String fullName,
+    required String email,
+    required String phone,
+    required int? genderId,
+    required int? departmentId,
+    required int? academicYearId,
+    required int? yearId,
+    required int? semesterId,
+    required int? sectionId,
+    required int? groupId,
+    required String sprNo,
+    required DateTime? dob,
+    required String address,
+    required bool active,
+    required String password,
+  }) async {
+    if (fullName.isEmpty || email.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Required fields cannot be empty.")),
       );
@@ -196,14 +240,21 @@ class _StudentsTabState extends State<StudentsTab> {
           "Authorization": "Bearer ${widget.token}",
         },
         body: jsonEncode({
-          "fullName": nameController.text.trim(),
-          "email": emailController.text.trim(),
-          "phone": phoneController.text.trim(),
-          "gender": genderController.text.toUpperCase().isEmpty ? "MALE" : genderController.text.toUpperCase(),
-          "departmentId": selectedDeptId,
-          "semester": semesterController.text.isEmpty ? "1" : semesterController.text,
-          "academicYear": yearController.text.isEmpty ? "2024-2025" : yearController.text,
-          "active": true
+          "fullName": fullName,
+          "email": email,
+          "phone": phone,
+          "genderId": genderId,
+          "departmentId": departmentId,
+          "academicYearId": academicYearId,
+          "yearId": yearId,
+          "semesterId": semesterId,
+          "sectionId": sectionId,
+          "groupId": groupId,
+          "sprNo": sprNo,
+          "dob": dob != null ? "${dob.year}-${dob.month.toString().padLeft(2, '0')}-${dob.day.toString().padLeft(2, '0')}" : null,
+          "address": address,
+          "active": active,
+          "password": password.isEmpty ? null : password,
         }),
       );
 
@@ -226,23 +277,8 @@ class _StudentsTabState extends State<StudentsTab> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Updated locally"), backgroundColor: Colors.orange),
+        SnackBar(content: Text("Network Error: $e"), backgroundColor: Colors.redAccent),
       );
-      setState(() {
-        final idx = studentsList.indexWhere((s) => s["id"] == id);
-        if (idx != -1) {
-          studentsList[idx]["fullName"] = nameController.text;
-          studentsList[idx]["email"] = emailController.text;
-          studentsList[idx]["phone"] = phoneController.text;
-          studentsList[idx]["gender"] = genderController.text.toUpperCase();
-          studentsList[idx]["departmentId"] = selectedDeptId;
-          studentsList[idx]["semester"] = semesterController.text;
-          studentsList[idx]["academicYear"] = yearController.text;
-          studentsList[idx]["departmentName"] = departments.firstWhere((d) => d["id"] == selectedDeptId, orElse: () => {"name": "CSE"})["name"];
-        }
-      });
-      _clearControllers();
-      Navigator.pop(context);
     }
   }
 
@@ -269,57 +305,95 @@ class _StudentsTabState extends State<StudentsTab> {
       }
     } catch (e) {
       if (!mounted) return;
-      setState(() {
-        studentsList.removeWhere((s) => s["id"] == id);
-      });
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Removed locally"), backgroundColor: Colors.orange),
+        SnackBar(content: Text("Network Error: $e"), backgroundColor: Colors.redAccent),
       );
     }
   }
 
   void _clearControllers() {
-    studentIdController.clear();
+    regNoController.clear();
     nameController.clear();
     emailController.clear();
-    passwordController.clear();
     phoneController.clear();
-    genderController.clear();
-    semesterController.clear();
-    yearController.clear();
+    sprNoController.clear();
+    selectedDob = null;
   }
 
   void _showAddStudentDialog() {
     _clearControllers();
+    int? selectedDeptId = departments.isNotEmpty ? departments.first["id"] : null;
+    int? selectedAcademicYearId = academicYears.isNotEmpty ? academicYears.first["id"] : null;
+    int? selectedYearId = years.isNotEmpty ? years.first["id"] : null;
+    int? selectedSemesterId = semesters.isNotEmpty ? semesters.first["id"] : null;
+    int? selectedGenderId = genders.isNotEmpty ? genders.first["id"] : null;
+    int? selectedSectionId;
+    int? selectedGroupId;
+    final TextEditingController addressController = TextEditingController();
+
     showDialog(
       context: context,
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setDialogState) {
+            final filteredSections = sections.where((sec) => sec["departmentId"] == selectedDeptId).toList();
+            if (selectedSectionId != null && !filteredSections.any((sec) => sec["id"] == selectedSectionId)) {
+              selectedSectionId = null;
+            }
+
             return AlertDialog(
               title: const Text("Register New Student", style: TextStyle(fontWeight: FontWeight.bold)),
               content: SingleChildScrollView(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    TextField(controller: studentIdController, decoration: const InputDecoration(labelText: "Student ID *")),
+                    TextField(controller: regNoController, decoration: const InputDecoration(labelText: "Student ID *")),
                     TextField(controller: nameController, decoration: const InputDecoration(labelText: "Full Name *")),
                     TextField(controller: emailController, decoration: const InputDecoration(labelText: "Email *")),
-                    TextField(controller: passwordController, obscureText: true, decoration: const InputDecoration(labelText: "Password *")),
-TextField(
-  controller: phoneController,
-  keyboardType: TextInputType.phone,
-  maxLength: 10,
-  decoration: const InputDecoration(
-    labelText: "Phone",
-    counterText: "",
-  ),
-),
-                    TextField(controller: genderController, decoration: const InputDecoration(labelText: "Gender (MALE/FEMALE)")),
+                    TextField(
+                      controller: phoneController,
+                      keyboardType: TextInputType.phone,
+                      maxLength: 10,
+                      decoration: const InputDecoration(
+                        labelText: "Phone",
+                        counterText: "",
+                      ),
+                    ),
+                    TextField(controller: sprNoController, decoration: const InputDecoration(labelText: "SPR No")),
+                    TextField(controller: addressController, decoration: const InputDecoration(labelText: "Address")),
+                    const SizedBox(height: 12),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          selectedDob == null
+                              ? "Select Date of Birth *"
+                              : "DOB: ${selectedDob!.year}-${selectedDob!.month.toString().padLeft(2, '0')}-${selectedDob!.day.toString().padLeft(2, '0')}",
+                          style: TextStyle(fontWeight: FontWeight.bold, color: selectedDob == null ? Colors.redAccent : Colors.black87),
+                        ),
+                        TextButton.icon(
+                          onPressed: () async {
+                            final picked = await showDatePicker(
+                              context: context,
+                              initialDate: DateTime(2004),
+                              firstDate: DateTime(1995),
+                              lastDate: DateTime.now(),
+                            );
+                            if (picked != null) {
+                              setDialogState(() {
+                                selectedDob = picked;
+                              });
+                            }
+                          },
+                          icon: const Icon(Icons.calendar_month),
+                          label: const Text("Pick"),
+                        )
+                      ],
+                    ),
                     const SizedBox(height: 10),
                     DropdownButtonFormField<int>(
                       value: selectedDeptId,
-                      decoration: const InputDecoration(labelText: "Department"),
+                      decoration: const InputDecoration(labelText: "Department *"),
                       items: departments.map((d) {
                         return DropdownMenuItem<int>(
                           value: d["id"],
@@ -329,18 +403,130 @@ TextField(
                       onChanged: (value) {
                         setDialogState(() {
                           selectedDeptId = value;
+                          selectedSectionId = null;
                         });
                       },
                     ),
-                    TextField(controller: semesterController, decoration: const InputDecoration(labelText: "Semester")),
-                    TextField(controller: yearController, decoration: const InputDecoration(labelText: "Academic Year")),
+                    DropdownButtonFormField<int>(
+                      value: selectedAcademicYearId,
+                      decoration: const InputDecoration(labelText: "Academic Year *"),
+                      items: academicYears.map((ay) {
+                        return DropdownMenuItem<int>(
+                          value: ay["id"],
+                          child: Text(ay["academicYear"] ?? ""),
+                        );
+                      }).toList(),
+                      onChanged: (value) {
+                        setDialogState(() {
+                          selectedAcademicYearId = value;
+                        });
+                      },
+                    ),
+                    DropdownButtonFormField<int>(
+                      value: selectedYearId,
+                      decoration: const InputDecoration(labelText: "Year *"),
+                      items: years.map((y) {
+                        return DropdownMenuItem<int>(
+                          value: y["id"],
+                          child: Text(y["yearNo"] != null ? "Year ${y["yearNo"]}" : ""),
+                        );
+                      }).toList(),
+                      onChanged: (value) {
+                        setDialogState(() {
+                          selectedYearId = value;
+                        });
+                      },
+                    ),
+                    DropdownButtonFormField<int>(
+                      value: selectedSemesterId,
+                      decoration: const InputDecoration(labelText: "Semester *"),
+                      items: semesters.map((s) {
+                        return DropdownMenuItem<int>(
+                          value: s["id"],
+                          child: Text(s["semesterNo"] != null ? "Semester ${s["semesterNo"]}" : ""),
+                        );
+                      }).toList(),
+                      onChanged: (value) {
+                        setDialogState(() {
+                          selectedSemesterId = value;
+                        });
+                      },
+                    ),
+                    DropdownButtonFormField<int>(
+                      value: selectedGenderId,
+                      decoration: const InputDecoration(labelText: "Gender *"),
+                      items: genders.map((g) {
+                        return DropdownMenuItem<int>(
+                          value: g["id"],
+                          child: Text(g["genderName"] ?? ""),
+                        );
+                      }).toList(),
+                      onChanged: (value) {
+                        setDialogState(() {
+                          selectedGenderId = value;
+                        });
+                      },
+                    ),
+                    DropdownButtonFormField<int?>(
+                      value: selectedSectionId,
+                      decoration: const InputDecoration(labelText: "Section (Optional)"),
+                      items: [
+                        const DropdownMenuItem<int?>(
+                          value: null,
+                          child: Text("No Section Selected (Optional)"),
+                        ),
+                        ...filteredSections.map((sec) {
+                          return DropdownMenuItem<int?>(
+                            value: sec["id"],
+                            child: Text(sec["sectionName"] ?? ""),
+                          );
+                        })
+                      ],
+                      onChanged: (value) {
+                        setDialogState(() {
+                          selectedSectionId = value;
+                        });
+                      },
+                    ),
+                    DropdownButtonFormField<int?>(
+                      value: selectedGroupId,
+                      decoration: const InputDecoration(labelText: "Group (Optional)"),
+                      items: [
+                        const DropdownMenuItem<int?>(
+                          value: null,
+                          child: Text("No Group Selected (Optional)"),
+                        ),
+                        ...groups.map((grp) {
+                          return DropdownMenuItem<int?>(
+                            value: grp["id"],
+                            child: Text(grp["name"] ?? ""),
+                          );
+                        })
+                      ],
+                      onChanged: (value) {
+                        setDialogState(() {
+                          selectedGroupId = value;
+                        });
+                      },
+                    ),
                   ],
                 ),
               ),
               actions: [
                 TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancel")),
                 ElevatedButton(
-                  onPressed: _addStudent,
+                  onPressed: () {
+                    _addStudent(
+                      departmentId: selectedDeptId,
+                      academicYearId: selectedAcademicYearId,
+                      yearId: selectedYearId,
+                      semesterId: selectedSemesterId,
+                      genderId: selectedGenderId,
+                      sectionId: selectedSectionId,
+                      groupId: selectedGroupId,
+                      address: addressController.text.trim(),
+                    );
+                  },
                   style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFEA4335)),
                   child: const Text("Add Student", style: TextStyle(color: Colors.white)),
                 ),
@@ -353,44 +539,136 @@ TextField(
   }
 
   void _showEditStudentDialog(Map<String, dynamic> student) {
-    nameController.text = student["fullName"] ?? '';
-    emailController.text = student["email"] ?? '';
-    phoneController.text = student["phone"] ?? '';
-    genderController.text = student["gender"] ?? 'MALE';
-    semesterController.text = student["semester"] ?? '1';
-    yearController.text = student["academicYear"] ?? '2024-2025';
-    
-    final deptName = student["departmentName"];
-    final match = departments.firstWhere((d) => d["name"] == deptName, orElse: () => {"id": departments.isNotEmpty ? departments.first["id"] : null});
-    selectedDeptId = match["id"];
+    final TextEditingController nameCtrl = TextEditingController(text: student["fullName"] ?? '');
+    final TextEditingController emailCtrl = TextEditingController(text: student["email"] ?? '');
+    final TextEditingController phoneCtrl = TextEditingController(text: student["phone"] ?? '');
+    final TextEditingController sprCtrl = TextEditingController(text: student["sprNo"] ?? '');
+    final TextEditingController addressCtrl = TextEditingController(text: student["address"] ?? '');
+    final TextEditingController passwordCtrl = TextEditingController();
+
+    DateTime? editDob;
+    if (student["dateOfBirth"] != null) {
+      try {
+        editDob = DateTime.parse(student["dateOfBirth"]);
+      } catch (_) {}
+    }
+
+    int? selectedDeptId = student["departmentId"];
+    if (selectedDeptId == null && student["departmentName"] != null) {
+      final match = departments.firstWhere((d) => d["name"] == student["departmentName"], orElse: () => null);
+      if (match != null) selectedDeptId = match["id"];
+    }
+    if (selectedDeptId == null && departments.isNotEmpty) {
+      selectedDeptId = departments.first["id"];
+    }
+
+    int? selectedAcademicYearId = student["academicYearId"];
+    if (selectedAcademicYearId == null && student["academicYear"] != null) {
+      final match = academicYears.firstWhere((ay) => ay["academicYear"] == student["academicYear"], orElse: () => null);
+      if (match != null) selectedAcademicYearId = match["id"];
+    }
+    if (selectedAcademicYearId == null && academicYears.isNotEmpty) {
+      selectedAcademicYearId = academicYears.first["id"];
+    }
+
+    int? selectedYearId = student["yearId"];
+    if (selectedYearId == null && student["year"] != null) {
+      final match = years.firstWhere((y) => y["yearNo"]?.toString() == student["year"], orElse: () => null);
+      if (match != null) selectedYearId = match["id"];
+    }
+    if (selectedYearId == null && years.isNotEmpty) {
+      selectedYearId = years.first["id"];
+    }
+
+    int? selectedSemesterId = student["semesterId"];
+    if (selectedSemesterId == null && student["semester"] != null) {
+      final match = semesters.firstWhere((s) => s["semesterNo"]?.toString() == student["semester"], orElse: () => null);
+      if (match != null) selectedSemesterId = match["id"];
+    }
+    if (selectedSemesterId == null && semesters.isNotEmpty) {
+      selectedSemesterId = semesters.first["id"];
+    }
+
+    int? selectedGenderId = student["genderId"];
+    if (selectedGenderId == null && student["gender"] != null) {
+      final match = genders.firstWhere((g) => g["genderName"]?.toString().toUpperCase() == student["gender"].toString().toUpperCase(), orElse: () => null);
+      if (match != null) selectedGenderId = match["id"];
+    }
+    if (selectedGenderId == null && genders.isNotEmpty) {
+      selectedGenderId = genders.first["id"];
+    }
+
+    int? selectedSectionId = student["sectionId"];
+    int? selectedGroupId = student["groupId"];
+    bool active = student["active"] ?? true;
 
     showDialog(
       context: context,
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setDialogState) {
+            final filteredSections = sections.where((sec) => sec["departmentId"] == selectedDeptId).toList();
+            if (selectedSectionId != null && !filteredSections.any((sec) => sec["id"] == selectedSectionId)) {
+              selectedSectionId = null;
+            }
+
             return AlertDialog(
               title: Text("Edit Student: ${student["studentId"]}", style: const TextStyle(fontWeight: FontWeight.bold)),
               content: SingleChildScrollView(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    TextField(controller: nameController, decoration: const InputDecoration(labelText: "Full Name *")),
-                    TextField(controller: emailController, decoration: const InputDecoration(labelText: "Email *")),
-TextField(
-  controller: phoneController,
-  keyboardType: TextInputType.phone,
-  maxLength: 10,
-  decoration: const InputDecoration(
-    labelText: "Phone",
-    counterText: "",
-  ),
-),
-                    TextField(controller: genderController, decoration: const InputDecoration(labelText: "Gender (MALE/FEMALE)")),
+                    TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: "Full Name *")),
+                    TextField(controller: emailCtrl, decoration: const InputDecoration(labelText: "Email *")),
+                    TextField(
+                      controller: phoneCtrl,
+                      keyboardType: TextInputType.phone,
+                      maxLength: 10,
+                      decoration: const InputDecoration(
+                        labelText: "Phone",
+                        counterText: "",
+                      ),
+                    ),
+                    TextField(controller: sprCtrl, decoration: const InputDecoration(labelText: "SPR No")),
+                    TextField(controller: addressCtrl, decoration: const InputDecoration(labelText: "Address")),
+                    TextField(
+                      controller: passwordCtrl,
+                      obscureText: true,
+                      decoration: const InputDecoration(labelText: "Change Password (leave empty to keep current)"),
+                    ),
+                    const SizedBox(height: 10),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          editDob == null
+                              ? "Select Date of Birth *"
+                              : "DOB: ${editDob!.year}-${editDob!.month.toString().padLeft(2, '0')}-${editDob!.day.toString().padLeft(2, '0')}",
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        TextButton.icon(
+                          onPressed: () async {
+                            final picked = await showDatePicker(
+                              context: context,
+                              initialDate: editDob ?? DateTime(2004),
+                              firstDate: DateTime(1995),
+                              lastDate: DateTime.now(),
+                            );
+                            if (picked != null) {
+                              setDialogState(() {
+                                editDob = picked;
+                              });
+                            }
+                          },
+                          icon: const Icon(Icons.calendar_month),
+                          label: const Text("Select"),
+                        )
+                      ],
+                    ),
                     const SizedBox(height: 10),
                     DropdownButtonFormField<int>(
-                      value: selectedDeptId,
-                      decoration: const InputDecoration(labelText: "Department"),
+                      value: departments.any((d) => d["id"] == selectedDeptId) ? selectedDeptId : null,
+                      decoration: const InputDecoration(labelText: "Department *"),
                       items: departments.map((d) {
                         return DropdownMenuItem<int>(
                           value: d["id"],
@@ -400,18 +678,147 @@ TextField(
                       onChanged: (value) {
                         setDialogState(() {
                           selectedDeptId = value;
+                          selectedSectionId = null;
                         });
                       },
                     ),
-                    TextField(controller: semesterController, decoration: const InputDecoration(labelText: "Semester")),
-                    TextField(controller: yearController, decoration: const InputDecoration(labelText: "Academic Year")),
+                    DropdownButtonFormField<int>(
+                      value: academicYears.any((ay) => ay["id"] == selectedAcademicYearId) ? selectedAcademicYearId : null,
+                      decoration: const InputDecoration(labelText: "Academic Year *"),
+                      items: academicYears.map((ay) {
+                        return DropdownMenuItem<int>(
+                          value: ay["id"],
+                          child: Text(ay["academicYear"] ?? ""),
+                        );
+                      }).toList(),
+                      onChanged: (value) {
+                        setDialogState(() {
+                          selectedAcademicYearId = value;
+                        });
+                      },
+                    ),
+                    DropdownButtonFormField<int>(
+                      value: years.any((y) => y["id"] == selectedYearId) ? selectedYearId : null,
+                      decoration: const InputDecoration(labelText: "Year *"),
+                      items: years.map((y) {
+                        return DropdownMenuItem<int>(
+                          value: y["id"],
+                          child: Text(y["yearNo"] != null ? "Year ${y["yearNo"]}" : ""),
+                        );
+                      }).toList(),
+                      onChanged: (value) {
+                        setDialogState(() {
+                          selectedYearId = value;
+                        });
+                      },
+                    ),
+                    DropdownButtonFormField<int>(
+                      value: semesters.any((s) => s["id"] == selectedSemesterId) ? selectedSemesterId : null,
+                      decoration: const InputDecoration(labelText: "Semester *"),
+                      items: semesters.map((s) {
+                        return DropdownMenuItem<int>(
+                          value: s["id"],
+                          child: Text(s["semesterNo"] != null ? "Semester ${s["semesterNo"]}" : ""),
+                        );
+                      }).toList(),
+                      onChanged: (value) {
+                        setDialogState(() {
+                          selectedSemesterId = value;
+                        });
+                      },
+                    ),
+                    DropdownButtonFormField<int>(
+                      value: genders.any((g) => g["id"] == selectedGenderId) ? selectedGenderId : null,
+                      decoration: const InputDecoration(labelText: "Gender *"),
+                      items: genders.map((g) {
+                        return DropdownMenuItem<int>(
+                          value: g["id"],
+                          child: Text(g["genderName"] ?? ""),
+                        );
+                      }).toList(),
+                      onChanged: (value) {
+                        setDialogState(() {
+                          selectedGenderId = value;
+                        });
+                      },
+                    ),
+                    DropdownButtonFormField<int?>(
+                      value: filteredSections.any((sec) => sec["id"] == selectedSectionId) ? selectedSectionId : null,
+                      decoration: const InputDecoration(labelText: "Section (Optional)"),
+                      items: [
+                        const DropdownMenuItem<int?>(
+                          value: null,
+                          child: Text("No Section Selected (Optional)"),
+                        ),
+                        ...filteredSections.map((sec) {
+                          return DropdownMenuItem<int?>(
+                            value: sec["id"],
+                            child: Text(sec["sectionName"] ?? ""),
+                          );
+                        })
+                      ],
+                      onChanged: (value) {
+                        setDialogState(() {
+                          selectedSectionId = value;
+                        });
+                      },
+                    ),
+                    DropdownButtonFormField<int?>(
+                      value: groups.any((grp) => grp["id"] == selectedGroupId) ? selectedGroupId : null,
+                      decoration: const InputDecoration(labelText: "Group (Optional)"),
+                      items: [
+                        const DropdownMenuItem<int?>(
+                          value: null,
+                          child: Text("No Group Selected (Optional)"),
+                        ),
+                        ...groups.map((grp) {
+                          return DropdownMenuItem<int?>(
+                            value: grp["id"],
+                            child: Text(grp["name"] ?? ""),
+                          );
+                        })
+                      ],
+                      onChanged: (value) {
+                        setDialogState(() {
+                          selectedGroupId = value;
+                        });
+                      },
+                    ),
+                    SwitchListTile(
+                      title: const Text("Active"),
+                      value: active,
+                      onChanged: (value) {
+                        setDialogState(() {
+                          active = value;
+                        });
+                      },
+                    ),
                   ],
                 ),
               ),
               actions: [
                 TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancel")),
                 ElevatedButton(
-                  onPressed: () => _editStudent(student["id"]),
+                  onPressed: () {
+                    _editStudent(
+                      id: student["id"],
+                      fullName: nameCtrl.text.trim(),
+                      email: emailCtrl.text.trim(),
+                      phone: phoneCtrl.text.trim(),
+                      genderId: selectedGenderId,
+                      departmentId: selectedDeptId,
+                      academicYearId: selectedAcademicYearId,
+                      yearId: selectedYearId,
+                      semesterId: selectedSemesterId,
+                      sectionId: selectedSectionId,
+                      groupId: selectedGroupId,
+                      sprNo: sprCtrl.text.trim(),
+                      dob: editDob,
+                      address: addressCtrl.text.trim(),
+                      active: active,
+                      password: passwordCtrl.text.trim(),
+                    );
+                  },
                   style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFEA4335)),
                   child: const Text("Save Changes", style: TextStyle(color: Colors.white)),
                 ),
@@ -481,8 +888,8 @@ TextField(
                           elevation: 2,
                           child: ListTile(
                             leading: CircleAvatar(
-                              backgroundColor: Colors.redAccent.withOpacity(0.1),
-                              child: const Icon(Icons.person, color: Colors.redAccent),
+                              backgroundColor: const Color(0xFFEA4335).withOpacity(0.1),
+                              child: const Icon(Icons.person, color: Color(0xFFEA4335)),
                             ),
                             title: Text(name, style: const TextStyle(fontWeight: FontWeight.bold)),
                             subtitle: Text("$sId • $deptName\nSem: ${s["semester"] ?? '1'}${s["year"] != null && s["year"].toString().isNotEmpty ? ' • Year: ${s["year"]}' : ''}${s["section"] != null && s["section"].toString().isNotEmpty ? ' • Section: ${s["section"]}' : ''}"),
