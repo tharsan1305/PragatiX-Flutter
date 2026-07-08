@@ -28,9 +28,10 @@ class _ActivitiesTabState extends State<ActivitiesTab> {
   @override
   void initState() {
     super.initState();
-    _initializeData();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _loadProfileAndHistory();
+    stages = [];
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await _initializeData();
+      await _loadProfileAndHistory();
     });
   }
 
@@ -64,104 +65,47 @@ class _ActivitiesTabState extends State<ActivitiesTab> {
     setState(() => isLoading = false);
   }
 
-  void _initializeData() {
-    stages = [
-      {
-        "id": 1,
-        "name": "Stage 1: Foundational Discipline",
-        "description": "Establish basic discipline requirements and code of conduct.",
-        "substages": [
-          {
-            "name": "MUST",
-            "threshold": 40,
-            "activities": [
-              {"name": "95% Attendance", "description": "Maintain above 95% attendance for a full calendar month.", "points": 30, "isDone": false},
-              {"name": "Assignment On Time", "description": "Submit all laboratory and theory assignments on schedule.", "points": 10, "isDone": false},
-            ]
-          },
-          {
-            "name": "INDIVIDUAL",
-            "threshold": 100,
-            "activities": [
-              {"name": "MS Word 5 pages", "description": "Complete MS Word document draft formatting.", "points": 50, "isDone": false},
-              {"name": "MS Excel 1 sheet", "description": "Complete MS Excel datasheet formula task.", "points": 50, "isDone": false},
-              {"name": "MS PowerPoint 10 slides", "description": "Complete MS PowerPoint 10-slide domain topic presentation.", "points": 50, "isDone": false},
-              {"name": "Keyboard Typing 20 WPM", "description": "Achieve typing speed of 20 WPM.", "points": 20, "isDone": false},
-            ]
-          },
-          {
-            "name": "GROUP",
-            "threshold": 90,
-            "activities": [
-              {"name": "Oral Presentation 2min", "description": "Deliver a 2-minute oral presentation in a group setting.", "points": 40, "isDone": false},
-              {"name": "Resume First Draft", "description": "Draft the first version of your professional resume.", "points": 50, "isDone": false},
-            ]
-          }
-        ]
-      },
-      {
-        "id": 2,
-        "name": "Stage 2: Advanced Participation",
-        "description": "Participate actively in academic forums and college workshops.",
-        "substages": [
-          {
-            "name": "MUST",
-            "threshold": 175,
-            "activities": [
-              {"name": "Join/Initiate Club", "description": "Register or start a department/college club.", "points": 100, "isDone": false},
-              {"name": "NPTEL Week 1 Complete", "description": "Complete the first week of NPTEL courses.", "points": 75, "isDone": false},
-            ]
-          },
-          {
-            "name": "INDIVIDUAL",
-            "threshold": 130,
-            "activities": [
-              {"name": "Technical Workshop", "description": "Participate in a technical workshop.", "points": 50, "isDone": false},
-              {"name": "Mock Interview", "description": "Attend the department placement mock interview.", "points": 80, "isDone": false},
-            ]
-          },
-          {
-            "name": "GROUP",
-            "threshold": 120,
-            "activities": [
-              {"name": "Peer Teaching 30min", "description": "Conduct a 30-minute peer teaching session.", "points": 40, "isDone": false},
-              {"name": "Mini Event Organised", "description": "Organize a department mini-event.", "points": 80, "isDone": false},
-            ]
-          }
-        ]
-      },
-      {
-        "id": 3,
-        "name": "Stage 3: Professional Excellence",
-        "description": "Represent the institution in state/national events and outreach camps.",
-        "substages": [
-          {
-            "name": "MUST",
-            "threshold": 400,
-            "activities": [
-              {"name": "Mini Project Demo Group", "description": "Successfully demonstrate your group mini-project.", "points": 300, "isDone": false},
-              {"name": "Resume Final Version", "description": "Finalize your resume with project credentials.", "points": 100, "isDone": false},
-            ]
-          },
-          {
-            "name": "INDIVIDUAL",
-            "threshold": 230,
-            "activities": [
-              {"name": "Mini Project Individual", "description": "Complete your individual project component.", "points": 150, "isDone": false},
-              {"name": "Internship Application", "description": "Submit applications for corporate internships.", "points": 80, "isDone": false},
-            ]
-          },
-          {
-            "name": "GROUP",
-            "threshold": 300,
-            "activities": [
-              {"name": "Hackathon Participation Group", "description": "Participate in an external hackathon event.", "points": 200, "isDone": false},
-              {"name": "Final Oral Presentation", "description": "Complete the final placement oral presentation.", "points": 100, "isDone": false},
-            ]
-          }
-        ]
+  Future<void> _initializeData() async {
+    try {
+      final response = await http.get(
+        Uri.parse("http://10.0.2.2:8080/api/v1/admin/stages"),
+        headers: {"Authorization": "Bearer ${widget.token}"},
+      );
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data["success"] == true) {
+          final List<dynamic> fetchedStages = data["data"] ?? [];
+          final mapped = fetchedStages.map<Map<String, dynamic>>((st) {
+            final List<dynamic> fetchedSubgroups = st["subgroups"] ?? [];
+            return {
+              "id": st["id"],
+              "name": st["name"],
+              "description": st["description"],
+              "substages": fetchedSubgroups.map((sub) {
+                final List<dynamic> fetchedActivities = sub["activities"] ?? [];
+                return {
+                  "name": sub["name"],
+                  "threshold": sub["threshold"] ?? 0,
+                  "activities": fetchedActivities.map((act) {
+                    return {
+                      "name": act["name"],
+                      "description": act["description"] ?? "",
+                      "points": int.tryParse(act["xpReward"]?.toString() ?? "0") ?? 0,
+                      "isDone": false,
+                    };
+                  }).toList(),
+                };
+              }).toList(),
+            };
+          }).toList();
+          setState(() {
+            stages = mapped;
+          });
+        }
       }
-    ];
+    } catch (e) {
+      // ignore
+    }
   }
 
   // Calculate current status of activity dynamically

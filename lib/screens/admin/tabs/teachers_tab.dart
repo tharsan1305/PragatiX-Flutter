@@ -133,11 +133,16 @@ class _TeachersTabState extends State<TeachersTab> {
             }).toList();
             isLoading = false;
           });
+          print("DEBUG FETCH: backend returned ${allUsers.length} total users. After filtering, ${usersList.length} teachers remain.");
           return;
+        } else {
+          print("ERROR FETCHING TEACHERS: success is false, data: $data");
         }
+      } else {
+        print("ERROR FETCHING TEACHERS: HTTP ${response.statusCode}");
       }
     } catch (e) {
-      // Catch
+      print("ERROR FETCHING TEACHERS: $e");
     }
 
     setState(() {

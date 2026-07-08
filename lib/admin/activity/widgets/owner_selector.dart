@@ -111,11 +111,7 @@ class OwnerSelector extends StatelessWidget {
         // ── Teacher dropdown ─────────────────────────────────────────────────
         InputDecorator(
           decoration:
-              _deco('Faculty / Teacher', Icons.person_outline_rounded).copyWith(
-            errorText: (showError && selectedTeacher == null)
-                ? 'Teacher selection is required'
-                : null,
-          ),
+              _deco('Faculty / Teacher (Optional)', Icons.person_outline_rounded),
           child: DropdownButton<dynamic>(
             value: selectedTeacher,
             isExpanded: true,

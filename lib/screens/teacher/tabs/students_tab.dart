@@ -1099,6 +1099,9 @@ class _StudentsTabState extends State<StudentsTab> {
         },
       );
 
+      debugPrint("DELETE /students/$id => status=${response.statusCode}");
+      debugPrint("DELETE body: ${response.body}");
+
       if (!mounted) return;
       if (response.statusCode == 200) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -1108,13 +1111,14 @@ class _StudentsTabState extends State<StudentsTab> {
         _fetchStudents();
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Delete failed on server"), backgroundColor: Colors.redAccent),
+          SnackBar(content: Text("Delete failed: ${response.statusCode} - ${response.body}"), backgroundColor: Colors.redAccent),
         );
       }
     } catch (e) {
+      debugPrint("DELETE exception: $e");
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Network error deleting student"), backgroundColor: Colors.redAccent),
+        SnackBar(content: Text("Network error deleting student: $e"), backgroundColor: Colors.redAccent),
       );
     }
   }

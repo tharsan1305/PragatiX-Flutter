@@ -159,9 +159,8 @@ class ActivityFormState extends State<ActivityForm> {
     final xpOk = _selectedXp != null;
     final capOk = _selectedCap != null;
     final deptOk = _selectedDept != null;
-    final teacherOk = _selectedTeacher != null;
 
-    if (!formOk || !freqOk || !evidOk || !xpOk || !capOk || !deptOk || !teacherOk) {
+    if (!formOk || !freqOk || !evidOk || !xpOk || !capOk || !deptOk) {
       return null;
     }
 

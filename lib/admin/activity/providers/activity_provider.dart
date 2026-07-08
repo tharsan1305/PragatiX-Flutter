@@ -40,7 +40,6 @@ class ActivityProvider extends ChangeNotifier {
 
   // ── Load form dependencies (departments + teachers) ───────────────────────
   Future<void> loadDependencies() async {
-    if (departments.isNotEmpty && allTeachers.isNotEmpty) return;
     isLoadingDependencies = true;
     notifyListeners();
     try {
