@@ -1613,13 +1613,20 @@ class _StudentsTabState extends State<StudentsTab> {
                                 "regNo": sId,
                                 "dept": deptName,
                                 "score": score,
+                                "isCaptain": s["isCaptain"] ?? s["captain"] ?? false,
                               };
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
                                   builder: (context) => TeacherStudentDetail(student: mappedStudent, token: widget.token),
                                 ),
-                              );
+                              ).then((_) {
+                                if (_searchController.text.trim().isNotEmpty) {
+                                  _searchStudents(_searchController.text.trim());
+                                } else {
+                                  _fetchStudents();
+                                }
+                              });
                             },
                           ),
                         );
@@ -1820,6 +1827,7 @@ class _BulkVerificationScreenState extends State<BulkVerificationScreen> {
                         final email = s["email"] ?? "";
                         final dob = s["dateOfBirth"] ?? "N/A";
                         final dept = s["departmentName"] ?? "";
+                        final academicYear = s["academicYear"] ?? "";
 
                         return Card(
                           shape: RoundedRectangleBorder(
@@ -1861,7 +1869,7 @@ class _BulkVerificationScreenState extends State<BulkVerificationScreen> {
                                       ),
                                       const SizedBox(height: 4),
                                       Text("Reg: $regNo • SPR: $sprNo"),
-                                      Text("Dept: $dept • DOB: $dob"),
+                                      Text("Dept: $dept • Acad Year: $academicYear • DOB: $dob"),
                                       Text("Email: $email"),
                                     ],
                                   ),
@@ -1945,6 +1953,7 @@ class _EditStudentDialogState extends State<EditStudentDialog> {
   late final TextEditingController emailCtrl;
   late final TextEditingController phoneCtrl;
   late final TextEditingController deptCtrl;
+  late final TextEditingController academicYearCtrl;
   DateTime? dob;
 
   @override
@@ -1956,6 +1965,7 @@ class _EditStudentDialogState extends State<EditStudentDialog> {
     emailCtrl = TextEditingController(text: widget.student["email"] ?? "");
     phoneCtrl = TextEditingController(text: widget.student["phone"] ?? "");
     deptCtrl = TextEditingController(text: widget.student["departmentName"] ?? "");
+    academicYearCtrl = TextEditingController(text: widget.student["academicYear"] ?? "");
     if (widget.student["dateOfBirth"] != null) {
       try {
         dob = DateTime.parse(widget.student["dateOfBirth"]);
@@ -1971,6 +1981,7 @@ class _EditStudentDialogState extends State<EditStudentDialog> {
     emailCtrl.dispose();
     phoneCtrl.dispose();
     deptCtrl.dispose();
+    academicYearCtrl.dispose();
     super.dispose();
   }
 
@@ -1986,16 +1997,17 @@ class _EditStudentDialogState extends State<EditStudentDialog> {
             TextField(controller: regCtrl, decoration: const InputDecoration(labelText: "Register No (reg_no)")),
             TextField(controller: sprCtrl, decoration: const InputDecoration(labelText: "SPR No (spr_no)")),
             TextField(controller: emailCtrl, decoration: const InputDecoration(labelText: "Email")),
-TextField(
-  controller: phoneCtrl,
-  keyboardType: TextInputType.phone,
-  maxLength: 10,
-  decoration: const InputDecoration(
-    labelText: "Phone",
-    counterText: "",
-  ),
-),
+            TextField(
+              controller: phoneCtrl,
+              keyboardType: TextInputType.phone,
+              maxLength: 10,
+              decoration: const InputDecoration(
+                labelText: "Phone",
+                counterText: "",
+              ),
+            ),
             TextField(controller: deptCtrl, decoration: const InputDecoration(labelText: "Department")),
+            TextField(controller: academicYearCtrl, decoration: const InputDecoration(labelText: "Academic Year (e.g. 2024-2025)")),
             const SizedBox(height: 16),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -2039,6 +2051,7 @@ TextField(
             updatedStudent["email"] = emailCtrl.text.trim();
             updatedStudent["phone"] = phoneCtrl.text.trim();
             updatedStudent["departmentName"] = deptCtrl.text.trim();
+            updatedStudent["academicYear"] = academicYearCtrl.text.trim();
             if (dob != null) {
               updatedStudent["dateOfBirth"] = "${dob!.year}-${dob!.month.toString().padLeft(2, '0')}-${dob!.day.toString().padLeft(2, '0')}";
             }

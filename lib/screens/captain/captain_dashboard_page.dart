@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'tabs/dashboard_tab.dart';
-import 'tabs/point_review_tab.dart';
-import 'tabs/leaderboard_tab.dart';
-import 'tabs/activities_tab.dart';
-import 'tabs/profile_tab.dart';
+import '../student/tabs/dashboard_tab.dart';
+import '../student/tabs/point_review_tab.dart';
+import '../student/tabs/leaderboard_tab.dart';
+import '../student/tabs/profile_tab.dart';
 import 'tabs/captain_group_tab.dart';
+import '../student/tabs/levels_badges_tab.dart';
 
 class CaptainDashboardPage extends StatefulWidget {
   final String token;
@@ -26,6 +26,7 @@ class _CaptainDashboardPageState extends State<CaptainDashboardPage> {
       PointReviewTab(token: widget.token),
       LeaderboardTab(token: widget.token),
       CaptainGroupTab(token: widget.token),
+      LevelsBadgesTab(token: widget.token),
       ProfileTab(token: widget.token),
     ];
   }
@@ -50,6 +51,10 @@ class _CaptainDashboardPageState extends State<CaptainDashboardPage> {
       const BottomNavigationBarItem(
         icon: Icon(Icons.groups_rounded),
         label: 'My Group',
+      ),
+      const BottomNavigationBarItem(
+        icon: Icon(Icons.military_tech_rounded),
+        label: 'Levels & Badges',
       ),
       const BottomNavigationBarItem(
         icon: Icon(Icons.person_rounded),

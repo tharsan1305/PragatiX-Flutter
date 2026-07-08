@@ -107,10 +107,12 @@ class _LoginPageState extends State<LoginPage> {
                 if (studentResponse.statusCode == 200 && studentData["success"] == true) {
           final Map<String, dynamic> responseData = studentData["data"] ?? {};
           final String token = responseData["token"] ?? "";
-          final List<dynamic> roles = responseData["roles"] ?? []; // <-- Added this
+          final String userType = responseData["userType"] ?? "";
+          // Jackson may serialize boolean isCaptain as "captain" or "isCaptain"
+          final bool isCaptain = (responseData["isCaptain"] ?? responseData["captain"] ?? false) == true;
 
           // Check if they are a captain!
-          if (roles.contains("ROLE_CAPTAIN")) {
+          if (userType == "CAPTAIN" || isCaptain) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
                 content: Text("Welcome Captain!"),

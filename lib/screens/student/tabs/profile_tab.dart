@@ -59,6 +59,7 @@ class _ProfileTabState extends State<ProfileTab> {
             sprNo = resData["sprNo"] ?? "SPR-2024-089";
             semester = resData["semester"] ?? "VI Semester";
             phone = resData["phone"] ?? "+91 98765 43210";
+            department = resData["department"] ?? "Computer Science";
             isLoading = false;
           });
           return;

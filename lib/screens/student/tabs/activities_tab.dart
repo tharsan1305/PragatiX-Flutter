@@ -1,4 +1,8 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'package:provider/provider.dart';
+import 'package:spdms_app/providers/xp_provider.dart';
 
 class ActivitiesTab extends StatefulWidget {
   final String token;
@@ -8,8 +12,6 @@ class ActivitiesTab extends StatefulWidget {
   State<ActivitiesTab> createState() => _ActivitiesTabState();
 }
 
-class _ProfileTabState {} // dummy placeholder for standard analysis
-
 class _ActivitiesTabState extends State<ActivitiesTab> {
   // Deep visual indigo/violet/slate theme colors
   final primaryColor = const Color(0xFF4F46E5);
@@ -18,13 +20,48 @@ class _ActivitiesTabState extends State<ActivitiesTab> {
   // Simulation mode toggled via developer action
   bool isSimulationActive = false;
 
-  // In-memory interactive stages dataset
+  // In-memory interactive stages dataset (Aligned to JJCET Master list)
   late List<Map<String, dynamic>> stages;
+  bool isLoading = true;
+  String studentId = "24IT077";
 
   @override
   void initState() {
     super.initState();
     _initializeData();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadProfileAndHistory();
+    });
+  }
+
+  Future<void> _loadProfileAndHistory() async {
+    setState(() => isLoading = true);
+    try {
+      // 1. Fetch profile to get studentId
+      final response = await http.get(
+        Uri.parse("http://10.0.2.2:8080/api/v1/auth/me"),
+        headers: {"Authorization": "Bearer ${widget.token}"},
+      );
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data["success"] == true) {
+          setState(() {
+            studentId = data["data"]["username"] ?? "24IT077";
+          });
+        }
+      }
+    } catch (e) {
+      // ignore
+    }
+
+    try {
+      // 2. Fetch history using XpProvider
+      final xpProv = Provider.of<XpProvider>(context, listen: false);
+      await xpProv.fetchHistory(studentId, widget.token);
+    } catch (e) {
+      // ignore
+    }
+    setState(() => isLoading = false);
   }
 
   void _initializeData() {
@@ -33,30 +70,31 @@ class _ActivitiesTabState extends State<ActivitiesTab> {
         "id": 1,
         "name": "Stage 1: Foundational Discipline",
         "description": "Establish basic discipline requirements and code of conduct.",
-        "isUnlocked": true,
         "substages": [
           {
             "name": "MUST",
-            "threshold": 30,
+            "threshold": 40,
             "activities": [
-              {"name": "Regular Attendance", "description": "Maintain above 90% attendance across all subjects.", "points": 20, "isDone": true},
-              {"name": "Identity Card Verification", "description": "Always wear the college ID card while on campus.", "points": 10, "isDone": true},
+              {"name": "95% Attendance", "description": "Maintain above 95% attendance for a full calendar month.", "points": 30, "isDone": false},
+              {"name": "Assignment On Time", "description": "Submit all laboratory and theory assignments on schedule.", "points": 10, "isDone": false},
             ]
           },
           {
             "name": "INDIVIDUAL",
-            "threshold": 20,
+            "threshold": 100,
             "activities": [
-              {"name": "Dress Code Compliance", "description": "Follow the official college uniform/dress code policy.", "points": 15, "isDone": true},
-              {"name": "Punctual Submission", "description": "Submit all laboratory and theory assignments on schedule.", "points": 15, "isDone": false},
+              {"name": "MS Word 5 pages", "description": "Complete MS Word document draft formatting.", "points": 50, "isDone": false},
+              {"name": "MS Excel 1 sheet", "description": "Complete MS Excel datasheet formula task.", "points": 50, "isDone": false},
+              {"name": "MS PowerPoint 10 slides", "description": "Complete MS PowerPoint 10-slide domain topic presentation.", "points": 50, "isDone": false},
+              {"name": "Keyboard Typing 20 WPM", "description": "Achieve typing speed of 20 WPM.", "points": 20, "isDone": false},
             ]
           },
           {
             "name": "GROUP",
-            "threshold": 20,
+            "threshold": 90,
             "activities": [
-              {"name": "Team Classroom Support", "description": "Contribute to class team cleanups and daily room organization.", "points": 10, "isDone": false},
-              {"name": "Group Presentation Active Role", "description": "Contribute to and participate in group assignments and presentations.", "points": 15, "isDone": false},
+              {"name": "Oral Presentation 2min", "description": "Deliver a 2-minute oral presentation in a group setting.", "points": 40, "isDone": false},
+              {"name": "Resume First Draft", "description": "Draft the first version of your professional resume.", "points": 50, "isDone": false},
             ]
           }
         ]
@@ -65,29 +103,29 @@ class _ActivitiesTabState extends State<ActivitiesTab> {
         "id": 2,
         "name": "Stage 2: Advanced Participation",
         "description": "Participate actively in academic forums and college workshops.",
-        "isUnlocked": false,
         "substages": [
           {
             "name": "MUST",
-            "threshold": 25,
+            "threshold": 175,
             "activities": [
-              {"name": "Lab Safety Procedures", "description": "Strictly follow standard laboratory safety guidelines and protocols.", "points": 25, "isDone": false},
+              {"name": "Join/Initiate Club", "description": "Register or start a department/college club.", "points": 100, "isDone": false},
+              {"name": "NPTEL Week 1 Complete", "description": "Complete the first week of NPTEL courses.", "points": 75, "isDone": false},
             ]
           },
           {
             "name": "INDIVIDUAL",
-            "threshold": 20,
+            "threshold": 130,
             "activities": [
-              {"name": "Library Discipline", "description": "Maintain silence and proper conduct in reading rooms.", "points": 10, "isDone": false},
-              {"name": "Timely Class Entry", "description": "Ensure arrival in the classroom before class commencement.", "points": 10, "isDone": false},
+              {"name": "Technical Workshop", "description": "Participate in a technical workshop.", "points": 50, "isDone": false},
+              {"name": "Mock Interview", "description": "Attend the department placement mock interview.", "points": 80, "isDone": false},
             ]
           },
           {
             "name": "GROUP",
-            "threshold": 30,
+            "threshold": 120,
             "activities": [
-              {"name": "Symposium Cooperation", "description": "Work actively with department peers to coordinate symposiums.", "points": 20, "isDone": false},
-              {"name": "NPTEL Team Study Group", "description": "Participate in study groups for collaborative courses.", "points": 15, "isDone": false},
+              {"name": "Peer Teaching 30min", "description": "Conduct a 30-minute peer teaching session.", "points": 40, "isDone": false},
+              {"name": "Mini Event Organised", "description": "Organize a department mini-event.", "points": 80, "isDone": false},
             ]
           }
         ]
@@ -96,29 +134,29 @@ class _ActivitiesTabState extends State<ActivitiesTab> {
         "id": 3,
         "name": "Stage 3: Professional Excellence",
         "description": "Represent the institution in state/national events and outreach camps.",
-        "isUnlocked": false,
         "substages": [
           {
             "name": "MUST",
-            "threshold": 50,
+            "threshold": 400,
             "activities": [
-              {"name": "Exam Hall Integrity", "description": "Adhere strictly to examination rules without code infractions.", "points": 50, "isDone": false},
+              {"name": "Mini Project Demo Group", "description": "Successfully demonstrate your group mini-project.", "points": 300, "isDone": false},
+              {"name": "Resume Final Version", "description": "Finalize your resume with project credentials.", "points": 100, "isDone": false},
             ]
           },
           {
             "name": "INDIVIDUAL",
-            "threshold": 40,
+            "threshold": 230,
             "activities": [
-              {"name": "Technical Certification", "description": "Complete a certified technical course or certification program.", "points": 30, "isDone": false},
-              {"name": "Junior Mentorship Support", "description": "Conduct peer mentoring sessions to assist junior students.", "points": 20, "isDone": false},
+              {"name": "Mini Project Individual", "description": "Complete your individual project component.", "points": 150, "isDone": false},
+              {"name": "Internship Application", "description": "Submit applications for corporate internships.", "points": 80, "isDone": false},
             ]
           },
           {
             "name": "GROUP",
-            "threshold": 50,
+            "threshold": 300,
             "activities": [
-              {"name": "NSS Outreach Camp", "description": "Represent the department at community services outreach camps.", "points": 30, "isDone": false},
-              {"name": "Project Exhibition Team", "description": "Participate as a group to showcase innovations at state level.", "points": 25, "isDone": false},
+              {"name": "Hackathon Participation Group", "description": "Participate in an external hackathon event.", "points": 200, "isDone": false},
+              {"name": "Final Oral Presentation", "description": "Complete the final placement oral presentation.", "points": 100, "isDone": false},
             ]
           }
         ]
@@ -126,12 +164,23 @@ class _ActivitiesTabState extends State<ActivitiesTab> {
     ];
   }
 
+  // Calculate current status of activity dynamically
+  bool _isActivityDone(Map<String, dynamic> act, List<dynamic> history) {
+    if (isSimulationActive) {
+      return act["isDone"] == true;
+    }
+    final name = act["name"].toString().trim().toLowerCase();
+    return history.any((tx) =>
+        tx["status"] == "APPROVED" &&
+        tx["activityName"].toString().trim().toLowerCase() == name);
+  }
+
   // Calculate current accumulated score of a substage
-  int _getSubstageScore(Map<String, dynamic> substage) {
+  int _getSubstageScore(Map<String, dynamic> substage, List<dynamic> history) {
     int score = 0;
     final List<dynamic> activities = substage["activities"] ?? [];
     for (var act in activities) {
-      if (act["isDone"] == true) {
+      if (_isActivityDone(act, history)) {
         score += act["points"] as int;
       }
     }
@@ -139,82 +188,45 @@ class _ActivitiesTabState extends State<ActivitiesTab> {
   }
 
   // Check if a substage passes the threshold
-  bool _isSubstagePassed(Map<String, dynamic> substage) {
-    final int score = _getSubstageScore(substage);
+  bool _isSubstagePassed(Map<String, dynamic> substage, List<dynamic> history) {
+    final int score = _getSubstageScore(substage, history);
     final int threshold = substage["threshold"] ?? 0;
     return score >= threshold;
   }
 
   // Check if all substages of a stage pass thresholds
-  bool _isStageFullyPassed(Map<String, dynamic> stage) {
+  bool _isStageFullyPassed(Map<String, dynamic> stage, List<dynamic> history) {
     final List<dynamic> substages = stage["substages"] ?? [];
     for (var sub in substages) {
-      if (!_isSubstagePassed(sub)) {
+      if (!_isSubstagePassed(sub, history)) {
         return false;
       }
     }
     return true;
   }
 
-  // Toggles the activity completion status and checks if stage unlocking is triggered
+  // Toggles the activity completion status in simulation mode
   void _toggleActivity(int stageIndex, int substageIndex, int activityIndex, bool? value) {
     setState(() {
       stages[stageIndex]["substages"][substageIndex]["activities"][activityIndex]["isDone"] = value ?? false;
-      _checkAndUnlockNextStages();
     });
-  }
-
-  void _checkAndUnlockNextStages() {
-    bool stage1Passed = _isStageFullyPassed(stages[0]);
-    bool stage2Passed = _isStageFullyPassed(stages[1]);
-
-    // Unlock/Lock Stage 2
-    if (stage1Passed && !stages[1]["isUnlocked"]) {
-      stages[1]["isUnlocked"] = true;
-      _showUnlockDialog("Stage 2: Advanced Participation");
-    } else if (!stage1Passed && stages[1]["isUnlocked"]) {
-      stages[1]["isUnlocked"] = false;
-      // Also lock stage 3 if stage 2 is locked
-      stages[2]["isUnlocked"] = false;
-    }
-
-    // Unlock/Lock Stage 3
-    if (stage1Passed && stage2Passed && !stages[2]["isUnlocked"]) {
-      stages[2]["isUnlocked"] = true;
-      _showUnlockDialog("Stage 3: Professional Excellence");
-    } else if (!stage2Passed && stages[2]["isUnlocked"]) {
-      stages[2]["isUnlocked"] = false;
-    }
-  }
-
-  void _showUnlockDialog(String stageName) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Row(
-          children: [
-            const Icon(Icons.stars_rounded, color: Colors.amber, size: 28),
-            const SizedBox(width: 10),
-            const Text("New Stage Unlocked!"),
-          ],
-        ),
-        content: Text(
-          "Great job! All sub-stages (MUST, INDIVIDUAL, GROUP) have met their points threshold.\n\n\"$stageName\" is now unlocked.",
-          style: const TextStyle(fontSize: 14, height: 1.4),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text("Awesome", style: TextStyle(color: primaryColor, fontWeight: FontWeight.bold)),
-          ),
-        ],
-      ),
-    );
   }
 
   @override
   Widget build(BuildContext context) {
+    final xpProvider = Provider.of<XpProvider>(context);
+    final history = xpProvider.history;
+
+    if (isLoading) {
+      return const Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF4F46E5)),
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
@@ -296,13 +308,20 @@ class _ActivitiesTabState extends State<ActivitiesTab> {
                 itemCount: stages.length,
                 itemBuilder: (context, stageIndex) {
                   final stage = stages[stageIndex];
-                  final bool isUnlocked = stage["isUnlocked"] ?? false;
+                  
+                  // Dynamically determine lock/unlock status of stages
+                  bool isUnlocked = false;
+                  if (stageIndex == 0) {
+                    isUnlocked = true;
+                  } else {
+                    isUnlocked = _isStageFullyPassed(stages[stageIndex - 1], history);
+                  }
 
                   // Count passed substages
                   int passedCount = 0;
                   final List<dynamic> subList = stage["substages"];
                   for (var sub in subList) {
-                    if (_isSubstagePassed(sub)) passedCount++;
+                    if (_isSubstagePassed(sub, history)) passedCount++;
                   }
 
                   return Card(
@@ -371,7 +390,7 @@ class _ActivitiesTabState extends State<ActivitiesTab> {
                           final substage = stage["substages"][subIndex];
                           final List<dynamic> activities = substage["activities"];
                           final int threshold = substage["threshold"] ?? 0;
-                          final int score = _getSubstageScore(substage);
+                          final int score = _getSubstageScore(substage, history);
                           final bool isPassed = score >= threshold;
 
                           return Column(
@@ -429,7 +448,7 @@ class _ActivitiesTabState extends State<ActivitiesTab> {
                               else
                                 ...List.generate(activities.length, (actIndex) {
                                   final activity = activities[actIndex];
-                                  final bool isDone = activity["isDone"];
+                                  final bool isDone = _isActivityDone(activity, history);
 
                                   return Container(
                                     margin: const EdgeInsets.only(bottom: 10),

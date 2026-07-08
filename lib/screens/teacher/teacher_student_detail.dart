@@ -17,11 +17,13 @@ class _TeacherStudentDetailState extends State<TeacherStudentDetail> {
   List<dynamic> historyLogs = [];
   List<dynamic> stagesList = [];
   bool isLoadingHistory = true;
+  bool isCurrentlyCaptain = false;
 
   @override
   void initState() {
     super.initState();
     currentScore = widget.student['score'] ?? 100;
+    isCurrentlyCaptain = widget.student['isCaptain'] ?? false;
     _fetchHistoryLogs();
     _fetchStages();
   }
@@ -80,6 +82,9 @@ class _TeacherStudentDetailState extends State<TeacherStudentDetail> {
       );
 
       if (response.statusCode == 200) {
+        setState(() {
+          isCurrentlyCaptain = true;
+        });
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Student successfully promoted to Captain!'),
@@ -90,6 +95,44 @@ class _TeacherStudentDetailState extends State<TeacherStudentDetail> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Failed to promote: ${jsonDecode(response.body)['message'] ?? response.statusCode}'),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Network error: Could not connect to backend.'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+    }
+  }
+
+  Future<void> _removeCaptain() async {
+    try {
+      final response = await http.post(
+        Uri.parse("http://10.0.2.2:8080/api/v1/students/${widget.student['id']}/remove-captain"),
+        headers: {
+          "Authorization": "Bearer ${widget.token}",
+          "Content-Type": "application/json",
+        },
+      );
+
+      if (response.statusCode == 200) {
+        setState(() {
+          isCurrentlyCaptain = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Student successfully removed from Captain status!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to remove: ${jsonDecode(response.body)['message'] ?? response.statusCode}'),
             backgroundColor: Colors.redAccent,
           ),
         );
@@ -402,23 +445,23 @@ class _TeacherStudentDetailState extends State<TeacherStudentDetail> {
               ],
             ),
 
-            // --- PROMOTE TO CAPTAIN BUTTON IS RIGHT HERE ---
+            // --- PROMOTE/REMOVE CAPTAIN BUTTON ---
             const SizedBox(height: 12), 
 
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
-                onPressed: _makeCaptain,
-                icon: const Icon(Icons.star_rounded, color: Colors.white),
-                label: const Text("Promote to Captain"),
+                onPressed: isCurrentlyCaptain ? _removeCaptain : _makeCaptain,
+                icon: Icon(isCurrentlyCaptain ? Icons.star_border_rounded : Icons.star_rounded, color: Colors.white),
+                label: Text(isCurrentlyCaptain ? "Remove from Captain" : "Promote to Captain"),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.amber.shade700,
+                  backgroundColor: isCurrentlyCaptain ? Colors.redAccent : Colors.amber.shade700,
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                 ),
               ),
             ),
-            // --- END OF NEW BUTTON ---
+            // --- END OF BUTTON ---
 
             const SizedBox(height: 30),
 

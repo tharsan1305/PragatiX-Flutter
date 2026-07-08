@@ -1,9 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'providers/xp_provider.dart';
 import 'screens/login/login_page.dart';
-//in this only the,Scaffold,AppBar,Text,Button,Card,Icons
+
 void main() {
-  // execution starts from here
-  runApp(const MyApp());
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => XpProvider()),
+      ],
+      child: const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -12,7 +20,6 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const MaterialApp(
-      // here the material app provides the Themes,Navigation,Routes,Material Design UI
       debugShowCheckedModeBanner: false,
       home: LoginPage(),
     );

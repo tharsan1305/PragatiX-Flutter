@@ -3,6 +3,7 @@ import 'tabs/dashboard_tab.dart';
 import 'tabs/point_review_tab.dart';
 import 'tabs/leaderboard_tab.dart';
 import 'tabs/activities_tab.dart';
+import 'tabs/levels_badges_tab.dart';
 import 'tabs/profile_tab.dart';
 
 class StudentDashboardPage extends StatefulWidget {
@@ -25,6 +26,7 @@ class _StudentDashboardPageState extends State<StudentDashboardPage> {
       PointReviewTab(token: widget.token),
       LeaderboardTab(token: widget.token),
       ActivitiesTab(token: widget.token),
+      LevelsBadgesTab(token: widget.token),
       ProfileTab(token: widget.token),
     ];
   }
@@ -49,6 +51,10 @@ class _StudentDashboardPageState extends State<StudentDashboardPage> {
       const BottomNavigationBarItem(
         icon: Icon(Icons.local_activity_rounded),
         label: 'Activities',
+      ),
+      const BottomNavigationBarItem(
+        icon: Icon(Icons.military_tech_rounded),
+        label: 'Levels & Badges',
       ),
       const BottomNavigationBarItem(
         icon: Icon(Icons.person_rounded),

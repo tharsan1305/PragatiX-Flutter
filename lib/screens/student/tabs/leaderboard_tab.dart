@@ -1,4 +1,6 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 
 class LeaderboardTab extends StatefulWidget {
   final String token;
@@ -12,22 +14,11 @@ class _LeaderboardTabState extends State<LeaderboardTab> {
   bool isLoading = true;
 
   // Currently logged-in student registry details
-  final String currentStudentId = "24CS036";
-  final String currentStudentName = "Sharugesh";
+  String currentStudentId = "24CS036";
+  String currentStudentName = "Sharugesh";
 
-  // Comprehensive mockup database representing all years, depts, and sections
-  final List<Map<String, dynamic>> allStudentsData = [
-    {"studentId": "24CS036", "fullName": "Sharugesh", "departmentName": "CSE", "year": "III", "section": "A", "score": 95},
-    {"studentId": "25CS010", "fullName": "Priya K", "departmentName": "CSE", "year": "I", "section": "A", "score": 92},
-    {"studentId": "24CS002", "fullName": "Venkat", "departmentName": "CSE", "year": "III", "section": "A", "score": 90},
-    {"studentId": "24IT089", "fullName": "Jagadheesh", "departmentName": "IT", "year": "III", "section": "B", "score": 88},
-    {"studentId": "22CS045", "fullName": "Rahul Kumar", "departmentName": "CSE", "year": "IV", "section": "A", "score": 85},
-    {"studentId": "25IT004", "fullName": "Sanjay M", "departmentName": "IT", "year": "I", "section": "B", "score": 84},
-    {"studentId": "24EE015", "fullName": "Divya T", "departmentName": "EEE", "year": "III", "section": "B", "score": 81},
-    {"studentId": "23EE012", "fullName": "Kavya S", "departmentName": "EEE", "year": "II", "section": "A", "score": 80},
-    {"studentId": "22ME022", "fullName": "Arjun P", "departmentName": "MECH", "year": "IV", "section": "C", "score": 79},
-    {"studentId": "23ME033", "fullName": "Vijay R", "departmentName": "MECH", "year": "II", "section": "B", "score": 75},
-  ];
+  // Comprehensive database representing all years, depts, and sections
+  List<Map<String, dynamic>> allStudentsData = [];
 
   // Active filter state variables
   String selectedYear = "All";
@@ -38,47 +29,121 @@ class _LeaderboardTabState extends State<LeaderboardTab> {
   List<Map<String, dynamic>> filteredList = [];
 
   // Filter options lists
-  final List<String> yearOptions = ["All", "I", "II", "III", "IV"];
-  final List<String> deptOptions = ["All", "CSE", "IT", "EEE", "MECH"];
-  final List<String> sectionOptions = ["All", "A", "B", "C"];
+  List<String> yearOptions = ["All", "I", "II", "III", "IV"];
+  List<String> deptOptions = ["All"];
+  List<String> sectionOptions = ["All"];
 
   @override
   void initState() {
     super.initState();
-    _applyFilters();
+    _fetchLeaderboardData();
   }
 
-  void _applyFilters() {
+  Future<void> _fetchLeaderboardData() async {
     setState(() {
       isLoading = true;
     });
 
-    // Simulate short loader
-    Future.delayed(const Duration(milliseconds: 300), () {
-      List<Map<String, dynamic>> temp = List.from(allStudentsData);
+    try {
+      // 1. Fetch current user profile to get studentId and name
+      final profileResponse = await http.get(
+        Uri.parse("http://10.0.2.2:8080/api/v1/auth/me"),
+        headers: {
+          "Authorization": "Bearer ${widget.token}",
+        },
+      );
 
-      // 1. Filter by Year
-      if (selectedYear != "All") {
-        temp = temp.where((s) => s["year"] == selectedYear).toList();
+      if (profileResponse.statusCode == 200) {
+        final profileData = jsonDecode(profileResponse.body);
+        if (profileData["success"] == true) {
+          final resData = profileData["data"];
+          currentStudentId = resData["username"] ?? "24CS036";
+          currentStudentName = resData["fullName"] ?? "Sharugesh";
+        }
       }
 
-      // 2. Filter by Department
-      if (selectedDept != "All") {
-        temp = temp.where((s) => s["departmentName"] == selectedDept).toList();
+      // 2. Fetch all students from backend
+      final studentsResponse = await http.get(
+        Uri.parse("http://10.0.2.2:8080/api/v1/students?page=0&size=1000&sortBy=fullName"),
+        headers: {
+          "Authorization": "Bearer ${widget.token}",
+        },
+      );
+
+      if (studentsResponse.statusCode == 200) {
+        final studentsData = jsonDecode(studentsResponse.body);
+        if (studentsData["success"] == true) {
+          final List<dynamic> content = studentsData["data"]["content"] ?? [];
+          allStudentsData = content.map((s) => {
+            "studentId": s["studentId"] ?? "",
+            "fullName": s["fullName"] ?? "",
+            "departmentName": s["departmentName"] ?? "",
+            "year": s["year"] ?? "",
+            "section": s["section"] ?? "",
+            "score": s["score"] ?? 0
+          }).toList();
+
+          // Dynamically populate filter options
+          final depts = allStudentsData
+              .map((s) => s["departmentName"] as String)
+              .where((d) => d.isNotEmpty)
+              .toSet()
+              .toList();
+          final sections = allStudentsData
+              .map((s) => s["section"] as String)
+              .where((s) => s.isNotEmpty)
+              .toSet()
+              .toList();
+
+          deptOptions = ["All", ...depts];
+          sectionOptions = ["All", ...sections];
+        }
       }
+    } catch (e) {
+      // Fallback mockup data if offline
+      allStudentsData = [
+        {"studentId": "24CS036", "fullName": "Sharugesh", "departmentName": "CSE", "year": "III", "section": "A", "score": 95},
+        {"studentId": "25CS010", "fullName": "Priya K", "departmentName": "CSE", "year": "I", "section": "A", "score": 92},
+        {"studentId": "24CS002", "fullName": "Venkat", "departmentName": "CSE", "year": "III", "section": "A", "score": 90},
+        {"studentId": "24IT089", "fullName": "Jagadheesh", "departmentName": "IT", "year": "III", "section": "B", "score": 88},
+        {"studentId": "22CS045", "fullName": "Rahul Kumar", "departmentName": "CSE", "year": "IV", "section": "A", "score": 85},
+        {"studentId": "25IT004", "fullName": "Sanjay M", "departmentName": "IT", "year": "I", "section": "B", "score": 84},
+        {"studentId": "24EE015", "fullName": "Divya T", "departmentName": "EEE", "year": "III", "section": "B", "score": 81},
+        {"studentId": "23EE012", "fullName": "Kavya S", "departmentName": "EEE", "year": "II", "section": "A", "score": 80},
+        {"studentId": "22ME022", "fullName": "Arjun P", "departmentName": "MECH", "year": "IV", "section": "C", "score": 79},
+        {"studentId": "23ME033", "fullName": "Vijay R", "departmentName": "MECH", "year": "II", "section": "B", "score": 75},
+      ];
+      deptOptions = ["All", "CSE", "IT", "EEE", "MECH"];
+      sectionOptions = ["All", "A", "B", "C"];
+    }
 
-      // 3. Filter by Section
-      if (selectedSection != "All") {
-        temp = temp.where((s) => s["section"] == selectedSection).toList();
-      }
+    _applyFilters();
+  }
 
-      // Sort remaining by score descending
-      temp.sort((a, b) => (b["score"] as int).compareTo(a["score"] as int));
+  void _applyFilters() {
+    List<Map<String, dynamic>> temp = List.from(allStudentsData);
 
-      setState(() {
-        filteredList = temp;
-        isLoading = false;
-      });
+    // 1. Filter by Year
+    if (selectedYear != "All") {
+      temp = temp.where((s) => s["year"] == selectedYear).toList();
+    }
+
+    // 2. Filter by Department
+    if (selectedDept != "All") {
+      temp = temp.where((s) => s["departmentName"] == selectedDept).toList();
+    }
+
+    // 3. Filter by Section
+    if (selectedSection != "All") {
+      temp = temp.where((s) => s["section"] == selectedSection).toList();
+    }
+
+    // Sort remaining by score descending
+    temp.sort((a, b) => (b["score"] as int).compareTo(a["score"] as int));
+
+    setState(() {
+      filteredList = temp;
+      isLoading = false;
     });
   }
 
