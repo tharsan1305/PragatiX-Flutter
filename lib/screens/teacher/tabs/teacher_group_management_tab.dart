@@ -31,22 +31,28 @@ class _TeacherGroupManagementTabState extends State<TeacherGroupManagementTab> {
 
   Future<void> _fetchGroups() async {
     setState(() => _isLoading = true);
+    const url = "http://10.0.2.2:8080/api/v1/teams";
+    debugPrint("API URL: $url");
     try {
       final response = await http.get(
-        Uri.parse("http://10.0.2.2:8080/api/v1/groups"),
+        Uri.parse(url),
         headers: {"Authorization": "Bearer ${widget.token}"},
       );
+      debugPrint("HTTP Status Code: ${response.statusCode}");
+      debugPrint("Raw Response Body: ${response.body}");
+
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data["success"] == true) {
           final List<dynamic> groups = data["data"] ?? [];
+          debugPrint("Parsed Team Count: ${groups.length}");
 
           // Build dynamic filter options from members
           final deptSet = <String>{};
           final yearSet = <String>{};
           final sectionSet = <String>{};
           for (final g in groups) {
-            for (final m in (g["students"] ?? [])) {
+            for (final m in (g["teamMembers"] ?? [])) {
               if (m["department"] != null) deptSet.add(m["department"]);
               if (m["year"] != null) yearSet.add(m["year"].toString());
               if (m["section"] != null) sectionSet.add(m["section"]);
@@ -64,14 +70,14 @@ class _TeacherGroupManagementTabState extends State<TeacherGroupManagementTab> {
         }
       }
     } catch (e) {
-      // fallback
+      debugPrint("Error fetching teams: $e");
     }
     setState(() => _isLoading = false);
   }
 
   List<dynamic> get _filteredGroups {
     return _groups.where((g) {
-      final members = (g["students"] ?? []) as List<dynamic>;
+      final members = (g["teamMembers"] ?? []) as List<dynamic>;
       if (selectedDept != null && selectedDept != "All") {
         if (!members.any((m) => m["department"] == selectedDept)) return false;
       }
@@ -140,9 +146,9 @@ class _TeacherGroupManagementTabState extends State<TeacherGroupManagementTab> {
                           itemBuilder: (context, index) {
                             final g = _filteredGroups[index];
                             final captainName = g["captainName"] ?? "No Captain";
-                            final memberCount = (g["students"] as List?)?.length ?? 0;
-                            final groupName = g["name"] ?? "Group";
-                            final size = g["size"] ?? 0;
+                            final memberCount = (g["teamMembers"] as List?)?.length ?? 0;
+                            final groupName = g["teamName"] ?? "Group";
+                            final size = g["teamCapacity"] ?? 0;
 
                             return Card(
                               margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -161,8 +167,8 @@ class _TeacherGroupManagementTabState extends State<TeacherGroupManagementTab> {
                                   "Captain: $captainName  •  $memberCount/$size members",
                                   style: const TextStyle(fontSize: 12, color: Colors.grey),
                                 ),
-                                children: (g["students"] as List? ?? []).map<Widget>((m) {
-                                  final isCaptain = m["studentId"] == g["captainStudentId"];
+                                children: (g["teamMembers"] as List? ?? []).map<Widget>((m) {
+                                  final isCaptain = m["studentId"] == g["captainId"];
                                   return ListTile(
                                     dense: true,
                                     leading: CircleAvatar(

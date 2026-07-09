@@ -80,7 +80,7 @@ class _StudentsTabState extends State<StudentsTab> {
         http.get(Uri.parse("http://10.0.2.2:8080/api/v1/admin/semesters"), headers: headers),
         http.get(Uri.parse("http://10.0.2.2:8080/api/v1/admin/genders"), headers: headers),
         http.get(Uri.parse("http://10.0.2.2:8080/api/v1/admin/sections"), headers: headers),
-        http.get(Uri.parse("http://10.0.2.2:8080/api/v1/groups"), headers: headers),
+        http.get(Uri.parse("http://10.0.2.2:8080/api/v1/teams"), headers: headers),
       ]);
 
       if (!mounted) return;
@@ -498,8 +498,8 @@ class _StudentsTabState extends State<StudentsTab> {
                         ),
                         ...groups.map((grp) {
                           return DropdownMenuItem<int?>(
-                            value: grp["id"],
-                            child: Text(grp["name"] ?? ""),
+                            value: grp["teamId"],
+                            child: Text(grp["teamName"] ?? ""),
                           );
                         })
                       ],
@@ -764,7 +764,7 @@ class _StudentsTabState extends State<StudentsTab> {
                       },
                     ),
                     DropdownButtonFormField<int?>(
-                      value: groups.any((grp) => grp["id"] == selectedGroupId) ? selectedGroupId : null,
+                      value: groups.any((grp) => grp["teamId"] == selectedGroupId) ? selectedGroupId : null,
                       decoration: const InputDecoration(labelText: "Group (Optional)"),
                       items: [
                         const DropdownMenuItem<int?>(
@@ -773,8 +773,8 @@ class _StudentsTabState extends State<StudentsTab> {
                         ),
                         ...groups.map((grp) {
                           return DropdownMenuItem<int?>(
-                            value: grp["id"],
-                            child: Text(grp["name"] ?? ""),
+                            value: grp["teamId"],
+                            child: Text(grp["teamName"] ?? ""),
                           );
                         })
                       ],

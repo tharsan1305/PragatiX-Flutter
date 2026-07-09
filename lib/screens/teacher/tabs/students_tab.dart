@@ -113,7 +113,7 @@ class _StudentsTabState extends State<StudentsTab> {
         http.get(Uri.parse("http://10.0.2.2:8080/api/v1/admin/semesters"), headers: headers),
         http.get(Uri.parse("http://10.0.2.2:8080/api/v1/admin/genders"), headers: headers),
         http.get(Uri.parse("http://10.0.2.2:8080/api/v1/admin/sections"), headers: headers),
-        http.get(Uri.parse("http://10.0.2.2:8080/api/v1/groups"), headers: headers),
+        http.get(Uri.parse("http://10.0.2.2:8080/api/v1/teams"), headers: headers),
       ]);
 
       if (!mounted) return;
@@ -612,8 +612,8 @@ class _StudentsTabState extends State<StudentsTab> {
                         ),
                         ...groups.map((grp) {
                           return DropdownMenuItem<int?>(
-                            value: grp["id"],
-                            child: Text(grp["name"] ?? ""),
+                            value: grp["teamId"],
+                            child: Text(grp["teamName"] ?? ""),
                           );
                         })
                       ],
@@ -668,7 +668,7 @@ class _StudentsTabState extends State<StudentsTab> {
             void loadGroups() async {
               try {
                 final response = await http.get(
-                  Uri.parse("http://10.0.2.2:8080/api/v1/groups"),
+                  Uri.parse("http://10.0.2.2:8080/api/v1/teams"),
                   headers: {"Authorization": "Bearer ${widget.token}"},
                 );
                 if (response.statusCode == 200) {
@@ -774,7 +774,7 @@ class _StudentsTabState extends State<StudentsTab> {
                                       final messenger = ScaffoldMessenger.of(context);
                                       try {
                                         final response = await http.post(
-                                          Uri.parse("http://10.0.2.2:8080/api/v1/groups"),
+                                          Uri.parse("http://10.0.2.2:8080/api/v1/teams"),
                                           headers: {
                                             "Content-Type": "application/json",
                                             "Authorization": "Bearer ${widget.token}",
@@ -825,7 +825,7 @@ class _StudentsTabState extends State<StudentsTab> {
                                         itemCount: localGroups.length,
                                         itemBuilder: (context, index) {
                                           final g = localGroups[index];
-                                          final List<dynamic> mems = g["members"] ?? [];
+                                          final List<dynamic> mems = g["teamMembers"] ?? [];
                                           return Card(
                                             margin: const EdgeInsets.only(bottom: 12),
                                             child: Padding(
@@ -833,14 +833,16 @@ class _StudentsTabState extends State<StudentsTab> {
                                               child: Column(
                                                 crossAxisAlignment: CrossAxisAlignment.start,
                                                 children: [
-                                                  Text(g["name"] ?? "", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                                                  Text(g["teamName"] ?? "", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                                                   const SizedBox(height: 4),
-                                                  Text("Captain: ${g["captainName"] ?? ""} (${g["captainStudentId"] ?? ""})", style: const TextStyle(fontSize: 13, color: Colors.blueGrey)),
-                                                  Text("Size Limit: ${g["size"] ?? 0} | Current Members: ${1 + mems.length}", style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                                                  Text("Captain: ${g["captainName"] ?? ""} (${g["captainId"] ?? ""})", style: const TextStyle(fontSize: 13, color: Colors.blueGrey)),
+                                                  Text("Size Limit: ${g["teamCapacity"] ?? 0} | Current Members: ${mems.length}", style: const TextStyle(fontSize: 12, color: Colors.grey)),
                                                   const SizedBox(height: 6),
                                                   const Text("Members List:", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11)),
-                                                  Text("• ${g["captainName"] ?? ""} (${g["captainStudentId"] ?? ""}) - Captain", style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                                                  ...mems.map((m) => Text("• ${m["fullName"]} (${m["studentId"]})", style: const TextStyle(fontSize: 12))),
+                                                  ...mems.map((m) {
+                                                    final isCap = m["studentId"] == g["captainId"];
+                                                    return Text("• ${m["fullName"]} (${m["studentId"]})${isCap ? ' - Captain' : ''}", style: TextStyle(fontSize: 12, fontWeight: isCap ? FontWeight.bold : FontWeight.normal));
+                                                  }),
                                                 ],
                                               ),
                                             ),

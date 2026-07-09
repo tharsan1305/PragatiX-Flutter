@@ -25,7 +25,7 @@ class _CaptainGroupTabState extends State<CaptainGroupTab> {
     setState(() => _isLoading = true);
     try {
       final response = await http.get(
-        Uri.parse("http://10.0.2.2:8080/api/v1/groups/my-group"),
+        Uri.parse("http://10.0.2.2:8080/api/v1/teams/my-team"),
         headers: {
           "Authorization": "Bearer ${widget.token}",
         },
@@ -36,7 +36,7 @@ class _CaptainGroupTabState extends State<CaptainGroupTab> {
         if (data["success"] == true) {
           setState(() {
             _groupData = data["data"];
-            _members = _groupData?["students"] ?? [];
+            _members = _groupData?["teamMembers"] ?? [];
           });
         } else {
           setState(() {
@@ -65,7 +65,7 @@ class _CaptainGroupTabState extends State<CaptainGroupTab> {
 
     try {
       final response = await http.post(
-        Uri.parse("http://10.0.2.2:8080/api/v1/groups"),
+        Uri.parse("http://10.0.2.2:8080/api/v1/teams"),
         headers: {
           "Authorization": "Bearer ${widget.token}",
           "Content-Type": "application/json",
@@ -99,7 +99,7 @@ class _CaptainGroupTabState extends State<CaptainGroupTab> {
   Future<void> _addMember(String studentId) async {
     try {
       final response = await http.post(
-        Uri.parse("http://10.0.2.2:8080/api/v1/groups/my-group/add-member?studentId=$studentId"),
+        Uri.parse("http://10.0.2.2:8080/api/v1/teams/my-team/add-member?studentId=$studentId"),
         headers: {
           "Authorization": "Bearer ${widget.token}",
         },
@@ -127,7 +127,7 @@ class _CaptainGroupTabState extends State<CaptainGroupTab> {
   Future<void> _removeMember(String studentId, String name) async {
     try {
       final response = await http.post(
-        Uri.parse("http://10.0.2.2:8080/api/v1/groups/my-group/remove-member?studentId=$studentId"),
+        Uri.parse("http://10.0.2.2:8080/api/v1/teams/my-team/remove-member?studentId=$studentId"),
         headers: {
           "Authorization": "Bearer ${widget.token}",
         },
@@ -249,7 +249,7 @@ class _CaptainGroupTabState extends State<CaptainGroupTab> {
   }
 
   void _showUpdateLimitDialog() {
-    final limitCtrl = TextEditingController(text: (_groupData?["size"] ?? 10).toString());
+    final limitCtrl = TextEditingController(text: (_groupData?["teamCapacity"] ?? 10).toString());
 
     showDialog(
       context: context,
@@ -292,7 +292,7 @@ class _CaptainGroupTabState extends State<CaptainGroupTab> {
   Future<void> _updateGroupLimit(int newSize) async {
     try {
       final response = await http.put(
-        Uri.parse("http://10.0.2.2:8080/api/v1/groups/my-group/limit?size=$newSize"),
+        Uri.parse("http://10.0.2.2:8080/api/v1/teams/my-team/limit?size=$newSize"),
         headers: {
           "Authorization": "Bearer ${widget.token}",
         },
@@ -319,9 +319,9 @@ class _CaptainGroupTabState extends State<CaptainGroupTab> {
   @override
   Widget build(BuildContext context) {
     final hasGroup = _groupData != null;
-    final groupName = _groupData?["name"] ?? "My Group";
-    final captainId = _groupData?["captainStudentId"];
-    final maxSize = _groupData?["size"] ?? 10;
+    final groupName = _groupData?["teamName"] ?? "My Group";
+    final captainId = _groupData?["captainId"];
+    final maxSize = _groupData?["teamCapacity"] ?? 10;
     final currentSize = _members.length;
 
     return Scaffold(
