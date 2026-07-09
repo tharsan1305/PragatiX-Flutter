@@ -172,6 +172,13 @@ class _ActivityTabState extends State<ActivityTab> {
         );
         setState(() => _isLoading = true);
         _fetchStages();
+      } else {
+        final data = jsonDecode(response.body);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content: Text(data['message'] ?? 'Failed to delete stage'),
+              backgroundColor: Colors.redAccent),
+        );
       }
     } catch (_) {
       if (!mounted) return;

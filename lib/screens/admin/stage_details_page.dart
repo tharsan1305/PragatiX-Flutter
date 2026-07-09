@@ -616,6 +616,7 @@ class _StageDetailsPageState extends State<StageDetailsPage> {
                                           subgroupCategory: catVal,
                                           teachersList:
                                               widget.teachersList,
+                                          isAdmin: true,
                                         ),
                                       ),
                                     );

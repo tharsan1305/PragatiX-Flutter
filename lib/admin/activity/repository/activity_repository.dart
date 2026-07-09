@@ -1,4 +1,5 @@
 import '../models/activity_model.dart';
+import '../models/my_activity_model.dart';
 import '../services/activity_service.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -10,6 +11,13 @@ class ActivityRepository {
   final ActivityService _service;
 
   ActivityRepository(ActivityService service) : _service = service;
+
+  Future<List<MyActivityModel>> getMyActivities() async {
+    final raw = await _service.fetchMyActivities();
+    return raw
+        .map((e) => MyActivityModel.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
 
   Future<List<ActivityModel>> getActivities(int subgroupId) async {
     final raw = await _service.fetchActivities(subgroupId);
@@ -26,7 +34,11 @@ class ActivityRepository {
     final users = await _service.fetchUsers();
     return users.where((u) {
       final roles = u['roles'] as List<dynamic>? ?? [];
-      return roles.contains('ROLE_TEACHER');
+      return roles.any((r) {
+        if (r is String) return r == 'ROLE_TEACHER';
+        if (r is Map) return r['name'] == 'ROLE_TEACHER';
+        return false;
+      });
     }).toList();
   }
 
@@ -48,5 +60,14 @@ class ActivityRepository {
 
   Future<void> delete(int activityId) async {
     await _service.deleteActivity(activityId);
+  }
+
+  Future<List<dynamic>> getSections() async {
+    return _service.fetchSections();
+  }
+
+  Future<Map<String, dynamic>> assign(
+      int activityId, int? sectionId, int teacherId) async {
+    return _service.assignActivity(activityId, sectionId, teacherId);
   }
 }

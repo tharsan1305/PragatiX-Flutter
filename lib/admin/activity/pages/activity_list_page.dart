@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import '../models/activity_model.dart';
+import '../models/my_activity_model.dart';
 import '../providers/activity_provider.dart';
 import '../repository/activity_repository.dart';
 import '../services/activity_service.dart';
 import '../widgets/activity_card.dart';
 import 'create_activity_page.dart';
 import 'edit_activity_page.dart';
+import 'activity_execution_page.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Activity List Page – entry point from SubgroupDetailsPage.
@@ -18,6 +20,10 @@ class ActivityListPage extends StatefulWidget {
   final String subgroupName;
   final String subgroupCategory;
   final List<dynamic> teachersList;
+  final bool isCc;
+  final bool isMyActivitiesOnly;
+  final bool showAppBar;
+  final bool isAdmin;
 
   const ActivityListPage({
     super.key,
@@ -26,6 +32,10 @@ class ActivityListPage extends StatefulWidget {
     required this.subgroupName,
     required this.subgroupCategory,
     required this.teachersList,
+    this.isCc = false,
+    this.isMyActivitiesOnly = false,
+    this.showAppBar = true,
+    this.isAdmin = false,
   });
 
   @override
@@ -69,7 +79,11 @@ class _ActivityListPageState extends State<ActivityListPage> {
     _provider = ActivityProvider(
       ActivityRepository(ActivityService(widget.token)),
     );
-    _provider.loadActivities(widget.subgroupId);
+    if (widget.isMyActivitiesOnly) {
+      _provider.loadMyActivities();
+    } else {
+      _provider.loadActivities(widget.subgroupId);
+    }
     _provider.loadDependencies();
   }
 
@@ -87,11 +101,16 @@ class _ActivityListPageState extends State<ActivityListPage> {
         builder: (_) => CreateActivityPage(
           provider: _provider,
           subgroupId: widget.subgroupId,
+          isCc: widget.isCc,
         ),
       ),
     );
     if (saved == true && mounted) {
-      await _provider.loadActivities(widget.subgroupId);
+      if (widget.isMyActivitiesOnly) {
+        await _provider.loadMyActivities();
+      } else {
+        await _provider.loadActivities(widget.subgroupId);
+      }
     }
   }
 
@@ -102,11 +121,16 @@ class _ActivityListPageState extends State<ActivityListPage> {
         builder: (_) => EditActivityPage(
           provider: _provider,
           activity: activity,
+          isCc: widget.isCc,
         ),
       ),
     );
     if (saved == true && mounted) {
-      await _provider.loadActivities(widget.subgroupId);
+      if (widget.isMyActivitiesOnly) {
+        await _provider.loadMyActivities();
+      } else {
+        await _provider.loadActivities(widget.subgroupId);
+      }
     }
   }
 
@@ -152,33 +176,43 @@ class _ActivityListPageState extends State<ActivityListPage> {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
-      appBar: AppBar(
-        title: Text(
-          '$cleanTitle – Activities',
-          style: const TextStyle(
-              fontWeight: FontWeight.bold, color: Colors.white),
-        ),
-        backgroundColor: _dark,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
-        ),
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _openCreate,
-        backgroundColor: _primary,
-        foregroundColor: Colors.white,
-        icon: const Icon(Icons.add_rounded),
-        label: const Text('Add Activity',
-            style: TextStyle(fontWeight: FontWeight.w600)),
-      ),
+      appBar: widget.showAppBar
+          ? AppBar(
+              title: Text(
+                '$cleanTitle – Activities',
+                style: const TextStyle(
+                    fontWeight: FontWeight.bold, color: Colors.white),
+              ),
+              backgroundColor: _dark,
+              elevation: 0,
+              leading: Navigator.canPop(context)
+                  ? IconButton(
+                      icon: const Icon(Icons.arrow_back, color: Colors.white),
+                      onPressed: () => Navigator.pop(context),
+                    )
+                  : null,
+            )
+          : null,
+      floatingActionButton: widget.isAdmin
+          ? FloatingActionButton.extended(
+              onPressed: _openCreate,
+              backgroundColor: _primary,
+              foregroundColor: Colors.white,
+              icon: const Icon(Icons.add_rounded),
+              label: const Text('Add Activity',
+                  style: TextStyle(fontWeight: FontWeight.w600)),
+            )
+          : null,
       body: ListenableBuilder(
         listenable: _provider,
         builder: (context, _) {
           if (_provider.isLoadingActivities) {
             return const Center(child: CircularProgressIndicator());
           }
+
+          final list = widget.isMyActivitiesOnly
+              ? _provider.myActivities.map((e) => e.toActivityModel()).toList()
+              : _provider.activities;
 
           return CustomScrollView(
             slivers: [
@@ -189,7 +223,7 @@ class _ActivityListPageState extends State<ActivityListPage> {
                 SliverToBoxAdapter(
                   child: _buildError(),
                 ),
-              if (_provider.activities.isEmpty && _provider.error == null)
+              if (list.isEmpty && _provider.error == null)
                 SliverFillRemaining(
                   child: _buildEmpty(),
                 )
@@ -199,14 +233,29 @@ class _ActivityListPageState extends State<ActivityListPage> {
                   sliver: SliverList(
                     delegate: SliverChildBuilderDelegate(
                       (ctx, i) {
-                        final act = _provider.activities[i];
+                        final act = list[i];
                         return ActivityCard(
                           activity: act,
                           onEdit: () => _openEdit(act),
                           onDelete: () => _confirmDelete(act),
+                          isCc: widget.isCc,
+                          isReadOnly: widget.isMyActivitiesOnly,
+                          onTap: widget.isMyActivitiesOnly
+                              ? () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => ActivityExecutionPage(
+                                        token: widget.token,
+                                        activityId: act.id,
+                                      ),
+                                    ),
+                                  );
+                                }
+                              : null,
                         );
                       },
-                      childCount: _provider.activities.length,
+                      childCount: list.length,
                     ),
                   ),
                 ),
@@ -258,11 +307,19 @@ class _ActivityListPageState extends State<ActivityListPage> {
                   const SizedBox(width: 8),
                   ListenableBuilder(
                     listenable: _provider,
-                    builder: (context, _) => Text(
-                      '${_provider.activities.length} activities configured',
-                      style: TextStyle(
-                          fontSize: 12, color: Colors.grey.shade600),
-                    ),
+                    builder: (context, _) {
+                      final count = widget.isMyActivitiesOnly
+                          ? _provider.myActivities.length
+                          : _provider.activities.length;
+                      final label = widget.isMyActivitiesOnly
+                          ? 'activities assigned'
+                          : 'activities configured';
+                      return Text(
+                        '$count $label',
+                        style: TextStyle(
+                            fontSize: 12, color: Colors.grey.shade600),
+                      );
+                    },
                   ),
                 ],
               ),
@@ -282,7 +339,7 @@ class _ActivityListPageState extends State<ActivityListPage> {
               size: 64, color: Colors.grey.shade300),
           const SizedBox(height: 16),
           Text(
-            'No activities yet',
+            widget.isMyActivitiesOnly ? 'No activities assigned.' : 'No activities yet',
             style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
@@ -290,7 +347,9 @@ class _ActivityListPageState extends State<ActivityListPage> {
           ),
           const SizedBox(height: 8),
           Text(
-            'Tap the button below to add the first activity.',
+            widget.isMyActivitiesOnly
+                ? 'Check back later or contact your Coordinator.'
+                : 'Tap the button below to add the first activity.',
             style: TextStyle(fontSize: 13, color: Colors.grey.shade500),
           ),
         ],
@@ -318,8 +377,13 @@ class _ActivityListPageState extends State<ActivityListPage> {
                 ),
               ),
               TextButton(
-                onPressed: () =>
-                    _provider.loadActivities(widget.subgroupId),
+                onPressed: () {
+                  if (widget.isMyActivitiesOnly) {
+                    _provider.loadMyActivities();
+                  } else {
+                    _provider.loadActivities(widget.subgroupId);
+                  }
+                },
                 child: const Text('Retry'),
               ),
             ],

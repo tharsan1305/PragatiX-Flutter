@@ -9,6 +9,9 @@ class ActivityCard extends StatelessWidget {
   final ActivityModel activity;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
+  final VoidCallback? onTap;
+  final bool isCc;
+  final bool isReadOnly;
 
   static const Color _dark = Color(0xFF1E293B);
 
@@ -17,6 +20,9 @@ class ActivityCard extends StatelessWidget {
     required this.activity,
     required this.onEdit,
     required this.onDelete,
+    this.onTap,
+    this.isCc = false,
+    this.isReadOnly = false,
   });
 
   @override
@@ -26,10 +32,13 @@ class ActivityCard extends StatelessWidget {
       shape:
           RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       margin: const EdgeInsets.only(bottom: 14),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // ── Header row ──
             Row(
@@ -45,22 +54,26 @@ class ActivityCard extends StatelessWidget {
                     ),
                   ),
                 ),
-                IconButton(
-                  icon: const Icon(Icons.edit_outlined,
-                      color: Colors.blue, size: 20),
-                  onPressed: onEdit,
-                  tooltip: 'Edit',
-                  visualDensity: VisualDensity.compact,
-                  padding: EdgeInsets.zero,
-                ),
-                IconButton(
-                  icon: const Icon(Icons.delete_outline,
-                      color: Colors.red, size: 20),
-                  onPressed: onDelete,
-                  tooltip: 'Delete',
-                  visualDensity: VisualDensity.compact,
-                  padding: EdgeInsets.zero,
-                ),
+                if (!isReadOnly) ...[
+                  IconButton(
+                    icon: Icon(
+                        isCc ? Icons.assignment_ind_outlined : Icons.edit_outlined,
+                        color: Colors.blue, size: 20),
+                    onPressed: onEdit,
+                    tooltip: isCc ? 'Assign Faculty/Owner' : 'Edit',
+                    visualDensity: VisualDensity.compact,
+                    padding: EdgeInsets.zero,
+                  ),
+                  if (!isCc)
+                    IconButton(
+                      icon: const Icon(Icons.delete_outline,
+                          color: Colors.red, size: 20),
+                      onPressed: onDelete,
+                      tooltip: 'Delete',
+                      visualDensity: VisualDensity.compact,
+                      padding: EdgeInsets.zero,
+                    ),
+                ],
               ],
             ),
 
@@ -93,24 +106,65 @@ class ActivityCard extends StatelessWidget {
 
             const SizedBox(height: 10),
 
-            // ── Owner row ──
-            Row(
-              children: [
-                const Icon(Icons.assignment_ind_outlined,
-                    size: 15, color: Colors.blue),
-                const SizedBox(width: 6),
-                Expanded(
-                  child: Text(
-                    'Owner: ${activity.ownerDepartment} '
-                    '(${activity.ownerSubrole.isNotEmpty ? activity.ownerSubrole : "All Teachers"})',
-                    style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey.shade700,
-                        fontWeight: FontWeight.w500),
+            // ── Owner/Assignments row ──
+            if (activity.assignmentSummary.isEmpty)
+              Row(
+                children: [
+                  const Icon(Icons.assignment_ind_outlined,
+                      size: 15, color: Colors.blue),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      'Department: ${activity.ownerDepartment.isNotEmpty ? activity.ownerDepartment : "Unassigned"} (No assignments yet)',
+                      style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey.shade700,
+                          fontWeight: FontWeight.w500),
+                    ),
                   ),
-                ),
-              ],
-            ),
+                ],
+              )
+            else
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(Icons.assignment_ind_outlined,
+                          size: 15, color: Colors.blue),
+                      const SizedBox(width: 6),
+                      Text(
+                        'Assignments (${activity.ownerDepartment}):',
+                        style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey.shade800,
+                            fontWeight: FontWeight.bold),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Padding(
+                    padding: const EdgeInsets.only(left: 21),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: activity.assignmentSummary.map((assign) {
+                        final secName = assign['section'] as String?;
+                        final teachName = assign['teacher'] as String? ?? 'Unknown Teacher';
+                        final text = secName != null
+                            ? 'Section $secName → $teachName'
+                            : 'Assigned to → $teachName';
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 2),
+                          child: Text(
+                            '• $text',
+                            style: TextStyle(fontSize: 12, color: Colors.grey.shade700),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ),
+                ],
+              ),
 
             // ── Evidence ──
             if (activity.evidence.isNotEmpty) ...[
@@ -146,6 +200,7 @@ class ActivityCard extends StatelessWidget {
           ],
         ),
       ),
+     ),
     );
   }
 }

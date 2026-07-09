@@ -14,6 +14,7 @@ class OwnerSelector extends StatelessWidget {
   final ValueChanged<dynamic> onDeptChanged;
   final ValueChanged<dynamic> onTeacherChanged;
   final bool showError;
+  final bool showTeacher;
 
   static const Color _primary = Color(0xFFEA4335);
   static const Color _dark = Color(0xFF1E293B);
@@ -27,10 +28,11 @@ class OwnerSelector extends StatelessWidget {
     required this.onDeptChanged,
     required this.onTeacherChanged,
     required this.showError,
+    this.showTeacher = true,
   });
 
   List<dynamic> get _filteredTeachers {
-    if (selectedDept == null) return [];
+    if (!showTeacher || selectedDept == null) return [];
     final deptId = selectedDept['id'];
     final deptName =
         (selectedDept['name'] as String).toLowerCase();
@@ -106,37 +108,39 @@ class OwnerSelector extends StatelessWidget {
           ),
         ),
 
-        const SizedBox(height: 16),
+        if (showTeacher) ...[
+          const SizedBox(height: 16),
 
-        // ── Teacher dropdown ─────────────────────────────────────────────────
-        InputDecorator(
-          decoration:
-              _deco('Faculty / Teacher (Optional)', Icons.person_outline_rounded),
-          child: DropdownButton<dynamic>(
-            value: selectedTeacher,
-            isExpanded: true,
-            underline: const SizedBox.shrink(),
-            icon: const Icon(Icons.expand_more_rounded, color: _primary),
-            hint: Text(
-              selectedDept == null
-                  ? 'Select department first'
-                  : filtered.isEmpty
-                      ? 'No teachers in this department'
-                      : 'Select teacher',
-              style: TextStyle(fontSize: 13, color: Colors.grey.shade500),
+          // ── Teacher dropdown ─────────────────────────────────────────────────
+          InputDecorator(
+            decoration:
+                _deco('Faculty / Teacher (Optional)', Icons.person_outline_rounded),
+            child: DropdownButton<dynamic>(
+              value: selectedTeacher,
+              isExpanded: true,
+              underline: const SizedBox.shrink(),
+              icon: const Icon(Icons.expand_more_rounded, color: _primary),
+              hint: Text(
+                selectedDept == null
+                    ? 'Select department first'
+                    : filtered.isEmpty
+                        ? 'No teachers in this department'
+                        : 'Select teacher',
+                style: TextStyle(fontSize: 13, color: Colors.grey.shade500),
+              ),
+              items: filtered.map((t) {
+                return DropdownMenuItem<dynamic>(
+                  value: t,
+                  child: Text(
+                    '${t["fullName"]}  (${t["username"]})',
+                    style: const TextStyle(fontSize: 14, color: _dark),
+                  ),
+                );
+              }).toList(),
+              onChanged: filtered.isEmpty ? null : onTeacherChanged,
             ),
-            items: filtered.map((t) {
-              return DropdownMenuItem<dynamic>(
-                value: t,
-                child: Text(
-                  '${t["fullName"]}  (${t["username"]})',
-                  style: const TextStyle(fontSize: 14, color: _dark),
-                ),
-              );
-            }).toList(),
-            onChanged: filtered.isEmpty ? null : onTeacherChanged,
           ),
-        ),
+        ],
       ],
     );
   }

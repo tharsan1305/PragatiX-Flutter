@@ -12,11 +12,13 @@ import '../widgets/sticky_bottom_buttons.dart';
 class EditActivityPage extends StatefulWidget {
   final ActivityProvider provider;
   final ActivityModel activity;
+  final bool isCc;
 
   const EditActivityPage({
     super.key,
     required this.provider,
     required this.activity,
+    this.isCc = false,
   });
 
   @override
@@ -49,41 +51,83 @@ class _EditActivityPageState extends State<EditActivityPage>
   }
 
   Future<void> _onSave() async {
-    final body = _formKey.currentState?.buildBody();
-    if (body == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please complete all required fields.'),
-          backgroundColor: Colors.redAccent,
-          behavior: SnackBarBehavior.floating,
-        ),
+    if (widget.isCc) {
+      final body = _formKey.currentState?.buildCcAssignmentBody();
+      if (body == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Please select a teacher (and section if applicable).'),
+            backgroundColor: Colors.redAccent,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+        return;
+      }
+
+      final ok = await widget.provider.assignActivity(
+        widget.activity.id,
+        body['sectionId'] as int?,
+        body['teacherId'] as int,
       );
-      return;
-    }
 
-    final ok =
-        await widget.provider.updateActivity(widget.activity.id, body);
+      if (!mounted) return;
 
-    if (!mounted) return;
-
-    if (ok) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Activity updated successfully!'),
-          backgroundColor: Colors.green,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-      Navigator.pop(context, true);
+      if (ok) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Teacher assigned successfully!'),
+            backgroundColor: Colors.green,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+        Navigator.pop(context, true);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content:
+                Text(widget.provider.error ?? 'Failed to assign teacher.'),
+            backgroundColor: Colors.redAccent,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content:
-              Text(widget.provider.error ?? 'Failed to update activity.'),
-          backgroundColor: Colors.redAccent,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+      final body = _formKey.currentState?.buildBody();
+      if (body == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Please complete all required fields.'),
+            backgroundColor: Colors.redAccent,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+        return;
+      }
+
+      final ok =
+          await widget.provider.updateActivity(widget.activity.id, body);
+
+      if (!mounted) return;
+
+      if (ok) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Activity updated successfully!'),
+            backgroundColor: Colors.green,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+        Navigator.pop(context, true);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content:
+                Text(widget.provider.error ?? 'Failed to update activity.'),
+            backgroundColor: Colors.redAccent,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
     }
   }
 
@@ -123,6 +167,19 @@ class _EditActivityPageState extends State<EditActivityPage>
                   ),
                 ),
               ),
+              actions: [
+                TextButton(
+                  onPressed: _onSave,
+                  child: const Text(
+                    'Save',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ],
           body: ListenableBuilder(
@@ -135,7 +192,9 @@ class _EditActivityPageState extends State<EditActivityPage>
                 key: _formKey,
                 departments: widget.provider.departments,
                 allTeachers: widget.provider.allTeachers,
+                sections: widget.provider.sections,
                 initialData: widget.activity,
+                isCc: widget.isCc,
               );
             },
           ),

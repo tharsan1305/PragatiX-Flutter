@@ -11,11 +11,13 @@ import '../widgets/sticky_bottom_buttons.dart';
 class CreateActivityPage extends StatefulWidget {
   final ActivityProvider provider;
   final int subgroupId;
+  final bool isCc;
 
   const CreateActivityPage({
     super.key,
     required this.provider,
     required this.subgroupId,
+    this.isCc = false,
   });
 
   @override
@@ -134,6 +136,8 @@ class _CreateActivityPageState extends State<CreateActivityPage>
                 key: _formKey,
                 departments: widget.provider.departments,
                 allTeachers: widget.provider.allTeachers,
+                sections: widget.provider.sections,
+                isCc: widget.isCc,
               );
             },
           ),

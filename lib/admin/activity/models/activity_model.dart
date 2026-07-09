@@ -16,6 +16,7 @@ class ActivityModel {
   final String cap;
   final String type;
   final String justification;
+  final List<Map<String, dynamic>> assignmentSummary;
 
   const ActivityModel({
     required this.id,
@@ -31,6 +32,7 @@ class ActivityModel {
     required this.cap,
     required this.type,
     required this.justification,
+    required this.assignmentSummary,
   });
 
   factory ActivityModel.fromJson(Map<String, dynamic> json) {
@@ -42,6 +44,14 @@ class ActivityModel {
       evidenceList = raw.split(',').map((e) => e.trim()).toList();
     } else {
       evidenceList = [];
+    }
+
+    final rawSummary = json['assignmentSummary'];
+    final List<Map<String, dynamic>> summaryList;
+    if (rawSummary is List) {
+      summaryList = rawSummary.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+    } else {
+      summaryList = [];
     }
 
     return ActivityModel(
@@ -58,6 +68,7 @@ class ActivityModel {
       cap: (json['cap'] ?? '').toString(),
       type: json['type'] as String? ?? 'Individual',
       justification: json['justification'] as String? ?? '',
+      assignmentSummary: summaryList,
     );
   }
 
@@ -74,6 +85,7 @@ class ActivityModel {
         'cap': cap,
         'type': type,
         'justification': justification,
+        'assignmentSummary': assignmentSummary,
       };
 
   ActivityModel copyWith({
@@ -90,6 +102,7 @@ class ActivityModel {
     String? cap,
     String? type,
     String? justification,
+    List<Map<String, dynamic>>? assignmentSummary,
   }) {
     return ActivityModel(
       id: id ?? this.id,
@@ -105,6 +118,7 @@ class ActivityModel {
       cap: cap ?? this.cap,
       type: type ?? this.type,
       justification: justification ?? this.justification,
+      assignmentSummary: assignmentSummary ?? this.assignmentSummary,
     );
   }
 }

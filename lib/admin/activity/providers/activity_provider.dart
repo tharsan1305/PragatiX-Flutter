@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import '../models/activity_model.dart';
+import '../models/my_activity_model.dart';
 import '../repository/activity_repository.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -14,13 +15,31 @@ class ActivityProvider extends ChangeNotifier {
 
   // ── List state ────────────────────────────────────────────────────────────
   List<ActivityModel> activities = [];
+  List<MyActivityModel> myActivities = [];
   List<dynamic> departments = [];
   List<dynamic> allTeachers = [];
+  List<dynamic> sections = [];
 
   bool isLoadingActivities = false;
   bool isLoadingDependencies = false;
   bool isSaving = false;
   String? error;
+
+  // ── Load my activities ────────────────────────────────────────────────────
+  Future<void> loadMyActivities() async {
+    isLoadingActivities = true;
+    error = null;
+    notifyListeners();
+    try {
+      myActivities = await _repository.getMyActivities();
+    } catch (e) {
+      error = e.toString();
+      myActivities = [];
+    } finally {
+      isLoadingActivities = false;
+      notifyListeners();
+    }
+  }
 
   // ── Load activities ───────────────────────────────────────────────────────
   Future<void> loadActivities(int subgroupId) async {
@@ -38,20 +57,27 @@ class ActivityProvider extends ChangeNotifier {
     }
   }
 
-  // ── Load form dependencies (departments + teachers) ───────────────────────
+  // ── Load form dependencies (departments + teachers + sections) ───────────
   Future<void> loadDependencies() async {
     isLoadingDependencies = true;
     notifyListeners();
     try {
       departments = await _repository.getDepartments();
-      allTeachers = await _repository.getTeachers();
     } catch (_) {
       departments = [];
-      allTeachers = [];
-    } finally {
-      isLoadingDependencies = false;
-      notifyListeners();
     }
+    try {
+      allTeachers = await _repository.getTeachers();
+    } catch (_) {
+      allTeachers = [];
+    }
+    try {
+      sections = await _repository.getSections();
+    } catch (_) {
+      sections = [];
+    }
+    isLoadingDependencies = false;
+    notifyListeners();
   }
 
   // ── CRUD ──────────────────────────────────────────────────────────────────
@@ -100,6 +126,23 @@ class ActivityProvider extends ChangeNotifier {
       // Optimistic removal even if API fails
     } finally {
       activities = activities.where((a) => a.id != activityId).toList();
+      notifyListeners();
+    }
+  }
+
+  Future<bool> assignActivity(
+      int activityId, int? sectionId, int teacherId) async {
+    isSaving = true;
+    error = null;
+    notifyListeners();
+    try {
+      await _repository.assign(activityId, sectionId, teacherId);
+      return true;
+    } catch (e) {
+      error = e.toString();
+      return false;
+    } finally {
+      isSaving = false;
       notifyListeners();
     }
   }

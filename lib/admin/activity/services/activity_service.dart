@@ -104,4 +104,88 @@ class ActivityService {
           'Failed to delete activity (status ${response.statusCode})');
     }
   }
+
+  Future<List<dynamic>> fetchSections() async {
+    final response = await http.get(
+      Uri.parse('${ActivityConstants.baseUrl}/sections'),
+      headers: _authHeaders,
+    );
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body) as Map<String, dynamic>;
+      if (data['success'] == true) {
+        return (data['data'] as List?) ?? [];
+      }
+    }
+    throw Exception('Failed to fetch sections (status ${response.statusCode})');
+  }
+
+  Future<Map<String, dynamic>> assignActivity(
+      int activityId, int? sectionId, int teacherId) async {
+    final response = await http.post(
+      Uri.parse('${ActivityConstants.baseUrl}/activities/$activityId/assign'),
+      headers: _jsonHeaders,
+      body: jsonEncode({
+        'sectionId': sectionId,
+        'teacherId': teacherId,
+      }),
+    );
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      return jsonDecode(response.body) as Map<String, dynamic>;
+    }
+    final data = jsonDecode(response.body) as Map<String, dynamic>;
+    throw Exception(data['message'] ?? 'Failed to assign activity');
+  }
+
+  Future<List<dynamic>> fetchMyActivities() async {
+    final response = await http.get(
+      Uri.parse('${ActivityConstants.baseUrl}/my-activities'),
+      headers: _authHeaders,
+    );
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body) as Map<String, dynamic>;
+      if (data['success'] == true) {
+        return (data['data'] as List?) ?? [];
+      }
+    }
+    throw Exception('Failed to fetch my activities (status ${response.statusCode})');
+  }
+
+  Future<Map<String, dynamic>> fetchExecutionStudents(int activityId) async {
+    final rootUrl = ActivityConstants.baseUrl.replaceAll('/admin', '');
+    final response = await http.get(
+      Uri.parse('$rootUrl/my-activities/$activityId/students'),
+      headers: _authHeaders,
+    );
+    final data = jsonDecode(response.body) as Map<String, dynamic>;
+    if (response.statusCode == 200 && data['success'] == true) {
+      return data['data'] as Map<String, dynamic>;
+    }
+    throw Exception(data['message'] ?? 'Failed to load execution students');
+  }
+
+  Future<void> awardXp({
+    required int studentId,
+    required int activityId,
+    required int assignmentId,
+    required int xp,
+    required String remarks,
+  }) async {
+    final rootUrl = ActivityConstants.baseUrl.replaceAll('/admin', '');
+    final response = await http.post(
+      Uri.parse('$rootUrl/student-xp/award'),
+      headers: _jsonHeaders,
+      body: jsonEncode({
+        'studentId': studentId,
+        'activityId': activityId,
+        'assignmentId': assignmentId,
+        'xp': xp,
+        'remarks': remarks,
+      }),
+    );
+    final data = jsonDecode(response.body) as Map<String, dynamic>;
+    if (response.statusCode == 200 && data['success'] == true) {
+      return;
+    }
+    throw Exception(data['message'] ?? 'Failed to award XP');
+  }
 }
