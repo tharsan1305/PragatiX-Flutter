@@ -127,7 +127,7 @@ class _CaptainGroupTabState extends State<CaptainGroupTab> {
   Future<void> _removeMember(String studentId, String name) async {
     try {
       final response = await http.post(
-        Uri.parse("http://10.0.2.2:8080/api/v1/teams/my-team/remove-member?studentId=$studentId"),
+        Uri.parse("http://10.0.2.2:8080/api/v1/teams/my-team/remove-request?studentId=$studentId"),
         headers: {
           "Authorization": "Bearer ${widget.token}",
         },
@@ -136,7 +136,7 @@ class _CaptainGroupTabState extends State<CaptainGroupTab> {
       final data = json.decode(response.body);
       if (response.statusCode == 200 && data["success"] == true) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Removed $name successfully!'), backgroundColor: Colors.green),
+          SnackBar(content: Text('Removal request for $name sent to CC!'), backgroundColor: Colors.green),
         );
         _fetchMyGroup();
       } else {
@@ -248,73 +248,7 @@ class _CaptainGroupTabState extends State<CaptainGroupTab> {
     );
   }
 
-  void _showUpdateLimitDialog() {
-    final limitCtrl = TextEditingController(text: (_groupData?["teamCapacity"] ?? 10).toString());
 
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text("Update Group Limit"),
-          content: TextField(
-            controller: limitCtrl,
-            decoration: const InputDecoration(
-              labelText: "Max Size Limit",
-            ),
-            keyboardType: TextInputType.number,
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text("Cancel"),
-            ),
-            ElevatedButton(
-              onPressed: () async {
-                final newSize = int.tryParse(limitCtrl.text);
-                if (newSize == null || newSize <= 0) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Please enter a valid positive number')),
-                  );
-                  return;
-                }
-                Navigator.pop(context);
-                await _updateGroupLimit(newSize);
-              },
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.amber),
-              child: const Text("Update"),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  Future<void> _updateGroupLimit(int newSize) async {
-    try {
-      final response = await http.put(
-        Uri.parse("http://10.0.2.2:8080/api/v1/teams/my-team/limit?size=$newSize"),
-        headers: {
-          "Authorization": "Bearer ${widget.token}",
-        },
-      );
-
-      final data = json.decode(response.body);
-      if (response.statusCode == 200 && data["success"] == true) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Group limit updated successfully!'), backgroundColor: Colors.green),
-        );
-        _fetchMyGroup();
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(data["message"] ?? 'Failed to update group limit'), backgroundColor: Colors.redAccent),
-        );
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e'), backgroundColor: Colors.orange),
-      );
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -340,11 +274,6 @@ class _CaptainGroupTabState extends State<CaptainGroupTab> {
         ),
         backgroundColor: Colors.amber, // Captain Color
         actions: hasGroup ? [
-          IconButton(
-            icon: const Icon(Icons.settings_outlined),
-            onPressed: _showUpdateLimitDialog,
-            tooltip: "Change Group Limit",
-          ),
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: _fetchMyGroup,

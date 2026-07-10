@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:spdms_app/providers/xp_provider.dart';
+import '../../captain/tabs/captain_group_tab.dart';
 
 class DashboardTab extends StatefulWidget {
   final String token;
@@ -138,6 +139,20 @@ class _DashboardTabState extends State<DashboardTab> {
         ),
         backgroundColor: const Color(0xFF1E293B),
         elevation: 0,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.groups_rounded, color: Colors.white),
+            tooltip: 'My Group',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => CaptainGroupTab(token: widget.token),
+                ),
+              );
+            },
+          ),
+        ],
       ),
       body: SingleChildScrollView(
         physics: const BouncingScrollPhysics(),

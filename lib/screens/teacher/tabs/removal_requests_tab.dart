@@ -14,13 +14,63 @@ class _RemovalRequestsTabState extends State<RemovalRequestsTab> {
   bool _isBadgeLoading = true;
   List<dynamic> _pendingBadgeClaims = [];
 
-  // Existing dynamic data representing pending group removal requests (populated from backend when endpoint is available)
-  List<Map<String, String>> pendingRemovalRequests = [];
+  // Dynamic data representing pending group removal requests
+  List<dynamic> pendingRemovalRequests = [];
+  bool _isRemovalsLoading = true;
 
   @override
   void initState() {
     super.initState();
     _loadPendingBadgeClaims();
+    _fetchRemovalRequests();
+  }
+
+  Future<void> _fetchRemovalRequests() async {
+    setState(() => _isRemovalsLoading = true);
+    try {
+      final response = await http.get(
+        Uri.parse("http://10.0.2.2:8080/api/v1/teams/removal-requests/pending"),
+        headers: {"Authorization": "Bearer ${widget.token}"},
+      );
+      final data = json.decode(response.body);
+      if (response.statusCode == 200 && data["success"] == true) {
+        setState(() {
+          pendingRemovalRequests = data["data"] ?? [];
+        });
+      }
+    } catch (e) {
+      debugPrint("Error fetching removal requests: $e");
+    } finally {
+      setState(() => _isRemovalsLoading = false);
+    }
+  }
+
+  Future<void> _handleRemovalRequest(int id, bool approve) async {
+    try {
+      final endpoint = approve ? "approve" : "reject";
+      final response = await http.put(
+        Uri.parse("http://10.0.2.2:8080/api/v1/teams/removal-requests/$id/$endpoint"),
+        headers: {"Authorization": "Bearer ${widget.token}"},
+      );
+      final data = json.decode(response.body);
+      if (response.statusCode == 200 && data["success"] == true) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Request ${approve ? "approved" : "rejected"} successfully'),
+            backgroundColor: approve ? Colors.green : Colors.orange,
+          ),
+        );
+        _fetchRemovalRequests();
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(data["message"] ?? 'Failed to update request'), backgroundColor: Colors.redAccent),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: $e'), backgroundColor: Colors.orange),
+      );
+    }
   }
 
   Future<void> _loadPendingBadgeClaims() async {
@@ -321,6 +371,10 @@ class _RemovalRequestsTabState extends State<RemovalRequestsTab> {
 
   // ── TAB 2: GROUP REMOVALS ────────────────────────────────────────
   Widget _buildGroupRemovalsTab() {
+    if (_isRemovalsLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
     if (pendingRemovalRequests.isEmpty) {
       return const Center(
         child: Column(
@@ -352,32 +406,18 @@ class _RemovalRequestsTabState extends State<RemovalRequestsTab> {
             title: Text("Remove ${request['studentName']}", style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
             subtitle: Padding(
               padding: const EdgeInsets.only(top: 8.0),
-              child: Text("From: ${request['groupName']}\nReason: ${request['reason']}", style: TextStyle(color: Colors.grey.shade700)),
+              child: Text("From: ${request['teamName']}\nRequested by: ${request['captainName']}\nReason: ${request['reason']}", style: TextStyle(color: Colors.grey.shade700)),
             ),
             trailing: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 IconButton(
                   icon: const Icon(Icons.check_circle, color: Colors.green, size: 28),
-                  onPressed: () {
-                    setState(() {
-                      pendingRemovalRequests.removeAt(index);
-                    });
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Request Approved!'), backgroundColor: Colors.green),
-                    );
-                  },
+                  onPressed: () => _handleRemovalRequest(request['id'], true),
                 ),
                 IconButton(
                   icon: const Icon(Icons.cancel, color: Colors.red, size: 28),
-                  onPressed: () {
-                    setState(() {
-                      pendingRemovalRequests.removeAt(index);
-                    });
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Request Rejected!'), backgroundColor: Colors.redAccent),
-                    );
-                  },
+                  onPressed: () => _handleRemovalRequest(request['id'], false),
                 ),
               ],
             ),

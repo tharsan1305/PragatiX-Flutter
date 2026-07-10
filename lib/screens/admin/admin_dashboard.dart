@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'tabs/overview_tab.dart';
-import 'tabs/students_tab.dart';
-import 'tabs/teachers_tab.dart';
-import 'tabs/departments_tab.dart';
+
 import 'tabs/activity_tab.dart';
 import 'tabs/profile_tab.dart';
 import '../teacher/tabs/removal_requests_tab.dart';
@@ -24,9 +22,6 @@ class _AdminDashboardState extends State<AdminDashboard> {
     super.initState();
     _tabs = [
       OverviewTab(token: widget.token),
-      StudentsTab(token: widget.token),
-      TeachersTab(token: widget.token),
-      DepartmentsTab(token: widget.token),
       ActivityTab(token: widget.token),
       TeacherGroupManagementTab(token: widget.token),
       RemovalRequestsTab(token: widget.token),
@@ -49,18 +44,6 @@ class _AdminDashboardState extends State<AdminDashboard> {
           BottomNavigationBarItem(
             icon: Icon(Icons.dashboard_rounded),
             label: 'Overview',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.people_alt_rounded),
-            label: 'Students',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.school_rounded),
-            label: 'Teachers',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.account_balance_rounded),
-            label: 'Depts',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.local_activity_rounded),

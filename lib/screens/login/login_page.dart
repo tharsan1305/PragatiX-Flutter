@@ -122,7 +122,7 @@ class _LoginPageState extends State<LoginPage> {
             Navigator.pushReplacement(
               context,
               MaterialPageRoute(
-                builder: (context) => CaptainDashboardPage(token: token), // Go to Captain page
+                builder: (context) => StudentDashboardPage(token: token),
               ),
             );
           } else {

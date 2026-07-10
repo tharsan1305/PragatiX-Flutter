@@ -167,9 +167,37 @@ class _TeacherGroupManagementTabState extends State<TeacherGroupManagementTab> {
                                   "Captain: $captainName  •  $memberCount/$size members",
                                   style: const TextStyle(fontSize: 12, color: Colors.grey),
                                 ),
-                                children: (g["teamMembers"] as List? ?? []).map<Widget>((m) {
-                                  final isCaptain = m["studentId"] == g["captainId"];
-                                  return ListTile(
+                                children: [
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                                    child: Row(
+                                      mainAxisAlignment: MainAxisAlignment.end,
+                                      children: [
+                                        ElevatedButton.icon(
+                                          onPressed: () => _showAddMemberDialog(g["teamId"]),
+                                          icon: const Icon(Icons.person_add, size: 16),
+                                          label: const Text("Add Member"),
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: Colors.green.shade50,
+                                            foregroundColor: Colors.green.shade700,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        ElevatedButton.icon(
+                                          onPressed: () => _showUpdateLimitDialog(g["teamId"], size),
+                                          icon: const Icon(Icons.edit, size: 16),
+                                          label: const Text("Edit Limit"),
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: Colors.indigo.shade50,
+                                            foregroundColor: Colors.indigo,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  ...(g["teamMembers"] as List? ?? []).map<Widget>((m) {
+                                    final isCaptain = m["studentId"] == g["captainId"];
+                                    return ListTile(
                                     dense: true,
                                     leading: CircleAvatar(
                                       radius: 16,
@@ -185,14 +213,25 @@ class _TeacherGroupManagementTabState extends State<TeacherGroupManagementTab> {
                                       "${m["studentId"]} • ${m["department"] ?? ''} ${m["year"] ?? ''} ${m["section"] ?? ''}".trim(),
                                       style: const TextStyle(fontSize: 12),
                                     ),
-                                    trailing: isCaptain
-                                        ? const Chip(
+                                    trailing: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        if (isCaptain)
+                                          const Chip(
                                             label: Text("Captain", style: TextStyle(fontSize: 10)),
                                             backgroundColor: Colors.amber,
-                                          )
-                                        : null,
+                                          ),
+                                        if (!isCaptain)
+                                          IconButton(
+                                            icon: const Icon(Icons.person_remove, color: Colors.red, size: 20),
+                                            tooltip: "Remove Member",
+                                            onPressed: () => _removeMemberByCC(g["teamId"], m["studentId"], m["fullName"] ?? "Student"),
+                                          ),
+                                      ],
+                                    ),
                                   );
-                                }).toList(),
+                                  }).toList(),
+                                ],
                               ),
                             );
                           },
@@ -222,5 +261,163 @@ class _TeacherGroupManagementTabState extends State<TeacherGroupManagementTab> {
         ),
       ),
     );
+  }
+
+  void _showUpdateLimitDialog(int teamId, int currentSize) {
+    final limitCtrl = TextEditingController(text: currentSize.toString());
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text("Update Group Limit"),
+          content: TextField(
+            controller: limitCtrl,
+            decoration: const InputDecoration(
+              labelText: "Max Size Limit",
+            ),
+            keyboardType: TextInputType.number,
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text("Cancel"),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                final newSize = int.tryParse(limitCtrl.text);
+                if (newSize == null || newSize <= 0) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Please enter a valid positive number')),
+                  );
+                  return;
+                }
+                Navigator.pop(context);
+                await _updateGroupLimit(teamId, newSize);
+              },
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.indigo),
+              child: const Text("Update"),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _updateGroupLimit(int teamId, int newSize) async {
+    try {
+      final response = await http.put(
+        Uri.parse("http://10.0.2.2:8080/api/v1/teams/$teamId/limit?size=$newSize"),
+        headers: {
+          "Authorization": "Bearer ${widget.token}",
+        },
+      );
+
+      final data = json.decode(response.body);
+      if (response.statusCode == 200 && data["success"] == true) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Group limit updated successfully!'), backgroundColor: Colors.green),
+        );
+        _fetchGroups();
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(data["message"] ?? 'Failed to update group limit'), backgroundColor: Colors.redAccent),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: $e'), backgroundColor: Colors.orange),
+      );
+    }
+  }
+
+  void _showAddMemberDialog(int teamId) {
+    final studentIdCtrl = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text("Add Member"),
+          content: TextField(
+            controller: studentIdCtrl,
+            decoration: const InputDecoration(
+              labelText: "Student ID (e.g. 24CS01)",
+              border: OutlineInputBorder(),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text("Cancel"),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                final studentId = studentIdCtrl.text.trim();
+                if (studentId.isNotEmpty) {
+                  Navigator.pop(context);
+                  _addMemberByCC(teamId, studentId);
+                }
+              },
+              child: const Text("Add"),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _addMemberByCC(int teamId, String studentId) async {
+    try {
+      final response = await http.post(
+        Uri.parse("http://10.0.2.2:8080/api/v1/teams/$teamId/add-member?studentId=$studentId"),
+        headers: {
+          "Authorization": "Bearer ${widget.token}",
+        },
+      );
+
+      final data = json.decode(response.body);
+      if (response.statusCode == 200 && data["success"] == true) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Member added successfully!'), backgroundColor: Colors.green),
+        );
+        _fetchGroups();
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(data["message"] ?? 'Failed to add member'), backgroundColor: Colors.redAccent),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: $e'), backgroundColor: Colors.orange),
+      );
+    }
+  }
+
+  Future<void> _removeMemberByCC(int teamId, String studentId, String name) async {
+    try {
+      final response = await http.post(
+        Uri.parse("http://10.0.2.2:8080/api/v1/teams/$teamId/remove-member?studentId=$studentId"),
+        headers: {
+          "Authorization": "Bearer ${widget.token}",
+        },
+      );
+
+      final data = json.decode(response.body);
+      if (response.statusCode == 200 && data["success"] == true) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Removed $name successfully!'), backgroundColor: Colors.green),
+        );
+        _fetchGroups();
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(data["message"] ?? 'Failed to remove member'), backgroundColor: Colors.redAccent),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: $e'), backgroundColor: Colors.orange),
+      );
+    }
   }
 }

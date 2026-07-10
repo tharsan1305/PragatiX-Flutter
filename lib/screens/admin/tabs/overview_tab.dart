@@ -1,6 +1,9 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'students_tab.dart';
+import 'teachers_tab.dart';
+import 'departments_tab.dart';
 
 class OverviewTab extends StatefulWidget {
   final String token;
@@ -121,18 +124,21 @@ class _OverviewTabState extends State<OverviewTab> {
                           count: totalStudents.toString(),
                           icon: Icons.people_alt_rounded,
                           color: const Color(0xFF4A90E2),
+                          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => StudentsTab(token: widget.token))),
                         ),
                         _buildStatCard(
                           title: "Teachers",
                           count: totalTeachers.toString(),
                           icon: Icons.school_rounded,
                           color: const Color(0xFF34A853),
+                          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => TeachersTab(token: widget.token))),
                         ),
                         _buildStatCard(
                           title: "Departments",
                           count: totalDepartments.toString(),
                           icon: Icons.account_balance_rounded,
                           color: const Color(0xFFFBBC05),
+                          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => DepartmentsTab(token: widget.token))),
                         ),
                         _buildStatCard(
                           title: "Alerts/Actions",
@@ -182,12 +188,16 @@ class _OverviewTabState extends State<OverviewTab> {
     required String count,
     required IconData icon,
     required Color color,
+    VoidCallback? onTap,
   }) {
     return Card(
       elevation: 4,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -229,6 +239,7 @@ class _OverviewTabState extends State<OverviewTab> {
             ),
           ],
         ),
+      ),
       ),
     );
   }
