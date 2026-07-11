@@ -40,18 +40,18 @@ class ActivityDetailsPage extends StatelessWidget {
                 : 'No description',
           ),
           _DetailCard(
+            icon: Icons.category_rounded,
+            title: 'XP Category',
+            content: activity.xpCategory.isNotEmpty
+                ? activity.xpCategory
+                : 'Academic',
+          ),
+          _DetailCard(
             icon: Icons.schedule_rounded,
             title: 'Frequency',
             content: activity.frequency.isNotEmpty
                 ? activity.frequency
                 : 'Not specified',
-          ),
-          _DetailCard(
-            icon: Icons.apartment_rounded,
-            title: 'Owner Department',
-            content: activity.ownerDepartment.isNotEmpty
-                ? activity.ownerDepartment
-                : 'All Departments',
           ),
           _DetailCard(
             icon: Icons.person_outline_rounded,
@@ -81,9 +81,8 @@ class ActivityDetailsPage extends StatelessWidget {
               Expanded(
                 child: _DetailCard(
                   icon: Icons.lock_clock_rounded,
-                  title: 'Weekly Cap',
-                  content:
-                      activity.cap.isNotEmpty ? activity.cap : '—',
+                  title: 'Cap',
+                  content: activity.cap > 0 ? activity.cap.toString() : '—',
                   color: Colors.teal,
                 ),
               ),

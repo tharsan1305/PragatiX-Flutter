@@ -2,12 +2,8 @@ import 'package:flutter/material.dart';
 import '../models/activity_model.dart';
 import '../utils/validators.dart';
 import 'activity_section.dart';
-import 'frequency_selector.dart';
 import 'evidence_selector.dart';
-import 'xp_selector.dart';
-import 'cap_selector.dart';
 import 'type_selector.dart';
-import 'owner_selector.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Shared activity form used by both CreateActivityPage and EditActivityPage.
@@ -15,7 +11,6 @@ import 'owner_selector.dart';
 // ─────────────────────────────────────────────────────────────────────────────
 
 class ActivityForm extends StatefulWidget {
-  final List<dynamic> departments;
   final List<dynamic> allTeachers;
   final List<dynamic> sections;
 
@@ -25,7 +20,6 @@ class ActivityForm extends StatefulWidget {
 
   const ActivityForm({
     super.key,
-    required this.departments,
     required this.allTeachers,
     required this.sections,
     this.initialData,
@@ -49,17 +43,41 @@ class ActivityFormState extends State<ActivityForm> {
   final _descCtrl = TextEditingController();
   final _justCtrl = TextEditingController();
   final _teacherSearchCtrl = TextEditingController();
+  final _capCtrl = TextEditingController(text: '1');
+  final _displayOrderCtrl = TextEditingController(text: '0');
+  final _awardXpCtrl = TextEditingController(text: '0');
+  String _selectedStatus = 'ACTIVE';
 
   // ── Selection state ───────────────────────────────────────────────────────
-  String? _selectedFrequency;
-  dynamic _selectedDept;
   dynamic _selectedTeacher;
   dynamic _selectedSection;
   Set<String> _selectedEvidence = {};
-  String? _selectedXp;
-  String? _selectedCap;
+  String _selectedAwardType = 'Fixed XP';
+  String _selectedAwardFrequency = 'One Time';
+  Set<String> _selectedAwardDays = {};
   String _selectedType = 'Individual';
   String _teacherSearchQuery = '';
+  String? _selectedXpCategory;
+  static const List<String> _xpCategories = [
+    'Academic',
+    'Skill',
+    'Communication',
+    'Leadership',
+    'Discipline',
+    'Placement',
+    'Innovation',
+    'Community',
+    'Sports',
+    'Cultural',
+  ];
+
+  static const List<String> _awardFrequencies = [
+    'One Time', 'Daily', 'Weekly', 'Monthly', 'Manual',
+  ];
+
+  static const List<String> _workingDays = [
+    'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday',
+  ];
 
   bool _submitted = false;
 
@@ -72,81 +90,58 @@ class ActivityFormState extends State<ActivityForm> {
       _nameCtrl.text = d.name;
       _descCtrl.text = d.description;
       _justCtrl.text = d.justification;
-      _selectedFrequency = d.frequency.isNotEmpty ? d.frequency : null;
-      _selectedXp = d.xp.isNotEmpty ? d.xp : null;
-      _selectedCap = d.cap.isNotEmpty ? d.cap : null;
+      _capCtrl.text = d.cap.toString();
+      _displayOrderCtrl.text = d.displayOrder.toString();
+      _selectedStatus = d.status.isNotEmpty ? d.status : 'ACTIVE';
+      _awardXpCtrl.text = d.awardXp.toString();
+      _selectedAwardType = d.awardType.isNotEmpty ? d.awardType : 'Fixed XP';
+      _selectedAwardFrequency = d.awardFrequency.isNotEmpty ? d.awardFrequency : 'One Time';
+      _selectedAwardDays = Set<String>.from(d.awardDays);
       _selectedType = d.type.isNotEmpty ? d.type : 'Individual';
       _selectedEvidence = Set<String>.from(d.evidence);
-
-      // Match department object
-      if (d.ownerDepartment.isNotEmpty || d.departmentId.isNotEmpty) {
-        try {
-          _selectedDept = widget.departments.firstWhere(
-            (dep) =>
-                dep['name'].toString() == d.ownerDepartment ||
-                dep['id'].toString() == d.departmentId,
-          );
-        } catch (_) {}
-      }
-
-      // Match teacher object
-      if (_selectedDept != null && d.teacherId.isNotEmpty) {
-        final filtered = _filteredTeachers;
-        try {
-          _selectedTeacher = filtered.firstWhere(
-            (t) => t['id'].toString() == d.teacherId,
-          );
-        } catch (_) {}
-      }
+      _selectedXpCategory = _normalizeXpCategory(d.xpCategory);
     }
   }
 
   @override
   void dispose() {
     _nameCtrl.dispose();
+    _capCtrl.dispose();
+    _displayOrderCtrl.dispose();
     _descCtrl.dispose();
     _justCtrl.dispose();
     _teacherSearchCtrl.dispose();
+    _awardXpCtrl.dispose();
     super.dispose();
+  }
+
+  String? _normalizeXpCategory(String? cat) {
+    if (cat == null || cat.trim().isEmpty) return null;
+    final normalized = cat.trim().toLowerCase();
+    for (final key in _xpCategories) {
+      if (key.toLowerCase() == normalized) {
+        return key;
+      }
+    }
+    return null;
   }
 
   // ── Helpers ───────────────────────────────────────────────────────────────
   List<dynamic> get _searchedTeachers {
-    final filtered = _filteredTeachers;
     if (_teacherSearchQuery.trim().isEmpty) {
-      return filtered;
+      return widget.allTeachers;
     }
     final query = _teacherSearchQuery.toLowerCase();
-    return filtered.where((t) {
+    return widget.allTeachers.where((t) {
       final name = (t['fullName'] as String? ?? '').toLowerCase();
       final username = (t['username'] as String? ?? '').toLowerCase();
       final dept = (t['departmentName'] as String? ?? '').toLowerCase();
       return name.contains(query) || username.contains(query) || dept.contains(query);
     }).toList();
   }
-  List<dynamic> get _filteredTeachers {
-    if (_selectedDept == null) return [];
-    final deptId = _selectedDept['id'];
-    if (deptId == 'all') {
-      return widget.allTeachers;
-    }
-    final deptName = (_selectedDept['name'] as String).toLowerCase();
-    return widget.allTeachers.where((t) {
-      final tid = t['departmentId'];
-      final tname = (t['departmentName'] as String? ?? '').toLowerCase();
-      return (tid != null && deptId != null && tid.toString() == deptId.toString()) || tname == deptName;
-    }).toList();
-  }
 
   List<dynamic> get _filteredSections {
-    if (_selectedDept == null) return [];
-    final deptId = _selectedDept['id'];
-    final deptName = (_selectedDept['name'] as String).toLowerCase();
-    return widget.sections.where((sec) {
-      final dep = sec['department'];
-      if (dep == null) return false;
-      return dep['id'] == deptId || (dep['name'] as String).toLowerCase() == deptName;
-    }).toList();
+    return widget.sections;
   }
 
   List<Widget> _buildAdminAssignmentSummaryRows() {
@@ -265,29 +260,34 @@ class ActivityFormState extends State<ActivityForm> {
   Map<String, dynamic>? buildBody() {
     setState(() => _submitted = true);
     final formOk = _formKey.currentState?.validate() ?? false;
-    final freqOk = _selectedFrequency != null;
     final evidOk = _selectedEvidence.isNotEmpty;
-    final xpOk = _selectedXp != null;
-    final capOk = _selectedCap != null;
-    final deptOk = _selectedDept != null;
+    final catOk = _selectedXpCategory != null;
+    final weeklyDaysOk = _selectedAwardFrequency != 'Weekly' || _selectedAwardDays.isNotEmpty;
 
-    if (!formOk || !freqOk || !evidOk || !xpOk || !capOk || !deptOk) {
+    if (!formOk || !evidOk || !catOk || !weeklyDaysOk) {
       return null;
     }
+
+    final int cap = int.tryParse(_capCtrl.text.trim()) ?? 1;
+    final bool capLocked = _selectedAwardFrequency == 'One Time' || _selectedAwardFrequency == 'Manual';
 
     return {
       'name': _nameCtrl.text.trim(),
       'description': _descCtrl.text.trim(),
-      'frequency': _selectedFrequency,
-      'ownerDepartment': _selectedDept?['name']?.toString() ?? '',
-      'departmentId': _selectedDept?['id']?.toString() ?? '',
       'teacherId': '',
       'ownerSubrole': '',
       'evidence': _selectedEvidence.toList(),
-      'xp': _selectedXp,
-      'cap': _selectedCap,
+      'xp': _awardXpCtrl.text.trim(),
       'type': _selectedType,
       'justification': _justCtrl.text.trim(),
+      'xpCategory': _selectedXpCategory,
+      'cap': capLocked ? 1 : cap,
+      'awardFrequency': _selectedAwardFrequency,
+      'awardDays': _selectedAwardFrequency == 'Weekly' ? _selectedAwardDays.toList() : [],
+      'displayOrder': int.tryParse(_displayOrderCtrl.text.trim()) ?? 0,
+      'status': _selectedStatus,
+      'awardXp': int.tryParse(_awardXpCtrl.text.trim()) ?? 0,
+      'awardType': _selectedAwardType,
     };
   }
 
@@ -329,71 +329,15 @@ class ActivityFormState extends State<ActivityForm> {
                   const SizedBox(height: 16),
                   ActivitySection(
                     number: (stepNum++).toString(),
-                    title: 'Frequency',
-                    child: FrequencySelector(
-                      selected: _selectedFrequency,
-                      onChanged: (v) => setState(() => _selectedFrequency = v),
-                      showError: _submitted,
-                    ),
+                    title: 'Award Rules',
+                    child: _buildAwardRulesSection(),
                   ),
                 ],
               ),
             ),
           ),
           const SizedBox(height: 16),
-          if (!widget.isCc)
-            ActivitySection(
-              number: (stepNum++).toString(),
-              title: widget.initialData == null ? 'Department' : 'Department Assignment Summary',
-              child: widget.initialData == null
-                  ? OwnerSelector(
-                      departments: widget.departments,
-                      allTeachers: widget.allTeachers,
-                      selectedDept: _selectedDept,
-                      selectedTeacher: _selectedTeacher,
-                      showTeacher: false,
-                      onDeptChanged: (val) {
-                        setState(() {
-                          _selectedDept = val;
-                          _selectedTeacher = null;
-                        });
-                      },
-                      onTeacherChanged: (val) =>
-                          setState(() => _selectedTeacher = val),
-                      showError: _submitted,
-                    )
-                  : Card(
-                      elevation: 0,
-                      color: Colors.grey.shade50,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
-                        side: BorderSide(color: Colors.grey.shade200),
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                const Icon(Icons.apartment_rounded, color: _primary, size: 22),
-                                const SizedBox(width: 8),
-                                Text(
-                                  _selectedDept?['name']?.toString() ?? 'Unassigned',
-                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: _dark),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 12),
-                            const Divider(height: 1),
-                            const SizedBox(height: 12),
-                            ..._buildAdminAssignmentSummaryRows(),
-                          ],
-                        ),
-                      ),
-                    ),
-            )
-          else
+          if (widget.isCc)
             ActivitySection(
               number: (stepNum++).toString(),
               title: 'Assign Teacher',
@@ -431,44 +375,8 @@ class ActivityFormState extends State<ActivityForm> {
                     style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: _dark),
                   ),
                   const SizedBox(height: 10),
-                  Builder(
-                    builder: (context) {
-                      final ccDeps = [
-                        {'id': 'all', 'name': 'Individual Staff'},
-                        ...widget.departments,
-                      ];
-                      return InputDecorator(
-                        decoration: _deco('Department', Icons.apartment_rounded).copyWith(
-                          errorText: (_submitted && _selectedDept == null) ? 'Department is required' : null,
-                        ),
-                        child: DropdownButton<dynamic>(
-                          value: _selectedDept != null
-                              ? ccDeps.firstWhere(
-                                  (d) => d['id'] == _selectedDept['id'] || d['name'] == _selectedDept['name'],
-                                  orElse: () => null,
-                                )
-                              : null,
-                          isExpanded: true,
-                          underline: const SizedBox.shrink(),
-                          icon: const Icon(Icons.expand_more_rounded, color: _primary),
-                          hint: const Text('Select department', style: TextStyle(fontSize: 14)),
-                          items: ccDeps.map((d) {
-                            return DropdownMenuItem<dynamic>(
-                              value: d,
-                              child: Text(d['name'].toString(), style: const TextStyle(fontSize: 14, color: _dark)),
-                            );
-                          }).toList(),
-                          onChanged: (val) {
-                            setState(() {
-                              _selectedDept = val;
-                              _selectedTeacher = null;
-                              _selectedSection = null;
-                            });
-                          },
-                        ),
-                      );
-                    }
-                  ),
+                  // Teacher search (no department filter needed for CC — all teachers visible)
+                  const SizedBox.shrink(),
                   const SizedBox(height: 16),
                   if (hasSections) ...[
                     InputDecorator(
@@ -602,86 +510,86 @@ class ActivityFormState extends State<ActivityForm> {
                                 itemCount: list.length,
                                 separatorBuilder: (_, __) => const SizedBox(height: 12),
                                 itemBuilder: (context, idx) {
-                                  final t = list[idx];
-                                  final isSelected = _selectedTeacher != null && _selectedTeacher['id'] == t['id'];
-                                  final deptName = t['departmentName'] ?? 'No Department';
-                                  final uName = t['username'] ?? '';
-                                  final fullName = t['fullName'] ?? '';
+                                    final t = list[idx];
+                                    final isSelected = _selectedTeacher != null && _selectedTeacher['id'] == t['id'];
+                                    final deptName = t['departmentName'] ?? 'No Department';
+                                    final uName = t['username'] ?? '';
+                                    final fullName = t['fullName'] ?? '';
 
-                                  return Card(
-                                    margin: EdgeInsets.zero,
-                                    elevation: isSelected ? 2 : 1,
-                                    shadowColor: Colors.black.withOpacity(0.08),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(14),
-                                      side: BorderSide(
-                                        color: isSelected ? Colors.blue : Colors.grey.shade200,
-                                        width: isSelected ? 1.5 : 1,
-                                      ),
-                                    ),
-                                    color: isSelected ? Colors.blue.shade50 : Colors.white,
-                                    child: InkWell(
-                                      borderRadius: BorderRadius.circular(14),
-                                      onTap: () {
-                                        setState(() {
-                                          _selectedTeacher = t;
-                                        });
-                                      },
-                                      child: Padding(
-                                        padding: const EdgeInsets.all(16),
-                                        child: Row(
-                                          children: [
-                                            CircleAvatar(
-                                              radius: 24,
-                                              backgroundColor: _primary.withOpacity(0.1),
-                                              child: const Icon(
-                                                Icons.person_rounded,
-                                                size: 26,
-                                                color: _primary,
-                                              ),
-                                            ),
-                                            const SizedBox(width: 14),
-                                            Expanded(
-                                              child: Column(
-                                                crossAxisAlignment: CrossAxisAlignment.start,
-                                                children: [
-                                                  Text(
-                                                    fullName,
-                                                    style: const TextStyle(
-                                                      fontSize: 17,
-                                                      fontWeight: FontWeight.w600,
-                                                      color: _dark,
-                                                    ),
-                                                  ),
-                                                  const SizedBox(height: 4),
-                                                  Text(
-                                                    '$uName • $deptName',
-                                                    style: TextStyle(
-                                                      fontSize: 14,
-                                                      color: Colors.grey.shade600,
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                            const SizedBox(width: 12),
-                                            if (isSelected)
-                                              const Icon(
-                                                Icons.check_circle_rounded,
-                                                color: Colors.green,
-                                                size: 24,
-                                              )
-                                            else
-                                              Icon(
-                                                Icons.arrow_forward_ios_rounded,
-                                                color: Colors.grey.shade400,
-                                                size: 16,
-                                              ),
-                                          ],
+                                    return Card(
+                                      margin: EdgeInsets.zero,
+                                      elevation: isSelected ? 2 : 1,
+                                      shadowColor: Colors.black.withOpacity(0.08),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(14),
+                                        side: BorderSide(
+                                          color: isSelected ? Colors.blue : Colors.grey.shade200,
+                                          width: isSelected ? 1.5 : 1,
                                         ),
                                       ),
-                                    ),
-                                  );
+                                      color: isSelected ? Colors.blue.shade50 : Colors.white,
+                                      child: InkWell(
+                                        borderRadius: BorderRadius.circular(14),
+                                        onTap: () {
+                                          setState(() {
+                                            _selectedTeacher = t;
+                                          });
+                                        },
+                                        child: Padding(
+                                          padding: const EdgeInsets.all(16),
+                                          child: Row(
+                                            children: [
+                                              CircleAvatar(
+                                                radius: 24,
+                                                backgroundColor: _primary.withOpacity(0.1),
+                                                child: const Icon(
+                                                  Icons.person_rounded,
+                                                  size: 26,
+                                                  color: _primary,
+                                                ),
+                                              ),
+                                              const SizedBox(width: 14),
+                                              Expanded(
+                                                child: Column(
+                                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                                  children: [
+                                                    Text(
+                                                      fullName,
+                                                      style: const TextStyle(
+                                                        fontSize: 17,
+                                                        fontWeight: FontWeight.w600,
+                                                        color: _dark,
+                                                      ),
+                                                    ),
+                                                    const SizedBox(height: 4),
+                                                    Text(
+                                                      '$uName • $deptName',
+                                                      style: TextStyle(
+                                                        fontSize: 14,
+                                                        color: Colors.grey.shade600,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                              const SizedBox(width: 12),
+                                              if (isSelected)
+                                                const Icon(
+                                                  Icons.check_circle_rounded,
+                                                  color: Colors.green,
+                                                  size: 24,
+                                                )
+                                              else
+                                                Icon(
+                                                  Icons.arrow_forward_ios_rounded,
+                                                  color: Colors.grey.shade400,
+                                                  size: 16,
+                                                ),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                    );
                                 },
                               );
                             }
@@ -720,26 +628,6 @@ class ActivityFormState extends State<ActivityForm> {
                   const SizedBox(height: 16),
                   ActivitySection(
                     number: (stepNum++).toString(),
-                    title: 'XP Configuration',
-                    child: XpSelector(
-                      selected: _selectedXp,
-                      onChanged: (v) => setState(() => _selectedXp = v),
-                      showError: _submitted,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  ActivitySection(
-                    number: (stepNum++).toString(),
-                    title: 'Weekly Cap',
-                    child: CapSelector(
-                      selected: _selectedCap,
-                      onChanged: (v) => setState(() => _selectedCap = v),
-                      showError: _submitted,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  ActivitySection(
-                    number: (stepNum++).toString(),
                     title: 'Activity Type',
                     child: TypeSelector(
                       selected: _selectedType,
@@ -767,8 +655,33 @@ class ActivityFormState extends State<ActivityForm> {
         TextFormField(
           controller: _nameCtrl,
           style: const TextStyle(color: _dark, fontSize: 15),
-          decoration: _deco('Activity Name', Icons.title_rounded),
+          decoration: _deco('Event Name', Icons.title_rounded),
           validator: ActivityValidators.validateName,
+        ),
+        const SizedBox(height: 16),
+        InputDecorator(
+          decoration: _deco('XP Category', Icons.category_rounded).copyWith(
+            errorText: (_submitted && _selectedXpCategory == null) ? 'XP Category is required' : null,
+          ),
+          child: DropdownButton<String>(
+            dropdownColor: Colors.white,
+            value: _selectedXpCategory,
+            isExpanded: true,
+            underline: const SizedBox.shrink(),
+            icon: const Icon(Icons.expand_more_rounded, color: _primary),
+            hint: const Text('Select XP Category', style: TextStyle(fontSize: 14)),
+            items: _xpCategories.map((c) {
+              return DropdownMenuItem<String>(
+                value: c,
+                child: Text(c, style: const TextStyle(fontSize: 14, color: _dark)),
+              );
+            }).toList(),
+            onChanged: (val) {
+              setState(() {
+                _selectedXpCategory = val;
+              });
+            },
+          ),
         ),
         const SizedBox(height: 16),
         TextFormField(
@@ -779,8 +692,236 @@ class ActivityFormState extends State<ActivityForm> {
               alignHint: true),
           validator: ActivityValidators.validateDescription,
         ),
+        const SizedBox(height: 16),
+        TextFormField(
+          controller: _displayOrderCtrl,
+          keyboardType: TextInputType.number,
+          style: const TextStyle(color: _dark, fontSize: 15),
+          decoration: _deco('Display Order', Icons.sort_rounded),
+          validator: (val) {
+            if (val == null || val.trim().isEmpty) {
+              return 'Display order is required';
+            }
+            if (int.tryParse(val) == null) {
+              return 'Must be a valid integer';
+            }
+            return null;
+          },
+        ),
+        const SizedBox(height: 16),
+        InputDecorator(
+          decoration: _deco('Status', Icons.check_circle_outline_rounded),
+          child: DropdownButton<String>(
+            dropdownColor: Colors.white,
+            value: _selectedStatus,
+            isExpanded: true,
+            underline: const SizedBox.shrink(),
+            icon: const Icon(Icons.expand_more_rounded, color: _primary),
+            items: const [
+              DropdownMenuItem<String>(value: 'ACTIVE', child: Text('Active', style: TextStyle(fontSize: 14, color: _dark))),
+              DropdownMenuItem<String>(value: 'INACTIVE', child: Text('Inactive', style: TextStyle(fontSize: 14, color: _dark))),
+            ],
+            onChanged: (val) {
+              if (val != null) {
+                setState(() => _selectedStatus = val);
+              }
+            },
+          ),
+        ),
       ],
     );
+  }
+
+  Widget _buildAwardRulesSection() {
+    final bool isOneTimeOrManual = _selectedAwardFrequency == 'One Time' || _selectedAwardFrequency == 'Manual';
+    final bool isWeekly = _selectedAwardFrequency == 'Weekly';
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // ── Award XP ─────────────────────────────────────────────────────────
+        TextFormField(
+          controller: _awardXpCtrl,
+          keyboardType: TextInputType.number,
+          style: const TextStyle(color: _dark, fontSize: 15),
+          decoration: _deco('Award XP', Icons.add_circle_outline_rounded),
+          validator: (val) {
+            if (val == null || val.trim().isEmpty) return 'Award XP is required';
+            final parsed = int.tryParse(val);
+            if (parsed == null || parsed <= 0) return 'Must be an integer greater than zero';
+            return null;
+          },
+        ),
+        const SizedBox(height: 16),
+
+        // ── Award Type ───────────────────────────────────────────────────────
+        InputDecorator(
+          decoration: _deco('Award Type', Icons.stars_rounded),
+          child: DropdownButton<String>(
+            dropdownColor: Colors.white,
+            value: _selectedAwardType,
+            isExpanded: true,
+            underline: const SizedBox.shrink(),
+            icon: const Icon(Icons.expand_more_rounded, color: _primary),
+            items: const [
+              DropdownMenuItem<String>(value: 'Fixed XP', child: Text('Fixed XP', style: TextStyle(fontSize: 14, color: _dark))),
+              DropdownMenuItem<String>(value: 'Variable XP (future use)', child: Text('Variable XP (future use)', style: TextStyle(fontSize: 14, color: _dark))),
+            ],
+            onChanged: (val) {
+              if (val != null) setState(() => _selectedAwardType = val);
+            },
+          ),
+        ),
+        const SizedBox(height: 16),
+
+        // ── Award Frequency ──────────────────────────────────────────────────
+        InputDecorator(
+          decoration: _deco('Award Frequency', Icons.repeat_rounded),
+          child: DropdownButton<String>(
+            dropdownColor: Colors.white,
+            value: _selectedAwardFrequency,
+            isExpanded: true,
+            underline: const SizedBox.shrink(),
+            icon: const Icon(Icons.expand_more_rounded, color: _primary),
+            items: _awardFrequencies.map((f) {
+              return DropdownMenuItem<String>(
+                value: f,
+                child: Text(f, style: const TextStyle(fontSize: 14, color: _dark)),
+              );
+            }).toList(),
+            onChanged: (val) {
+              if (val != null) {
+                setState(() {
+                  _selectedAwardFrequency = val;
+                  if (val == 'One Time' || val == 'Manual') {
+                    _capCtrl.text = '1';
+                    _selectedAwardDays = {};
+                  } else if (val == 'Weekly' && _selectedAwardDays.isEmpty) {
+                    // default to Mon-Fri
+                    _selectedAwardDays = {'Monday','Tuesday','Wednesday','Thursday','Friday'};
+                    if (_capCtrl.text == '1') _capCtrl.text = '5';
+                  } else {
+                    if (_capCtrl.text == '1') _capCtrl.text = '1';
+                  }
+                });
+              }
+            },
+          ),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          _frequencyHint(_selectedAwardFrequency),
+          style: TextStyle(fontSize: 11, color: Colors.grey.shade600, fontStyle: FontStyle.italic),
+        ),
+        const SizedBox(height: 16),
+
+        // ── Award Days (Weekly only) ─────────────────────────────────────────
+        if (isWeekly) ...[
+          Container(
+            decoration: BoxDecoration(
+              color: _surface,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(
+                color: (_submitted && _selectedAwardDays.isEmpty) ? Colors.red : Colors.grey.shade300,
+                width: (_submitted && _selectedAwardDays.isEmpty) ? 2 : 1,
+              ),
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(Icons.calendar_today_rounded, color: _primary, size: 18),
+                    const SizedBox(width: 8),
+                    const Text(
+                      'Award Days',
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: _dark),
+                    ),
+                    const Spacer(),
+                    TextButton(
+                      onPressed: () => setState(() => _selectedAwardDays = Set.from(_workingDays)),
+                      child: const Text('All', style: TextStyle(fontSize: 12)),
+                    ),
+                    TextButton(
+                      onPressed: () => setState(() => _selectedAwardDays = {}),
+                      child: const Text('None', style: TextStyle(fontSize: 12, color: Colors.red)),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 4,
+                  children: _workingDays.map((day) {
+                    final selected = _selectedAwardDays.contains(day);
+                    return FilterChip(
+                      label: Text(day.substring(0, 3), style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: selected ? Colors.white : _dark,
+                      )),
+                      selected: selected,
+                      selectedColor: _primary,
+                      checkmarkColor: Colors.white,
+                      backgroundColor: Colors.grey.shade100,
+                      onSelected: (val) => setState(() {
+                        if (val) _selectedAwardDays.add(day);
+                        else _selectedAwardDays.remove(day);
+                      }),
+                    );
+                  }).toList(),
+                ),
+                if (_submitted && _selectedAwardDays.isEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 6),
+                    child: Text(
+                      'At least one Award Day is required for Weekly frequency.',
+                      style: TextStyle(color: Theme.of(context).colorScheme.error, fontSize: 12),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+        ],
+
+        // ── Cap ──────────────────────────────────────────────────────────────
+        AbsorbPointer(
+          absorbing: isOneTimeOrManual,
+          child: Opacity(
+            opacity: isOneTimeOrManual ? 0.5 : 1.0,
+            child: TextFormField(
+              controller: _capCtrl,
+              keyboardType: TextInputType.number,
+              style: const TextStyle(color: _dark, fontSize: 15),
+              decoration: _deco(
+                isOneTimeOrManual ? 'Cap (fixed at 1)' : 'Cap (max awards per frequency window)',
+                Icons.bar_chart_rounded,
+              ),
+              validator: (val) {
+                if (isOneTimeOrManual) return null;
+                if (val == null || val.trim().isEmpty) return 'Cap is required';
+                final parsed = int.tryParse(val);
+                if (parsed == null || parsed <= 0) return 'Must be an integer greater than zero';
+                return null;
+              },
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  String _frequencyHint(String freq) {
+    switch (freq) {
+      case 'One Time': return 'XP is awarded only once to the student. No repetition allowed.';
+      case 'Daily':    return 'XP can be awarded once per day (resets at midnight).';
+      case 'Weekly':   return 'XP can be awarded on selected days. Cap resets every Monday.';
+      case 'Monthly':  return 'Cap resets at the start of each calendar month.';
+      case 'Manual':   return 'XP is awarded manually by admin reset. Cap is fixed at 1.';
+      default:         return '';
+    }
   }
 
   Widget _buildJustificationSection() {

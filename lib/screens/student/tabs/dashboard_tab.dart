@@ -1,3 +1,4 @@
+import 'package:spdms_app/core/config/api_config.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -47,7 +48,7 @@ class _DashboardTabState extends State<DashboardTab> {
     }
     try {
       final response = await http.get(
-        Uri.parse("http://10.0.2.2:8080/api/v1/auth/me"),
+        Uri.parse("${ApiConfig.baseUrl}/api/v1/auth/me"),
         headers: {
           "Authorization": "Bearer ${widget.token}",
         },
@@ -362,6 +363,8 @@ class _DashboardTabState extends State<DashboardTab> {
               _buildStreaksRow(xpProvider.streaks),
 
               const SizedBox(height: 24),
+              _buildXpSummaryGrid(xpProvider.xpByCategory, totalXp),
+              const SizedBox(height: 24),
 
               // Widget 1: XP Category Mini Bar Chart
               const Text(
@@ -396,22 +399,24 @@ class _DashboardTabState extends State<DashboardTab> {
     );
   }
 
-  // Widget 1: Bar Chart Builder
   Widget _buildCategoryBarChart(Map<String, int> categories) {
     final double acadXp = (categories["ACADEMIC"] ?? 0).toDouble();
     final double skillXp = (categories["SKILL"] ?? 0).toDouble();
+    final double commXp = (categories["COMMUNICATION"] ?? 0).toDouble();
     final double leadXp = (categories["LEADERSHIP"] ?? 0).toDouble();
-    final double careXp = (categories["CAREER"] ?? 0).toDouble();
     final double innoXp = (categories["INNOVATION"] ?? 0).toDouble();
-    final double commXp = (categories["COMMUNITY"] ?? 0).toDouble();
+    final double placXp = (categories["PLACEMENT"] ?? 0).toDouble();
     final double discXp = (categories["DISCIPLINE"] ?? 0).toDouble();
+    final double commuXp = (categories["COMMUNITY"] ?? 0).toDouble();
+    final double sporXp = (categories["SPORTS"] ?? 0).toDouble();
+    final double cultXp = (categories["CULTURAL"] ?? 0).toDouble();
 
-    double maxVal = [acadXp, skillXp, leadXp, careXp, innoXp, commXp, discXp]
+    double maxVal = [acadXp, skillXp, commXp, leadXp, innoXp, placXp, discXp, commuXp, sporXp, cultXp]
         .reduce((curr, next) => curr > next ? curr : next);
     if (maxVal < 10) maxVal = 100;
 
     return Container(
-      height: 200,
+      height: 220,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
@@ -438,15 +443,18 @@ class _DashboardTabState extends State<DashboardTab> {
               sideTitles: SideTitles(
                 showTitles: true,
                 getTitlesWidget: (double value, TitleMeta meta) {
-                  const style = TextStyle(color: Color(0xFF64748B), fontWeight: FontWeight.bold, fontSize: 10);
+                  const style = TextStyle(color: Color(0xFF64748B), fontWeight: FontWeight.bold, fontSize: 8);
                   switch (value.toInt()) {
                     case 0: return const Text('Acad', style: style);
                     case 1: return const Text('Skill', style: style);
-                    case 2: return const Text('Lead', style: style);
-                    case 3: return const Text('Care', style: style);
+                    case 2: return const Text('Comm', style: style);
+                    case 3: return const Text('Lead', style: style);
                     case 4: return const Text('Inno', style: style);
-                    case 5: return const Text('Comm', style: style);
+                    case 5: return const Text('Plac', style: style);
                     case 6: return const Text('Disc', style: style);
+                    case 7: return const Text('Commu', style: style);
+                    case 8: return const Text('Sport', style: style);
+                    case 9: return const Text('Cult', style: style);
                     default: return const Text('', style: style);
                   }
                 },
@@ -461,13 +469,128 @@ class _DashboardTabState extends State<DashboardTab> {
           barGroups: [
             _makeBarGroup(0, acadXp, Colors.blue),
             _makeBarGroup(1, skillXp, Colors.purple),
-            _makeBarGroup(2, leadXp, Colors.amber),
-            _makeBarGroup(3, careXp, Colors.green),
+            _makeBarGroup(2, commXp, Colors.indigo),
+            _makeBarGroup(3, leadXp, Colors.amber),
             _makeBarGroup(4, innoXp, Colors.orange),
-            _makeBarGroup(5, commXp, Colors.teal),
+            _makeBarGroup(5, placXp, Colors.green),
             _makeBarGroup(6, discXp, Colors.red),
+            _makeBarGroup(7, commuXp, Colors.teal),
+            _makeBarGroup(8, sporXp, Colors.pink),
+            _makeBarGroup(9, cultXp, Colors.cyan),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildXpSummaryGrid(Map<String, int> categories, int totalXp) {
+    final list = [
+      {"label": "Academic XP", "value": categories["ACADEMIC"] ?? 0, "color": Colors.blue},
+      {"label": "Skill XP", "value": categories["SKILL"] ?? 0, "color": Colors.purple},
+      {"label": "Communication XP", "value": categories["COMMUNICATION"] ?? 0, "color": Colors.indigo},
+      {"label": "Leadership XP", "value": categories["LEADERSHIP"] ?? 0, "color": Colors.amber},
+      {"label": "Innovation XP", "value": categories["INNOVATION"] ?? 0, "color": Colors.orange},
+      {"label": "Placement XP", "value": categories["PLACEMENT"] ?? 0, "color": Colors.green},
+      {"label": "Discipline XP", "value": categories["DISCIPLINE"] ?? 0, "color": Colors.red},
+      {"label": "Community XP", "value": categories["COMMUNITY"] ?? 0, "color": Colors.teal},
+      {"label": "Sports XP", "value": categories["SPORTS"] ?? 0, "color": Colors.pink},
+      {"label": "Cultural XP", "value": categories["CULTURAL"] ?? 0, "color": Colors.cyan},
+    ];
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: Colors.grey.shade100),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
+            children: [
+              Icon(Icons.summarize_rounded, color: Color(0xFF4F46E5)),
+              SizedBox(width: 8),
+              Text(
+                "XP Summary",
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              childAspectRatio: 2.8,
+              crossAxisSpacing: 12,
+              mainAxisSpacing: 12,
+            ),
+            itemCount: list.length,
+            itemBuilder: (context, index) {
+              final item = list[index];
+              final label = item["label"] as String;
+              final val = item["value"] as int;
+              final color = item["color"] as Color;
+              return Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.05),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: color.withOpacity(0.15)),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 6,
+                      height: double.infinity,
+                      decoration: BoxDecoration(
+                        color: color,
+                        borderRadius: BorderRadius.circular(3),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            label,
+                            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: Colors.grey),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            "$val XP",
+                            style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: color),
+                          ),
+                        ],
+                      ),
+                    )
+                  ],
+                ),
+              );
+            },
+          ),
+          const SizedBox(height: 16),
+          const Divider(height: 1),
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                "Total XP",
+                style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+              ),
+              Text(
+                "$totalXp XP",
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF4F46E5)),
+              ),
+            ],
+          )
+        ],
       ),
     );
   }

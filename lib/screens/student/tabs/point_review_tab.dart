@@ -1,3 +1,4 @@
+import 'package:spdms_app/core/config/api_config.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -22,11 +23,14 @@ class _PointReviewTabState extends State<PointReviewTab> {
   final Map<String, Map<String, dynamic>> categoryConfig = {
     "ACADEMIC": {"color": Colors.blue, "priority": "HIGH", "decay": "Streak decays if broken ↺"},
     "SKILL": {"color": Colors.purple, "priority": "HIGH", "decay": "Permanent ✓"},
+    "COMMUNICATION": {"color": Colors.indigo, "priority": "HIGH", "decay": "Permanent ✓"},
     "LEADERSHIP": {"color": Colors.amber, "priority": "MEDIUM-HIGH", "decay": "Permanent ✓"},
-    "CAREER": {"color": Colors.green, "priority": "HIGH", "decay": "Permanent ✓"},
     "INNOVATION": {"color": Colors.orange, "priority": "HIGH", "decay": "Permanent ✓"},
-    "COMMUNITY": {"color": Colors.teal, "priority": "MEDIUM", "decay": "Resets per semester ↺"},
+    "PLACEMENT": {"color": Colors.green, "priority": "HIGH", "decay": "Permanent ✓"},
     "DISCIPLINE": {"color": Colors.red, "priority": "MEDIUM", "decay": "Resets if streak broken ↺"},
+    "COMMUNITY": {"color": Colors.teal, "priority": "MEDIUM", "decay": "Resets per semester ↺"},
+    "SPORTS": {"color": Colors.pink, "priority": "MEDIUM", "decay": "Permanent ✓"},
+    "CULTURAL": {"color": Colors.cyan, "priority": "MEDIUM", "decay": "Permanent ✓"},
   };
 
   // Activity Master List
@@ -37,10 +41,10 @@ class _PointReviewTabState extends State<PointReviewTab> {
     {"name": "MS Word 5 pages", "xp": 50, "category": "SKILL", "stage": 1, "cap": "once"},
     {"name": "MS Excel 1 sheet", "xp": 50, "category": "SKILL", "stage": 1, "cap": "once"},
     {"name": "MS PowerPoint 10 slides", "xp": 50, "category": "SKILL", "stage": 1, "cap": "once"},
-    {"name": "Oral Presentation 2min", "xp": 40, "category": "CAREER", "stage": 1, "cap": "cap 120/mo"},
-    {"name": "Resume First Draft", "xp": 50, "category": "CAREER", "stage": 1, "cap": "once"},
+    {"name": "Oral Presentation 2min", "xp": 40, "category": "PLACEMENT", "stage": 1, "cap": "cap 120/mo"},
+    {"name": "Resume First Draft", "xp": 50, "category": "PLACEMENT", "stage": 1, "cap": "once"},
     {"name": "Keyboard Typing 20 WPM", "xp": 20, "category": "SKILL", "stage": 1, "cap": "once"},
-    {"name": "Duolingo 3-day Streak", "xp": 15, "category": "CAREER", "stage": 1, "cap": "cap 45/mo"},
+    {"name": "Duolingo 3-day Streak", "xp": 15, "category": "PLACEMENT", "stage": 1, "cap": "cap 45/mo"},
     {"name": "Newspaper Word of Day", "xp": 5, "category": "ACADEMIC", "stage": 1, "cap": "cap 25/wk"},
     {"name": "Domain Activity Report", "xp": 50, "category": "SKILL", "stage": 1, "cap": "cap 150/mo"},
     {"name": "Certificate Course", "xp": 100, "category": "SKILL", "stage": 1, "cap": "cap 200/sem"},
@@ -52,7 +56,7 @@ class _PointReviewTabState extends State<PointReviewTab> {
     {"name": "Non-Tech Event Outside", "xp": 80, "category": "COMMUNITY", "stage": 2, "cap": "cap 160/mo"},
     {"name": "NPTEL Week 1 Complete", "xp": 75, "category": "SKILL", "stage": 2, "cap": "cap 150/mo"},
     {"name": "Technical Workshop", "xp": 50, "category": "SKILL", "stage": 2, "cap": "cap 100/mo"},
-    {"name": "Mock Interview", "xp": 80, "category": "CAREER", "stage": 2, "cap": "cap 160 bi-wk"},
+    {"name": "Mock Interview", "xp": 80, "category": "PLACEMENT", "stage": 2, "cap": "cap 160 bi-wk"},
     {"name": "Peer Teaching 30min", "xp": 40, "category": "LEADERSHIP", "stage": 2, "cap": "cap 80 bi-wk"},
     {"name": "CoE Project Idea Group", "xp": 100, "category": "INNOVATION", "stage": 2, "cap": "cap 100/mo"},
     {"name": "Hackathon Registration Group", "xp": 60, "category": "INNOVATION", "stage": 2, "cap": "cap 60/mo"},
@@ -67,10 +71,10 @@ class _PointReviewTabState extends State<PointReviewTab> {
     {"name": "Hackathon Participation Group", "xp": 200, "category": "INNOVATION", "stage": 3, "cap": "cap 200/mo"},
     {"name": "Hackathon Winning Group", "xp": 400, "category": "INNOVATION", "stage": 3, "cap": "no cap"},
     {"name": "Research Paper Draft", "xp": 300, "category": "INNOVATION", "stage": 3, "cap": "end Month 3"},
-    {"name": "Industry/Consultancy", "xp": 200, "category": "CAREER", "stage": 3, "cap": "cap 200/grp"},
-    {"name": "Resume Final Version", "xp": 100, "category": "CAREER", "stage": 3, "cap": "once"},
-    {"name": "Internship Application", "xp": 80, "category": "CAREER", "stage": 3, "cap": "cap 160/mo"},
-    {"name": "Final Oral Presentation", "xp": 100, "category": "CAREER", "stage": 3, "cap": "once"},
+    {"name": "Industry/Consultancy", "xp": 200, "category": "PLACEMENT", "stage": 3, "cap": "cap 200/grp"},
+    {"name": "Resume Final Version", "xp": 100, "category": "PLACEMENT", "stage": 3, "cap": "once"},
+    {"name": "Internship Application", "xp": 80, "category": "PLACEMENT", "stage": 3, "cap": "cap 160/mo"},
+    {"name": "Final Oral Presentation", "xp": 100, "category": "PLACEMENT", "stage": 3, "cap": "once"},
     {"name": "All Streaks Maintained Bonus", "xp": 100, "category": "DISCIPLINE", "stage": 3, "cap": "end Month 3"},
   ];
 
@@ -84,7 +88,7 @@ class _PointReviewTabState extends State<PointReviewTab> {
     setState(() => isLoading = true);
     try {
       final response = await http.get(
-        Uri.parse("http://10.0.2.2:8080/api/v1/auth/me"),
+        Uri.parse("${ApiConfig.baseUrl}/api/v1/auth/me"),
         headers: {"Authorization": "Bearer ${widget.token}"},
       );
 

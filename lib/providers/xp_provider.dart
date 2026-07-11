@@ -1,16 +1,20 @@
+import 'package:spdms_app/core/config/api_config.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
 class XpProvider extends ChangeNotifier {
   Map<String, int> _xpByCategory = {
-    "ACADEMIC": 0,
-    "SKILL": 0,
-    "LEADERSHIP": 0,
-    "CAREER": 0,
-    "INNOVATION": 0,
-    "COMMUNITY": 0,
-    "DISCIPLINE": 0,
+    "ACADEMIC": 120,
+    "SKILL": 100,
+    "COMMUNICATION": 40,
+    "LEADERSHIP": 30,
+    "INNOVATION": 60,
+    "PLACEMENT": 80,
+    "DISCIPLINE": 20,
+    "COMMUNITY": 60,
+    "SPORTS": 50,
+    "CULTURAL": 40,
   };
   List<dynamic> _history = [];
   List<dynamic> _streaks = [];
@@ -29,7 +33,7 @@ class XpProvider extends ChangeNotifier {
 
     try {
       final response = await http.get(
-        Uri.parse("http://10.0.2.2:8080/api/v1/xp/$studentId/summary"),
+        Uri.parse("${ApiConfig.baseUrl}/api/v1/xp/$studentId/summary"),
         headers: {"Authorization": "Bearer $token"},
       );
 
@@ -54,7 +58,7 @@ class XpProvider extends ChangeNotifier {
 
     try {
       final response = await http.get(
-        Uri.parse("http://10.0.2.2:8080/api/v1/xp/$studentId/history?page=0&size=50"),
+        Uri.parse("${ApiConfig.baseUrl}/api/v1/xp/$studentId/history?page=0&size=50"),
         headers: {"Authorization": "Bearer $token"},
       );
 
@@ -104,7 +108,7 @@ class XpProvider extends ChangeNotifier {
 
     try {
       final response = await http.get(
-        Uri.parse("http://10.0.2.2:8080/api/v1/xp/$studentId/streaks"),
+        Uri.parse("${ApiConfig.baseUrl}/api/v1/xp/$studentId/streaks"),
         headers: {"Authorization": "Bearer $token"},
       );
 
@@ -136,7 +140,7 @@ class XpProvider extends ChangeNotifier {
   ) async {
     try {
       final response = await http.post(
-        Uri.parse("http://10.0.2.2:8080/api/v1/xp/submit"),
+        Uri.parse("${ApiConfig.baseUrl}/api/v1/xp/submit"),
         headers: {
           "Authorization": "Bearer $token",
           "Content-Type": "application/json",

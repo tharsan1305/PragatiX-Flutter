@@ -1,3 +1,4 @@
+import 'package:spdms_app/core/config/api_config.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -31,7 +32,7 @@ class _TeacherStudentDetailState extends State<TeacherStudentDetail> {
   Future<void> _fetchHistoryLogs() async {
     try {
       final response = await http.get(
-        Uri.parse("http://10.0.2.2:8080/api/v1/students/${widget.student['id']}/discipline-logs"),
+        Uri.parse("${ApiConfig.baseUrl}/api/v1/students/${widget.student['id']}/discipline-logs"),
         headers: {"Authorization": "Bearer ${widget.token}"},
       );
       if (response.statusCode == 200) {
@@ -55,7 +56,7 @@ class _TeacherStudentDetailState extends State<TeacherStudentDetail> {
   Future<void> _fetchStages() async {
     try {
       final response = await http.get(
-        Uri.parse("http://10.0.2.2:8080/api/v1/admin/stages"),
+        Uri.parse("${ApiConfig.baseUrl}/api/v1/admin/stages"),
         headers: {"Authorization": "Bearer ${widget.token}"},
       );
       if (response.statusCode == 200) {
@@ -74,7 +75,7 @@ class _TeacherStudentDetailState extends State<TeacherStudentDetail> {
   Future<void> _makeCaptain() async {
     try {
       final response = await http.post(
-        Uri.parse("http://10.0.2.2:8080/api/v1/students/${widget.student['id']}/make-captain"),
+        Uri.parse("${ApiConfig.baseUrl}/api/v1/students/${widget.student['id']}/make-captain"),
         headers: {
           "Authorization": "Bearer ${widget.token}",
           "Content-Type": "application/json",
@@ -112,7 +113,7 @@ class _TeacherStudentDetailState extends State<TeacherStudentDetail> {
   Future<void> _removeCaptain() async {
     try {
       final response = await http.post(
-        Uri.parse("http://10.0.2.2:8080/api/v1/students/${widget.student['id']}/remove-captain"),
+        Uri.parse("${ApiConfig.baseUrl}/api/v1/students/${widget.student['id']}/remove-captain"),
         headers: {
           "Authorization": "Bearer ${widget.token}",
           "Content-Type": "application/json",
@@ -150,7 +151,7 @@ class _TeacherStudentDetailState extends State<TeacherStudentDetail> {
   Future<void> _changeScore(int points, String reason, int? subgroupId) async {
     try {
       final response = await http.post(
-        Uri.parse("http://10.0.2.2:8080/api/v1/students/${widget.student['id']}/adjust-points"),
+        Uri.parse("${ApiConfig.baseUrl}/api/v1/students/${widget.student['id']}/adjust-points"),
         headers: {
           "Content-Type": "application/json",
           "Authorization": "Bearer ${widget.token}",

@@ -8,6 +8,7 @@ import '../widgets/activity_card.dart';
 import 'create_activity_page.dart';
 import 'edit_activity_page.dart';
 import 'activity_execution_page.dart';
+import 'admin_activity_detail_page.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Activity List Page – entry point from SubgroupDetailsPage.
@@ -240,19 +241,32 @@ class _ActivityListPageState extends State<ActivityListPage> {
                           onDelete: () => _confirmDelete(act),
                           isCc: widget.isCc,
                           isReadOnly: widget.isMyActivitiesOnly,
-                          onTap: widget.isMyActivitiesOnly
+                          onTap: widget.isAdmin
                               ? () {
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                      builder: (_) => ActivityExecutionPage(
+                                      builder: (_) => AdminActivityDetailPage(
                                         token: widget.token,
-                                        activityId: act.id,
+                                        activity: act,
+                                        subgroupId: widget.subgroupId,
                                       ),
                                     ),
                                   );
                                 }
-                              : null,
+                              : (widget.isMyActivitiesOnly
+                                  ? () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (_) => ActivityExecutionPage(
+                                            token: widget.token,
+                                            activityId: act.id,
+                                          ),
+                                        ),
+                                      );
+                                    }
+                                  : null),
                         );
                       },
                       childCount: list.length,

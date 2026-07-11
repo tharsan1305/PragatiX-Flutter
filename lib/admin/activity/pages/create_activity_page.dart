@@ -107,7 +107,7 @@ class _CreateActivityPageState extends State<CreateActivityPage>
               ),
               flexibleSpace: FlexibleSpaceBar(
                 title: const Text(
-                  'Create Activity',
+                  'Create Event',
                   style: TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.w700,
@@ -134,7 +134,6 @@ class _CreateActivityPageState extends State<CreateActivityPage>
               }
               return ActivityForm(
                 key: _formKey,
-                departments: widget.provider.departments,
                 allTeachers: widget.provider.allTeachers,
                 sections: widget.provider.sections,
                 isCc: widget.isCc,
@@ -146,7 +145,7 @@ class _CreateActivityPageState extends State<CreateActivityPage>
       bottomNavigationBar: ListenableBuilder(
         listenable: widget.provider,
         builder: (context, _) => StickyBottomButtons(
-          saveLabel: 'Create Activity',
+          saveLabel: 'Create Event',
           onSave: _onSave,
           onCancel: () => Navigator.pop(context),
           isSaving: widget.provider.isSaving,

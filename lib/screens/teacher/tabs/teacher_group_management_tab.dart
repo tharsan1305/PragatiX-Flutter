@@ -1,3 +1,4 @@
+import 'package:spdms_app/core/config/api_config.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -31,7 +32,7 @@ class _TeacherGroupManagementTabState extends State<TeacherGroupManagementTab> {
 
   Future<void> _fetchGroups() async {
     setState(() => _isLoading = true);
-    const url = "http://10.0.2.2:8080/api/v1/teams";
+    const url = "${ApiConfig.baseUrl}/api/v1/teams";
     debugPrint("API URL: $url");
     try {
       final response = await http.get(
@@ -307,7 +308,7 @@ class _TeacherGroupManagementTabState extends State<TeacherGroupManagementTab> {
   Future<void> _updateGroupLimit(int teamId, int newSize) async {
     try {
       final response = await http.put(
-        Uri.parse("http://10.0.2.2:8080/api/v1/teams/$teamId/limit?size=$newSize"),
+        Uri.parse("${ApiConfig.baseUrl}/api/v1/teams/$teamId/limit?size=$newSize"),
         headers: {
           "Authorization": "Bearer ${widget.token}",
         },
@@ -370,7 +371,7 @@ class _TeacherGroupManagementTabState extends State<TeacherGroupManagementTab> {
   Future<void> _addMemberByCC(int teamId, String studentId) async {
     try {
       final response = await http.post(
-        Uri.parse("http://10.0.2.2:8080/api/v1/teams/$teamId/add-member?studentId=$studentId"),
+        Uri.parse("${ApiConfig.baseUrl}/api/v1/teams/$teamId/add-member?studentId=$studentId"),
         headers: {
           "Authorization": "Bearer ${widget.token}",
         },
@@ -397,7 +398,7 @@ class _TeacherGroupManagementTabState extends State<TeacherGroupManagementTab> {
   Future<void> _removeMemberByCC(int teamId, String studentId, String name) async {
     try {
       final response = await http.post(
-        Uri.parse("http://10.0.2.2:8080/api/v1/teams/$teamId/remove-member?studentId=$studentId"),
+        Uri.parse("${ApiConfig.baseUrl}/api/v1/teams/$teamId/remove-member?studentId=$studentId"),
         headers: {
           "Authorization": "Bearer ${widget.token}",
         },

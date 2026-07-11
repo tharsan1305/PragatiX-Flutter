@@ -1,3 +1,4 @@
+import 'package:spdms_app/core/config/api_config.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -29,7 +30,7 @@ class _RemovalRequestsTabState extends State<RemovalRequestsTab> {
     setState(() => _isRemovalsLoading = true);
     try {
       final response = await http.get(
-        Uri.parse("http://10.0.2.2:8080/api/v1/teams/removal-requests/pending"),
+        Uri.parse("${ApiConfig.baseUrl}/api/v1/teams/removal-requests/pending"),
         headers: {"Authorization": "Bearer ${widget.token}"},
       );
       final data = json.decode(response.body);
@@ -49,7 +50,7 @@ class _RemovalRequestsTabState extends State<RemovalRequestsTab> {
     try {
       final endpoint = approve ? "approve" : "reject";
       final response = await http.put(
-        Uri.parse("http://10.0.2.2:8080/api/v1/teams/removal-requests/$id/$endpoint"),
+        Uri.parse("${ApiConfig.baseUrl}/api/v1/teams/removal-requests/$id/$endpoint"),
         headers: {"Authorization": "Bearer ${widget.token}"},
       );
       final data = json.decode(response.body);
@@ -77,7 +78,7 @@ class _RemovalRequestsTabState extends State<RemovalRequestsTab> {
     setState(() => _isBadgeLoading = true);
     try {
       final response = await http.get(
-        Uri.parse("http://10.0.2.2:8080/api/v1/badges/pending"),
+        Uri.parse("${ApiConfig.baseUrl}/api/v1/badges/pending"),
         headers: {
           "Authorization": "Bearer ${widget.token}",
         },
@@ -150,7 +151,7 @@ class _RemovalRequestsTabState extends State<RemovalRequestsTab> {
   Future<void> _approveClaim(int claimId, String badgeName) async {
     try {
       final response = await http.put(
-        Uri.parse("http://10.0.2.2:8080/api/v1/badges/$claimId/approve"),
+        Uri.parse("${ApiConfig.baseUrl}/api/v1/badges/$claimId/approve"),
         headers: {
           "Authorization": "Bearer ${widget.token}",
         },

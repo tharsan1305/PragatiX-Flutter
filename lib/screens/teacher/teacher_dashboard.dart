@@ -1,7 +1,8 @@
+import 'package:spdms_app/core/config/api_config.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'tabs/students_tab.dart';
+import 'tabs/performance_activities_tab.dart';
 import 'tabs/activity_tab.dart';
 import 'tabs/leaderboard_tab.dart';
 import 'tabs/profile_tab.dart';
@@ -40,7 +41,7 @@ class _TeacherDashboardState extends State<TeacherDashboard> {
     }
     try {
       final response = await http.get(
-        Uri.parse("http://10.0.2.2:8080/api/v1/auth/me"),
+        Uri.parse("${ApiConfig.baseUrl}/api/v1/auth/me"),
         headers: {"Authorization": "Bearer ${widget.token}"},
       );
       if (response.statusCode == 200) {
@@ -67,8 +68,9 @@ class _TeacherDashboardState extends State<TeacherDashboard> {
   void _initializeScreens() {
     setState(() {
       _screens = [
-        StudentsTab(token: widget.token, subRoles: subRoles),
-        ActivityTab(token: widget.token),
+        PerformanceActivitiesTab(token: widget.token, subRoles: subRoles),
+        if (subRoles.any((r) => r.toUpperCase() == 'CC'))
+          ActivityTab(token: widget.token),
         LeaderboardTab(token: widget.token),
         RemovalRequestsTab(token: widget.token),
         TeacherGroupManagementTab(token: widget.token),
@@ -88,14 +90,15 @@ class _TeacherDashboardState extends State<TeacherDashboard> {
     }
 
     final List<BottomNavigationBarItem> barItems = [
-      const BottomNavigationBarItem(
-        icon: Icon(Icons.people_alt_rounded),
-        label: 'Students',
+      BottomNavigationBarItem(
+        icon: const Icon(Icons.event_note_rounded),
+        label: subRoles.any((r) => r.toUpperCase() == 'CC') ? 'Dashboard' : 'Events',
       ),
-      const BottomNavigationBarItem(
-        icon: Icon(Icons.local_activity_rounded),
-        label: 'Activity',
-      ),
+      if (subRoles.any((r) => r.toUpperCase() == 'CC'))
+        const BottomNavigationBarItem(
+          icon: Icon(Icons.local_activity_rounded),
+          label: 'Activities',
+        ),
       const BottomNavigationBarItem(
         icon: Icon(Icons.leaderboard_rounded),
         label: 'Leaderboard',

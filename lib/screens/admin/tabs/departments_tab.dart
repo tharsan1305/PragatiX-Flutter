@@ -1,3 +1,4 @@
+import 'package:spdms_app/core/config/api_config.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -5,7 +6,7 @@ import 'package:http/http.dart' as http;
 Future<List<dynamic>> _apiGetDepartments(String token) async {
   try {
     final response = await http.get(
-      Uri.parse("http://10.0.2.2:8080/api/v1/admin/departments"),
+      Uri.parse("${ApiConfig.baseUrl}/api/v1/admin/departments"),
       headers: {"Authorization": "Bearer $token"},
     );
     if (response.statusCode == 200) {
@@ -87,7 +88,7 @@ class _DepartmentsTabState extends State<DepartmentsTab> {
 
     try {
       final response = await http.post(
-        Uri.parse("http://10.0.2.2:8080/api/v1/admin/departments"),
+        Uri.parse("${ApiConfig.baseUrl}/api/v1/admin/departments"),
         headers: {
           "Content-Type": "application/json",
           "Authorization": "Bearer ${widget.token}",
@@ -147,7 +148,7 @@ class _DepartmentsTabState extends State<DepartmentsTab> {
 
     try {
       final response = await http.put(
-        Uri.parse("http://10.0.2.2:8080/api/v1/admin/departments/$id"),
+        Uri.parse("${ApiConfig.baseUrl}/api/v1/admin/departments/$id"),
         headers: {
           "Content-Type": "application/json",
           "Authorization": "Bearer ${widget.token}",
@@ -197,7 +198,7 @@ class _DepartmentsTabState extends State<DepartmentsTab> {
   Future<void> _deleteDepartment(int id) async {
     try {
       final response = await http.delete(
-        Uri.parse("http://10.0.2.2:8080/api/v1/admin/departments/$id"),
+        Uri.parse("${ApiConfig.baseUrl}/api/v1/admin/departments/$id"),
         headers: {
           "Authorization": "Bearer ${widget.token}",
         },

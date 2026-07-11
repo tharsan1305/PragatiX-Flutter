@@ -1,3 +1,4 @@
+import 'package:spdms_app/core/config/api_config.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -5,7 +6,7 @@ import 'package:http/http.dart' as http;
 Future<List<dynamic>> _apiGetDepartments(String token) async {
   try {
     final response = await http.get(
-      Uri.parse("http://10.0.2.2:8080/api/v1/admin/departments"),
+      Uri.parse("${ApiConfig.baseUrl}/api/v1/admin/departments"),
       headers: {"Authorization": "Bearer $token"},
     );
     if (response.statusCode == 200) {
@@ -74,13 +75,13 @@ class _StudentsTabState extends State<StudentsTab> {
     try {
       final headers = {"Authorization": "Bearer ${widget.token}"};
       final results = await Future.wait([
-        http.get(Uri.parse("http://10.0.2.2:8080/api/v1/admin/departments"), headers: headers),
-        http.get(Uri.parse("http://10.0.2.2:8080/api/v1/admin/academic-years"), headers: headers),
-        http.get(Uri.parse("http://10.0.2.2:8080/api/v1/admin/years"), headers: headers),
-        http.get(Uri.parse("http://10.0.2.2:8080/api/v1/admin/semesters"), headers: headers),
-        http.get(Uri.parse("http://10.0.2.2:8080/api/v1/admin/genders"), headers: headers),
-        http.get(Uri.parse("http://10.0.2.2:8080/api/v1/admin/sections"), headers: headers),
-        http.get(Uri.parse("http://10.0.2.2:8080/api/v1/teams"), headers: headers),
+        http.get(Uri.parse("${ApiConfig.baseUrl}/api/v1/admin/departments"), headers: headers),
+        http.get(Uri.parse("${ApiConfig.baseUrl}/api/v1/admin/academic-years"), headers: headers),
+        http.get(Uri.parse("${ApiConfig.baseUrl}/api/v1/admin/years"), headers: headers),
+        http.get(Uri.parse("${ApiConfig.baseUrl}/api/v1/admin/semesters"), headers: headers),
+        http.get(Uri.parse("${ApiConfig.baseUrl}/api/v1/admin/genders"), headers: headers),
+        http.get(Uri.parse("${ApiConfig.baseUrl}/api/v1/admin/sections"), headers: headers),
+        http.get(Uri.parse("${ApiConfig.baseUrl}/api/v1/teams"), headers: headers),
       ]);
 
       if (!mounted) return;
@@ -106,7 +107,7 @@ class _StudentsTabState extends State<StudentsTab> {
   Future<void> _fetchStudents() async {
     try {
       final response = await http.get(
-        Uri.parse("http://10.0.2.2:8080/api/v1/students?page=0&size=100&sortBy=fullName"),
+        Uri.parse("${ApiConfig.baseUrl}/api/v1/students?page=0&size=100&sortBy=fullName"),
         headers: {
           "Authorization": "Bearer ${widget.token}",
         },
@@ -157,7 +158,7 @@ class _StudentsTabState extends State<StudentsTab> {
 
     try {
       final response = await http.post(
-        Uri.parse("http://10.0.2.2:8080/api/v1/students"),
+        Uri.parse("${ApiConfig.baseUrl}/api/v1/students"),
         headers: {
           "Content-Type": "application/json",
           "Authorization": "Bearer ${widget.token}",
@@ -234,7 +235,7 @@ class _StudentsTabState extends State<StudentsTab> {
 
     try {
       final response = await http.put(
-        Uri.parse("http://10.0.2.2:8080/api/v1/students/$id"),
+        Uri.parse("${ApiConfig.baseUrl}/api/v1/students/$id"),
         headers: {
           "Content-Type": "application/json",
           "Authorization": "Bearer ${widget.token}",
@@ -285,7 +286,7 @@ class _StudentsTabState extends State<StudentsTab> {
   Future<void> _deleteStudent(int id) async {
     try {
       final response = await http.delete(
-        Uri.parse("http://10.0.2.2:8080/api/v1/students/$id"),
+        Uri.parse("${ApiConfig.baseUrl}/api/v1/students/$id"),
         headers: {
           "Authorization": "Bearer ${widget.token}",
         },

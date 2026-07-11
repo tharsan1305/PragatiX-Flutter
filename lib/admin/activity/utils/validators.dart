@@ -8,7 +8,7 @@ class ActivityValidators {
 
   static String? validateName(String? value) {
     if (value == null || value.trim().isEmpty) {
-      return 'Activity name is required';
+      return 'Event name is required';
     }
     if (value.trim().length < 3) {
       return 'Name must be at least 3 characters';

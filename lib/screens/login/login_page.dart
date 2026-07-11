@@ -1,3 +1,4 @@
+import 'package:spdms_app/core/config/api_config.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -34,7 +35,7 @@ class _LoginPageState extends State<LoginPage> {
       if (_selectedRole == 'Admin' || _selectedRole == 'Teacher') {
         // Step 1: Attempt Staff (Teacher/Admin) Login
         final staffResponse = await http.post(
-          Uri.parse("http://10.0.2.2:8080/api/v1/auth/login"),
+          Uri.parse("${ApiConfig.baseUrl}/api/v1/auth/login"),
           headers: {"Content-Type": "application/json"},
           body: jsonEncode({"username": identity, "password": password}),
         );
@@ -95,7 +96,7 @@ class _LoginPageState extends State<LoginPage> {
       } else {
         // Step 2: Attempt Student Login
         final studentResponse = await http.post(
-          Uri.parse("http://10.0.2.2:8080/api/v1/auth/student-login"),
+          Uri.parse("${ApiConfig.baseUrl}/api/v1/auth/student-login"),
           headers: {"Content-Type": "application/json"},
           body: jsonEncode({"identity": identity, "password": password}),
         );

@@ -1,3 +1,4 @@
+import 'package:spdms_app/core/config/api_config.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../models/student.dart';
@@ -5,7 +6,7 @@ import '../models/student.dart';
 class StudentService {
 
   static const String baseUrl =
-      "http://10.0.2.2:8080";
+      ApiConfig.baseUrl;
 
   Future<List<Student>> getStudents() async {
 

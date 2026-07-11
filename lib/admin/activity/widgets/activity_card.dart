@@ -98,7 +98,7 @@ class ActivityCard extends StatelessWidget {
               children: [
                 _Tag('XP: ${activity.xp}', Colors.green),
                 _Tag('Cap: ${activity.cap}', Colors.teal),
-                _Tag('Freq: ${activity.frequency}',
+                _Tag('Freq: ${activity.awardFrequency}',
                     Colors.amber.shade800),
                 _Tag('Type: ${activity.type}', Colors.purple),
               ],

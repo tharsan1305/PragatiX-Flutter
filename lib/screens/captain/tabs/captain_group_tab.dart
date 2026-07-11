@@ -1,3 +1,4 @@
+import 'package:spdms_app/core/config/api_config.dart';
 import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
@@ -25,7 +26,7 @@ class _CaptainGroupTabState extends State<CaptainGroupTab> {
     setState(() => _isLoading = true);
     try {
       final response = await http.get(
-        Uri.parse("http://10.0.2.2:8080/api/v1/teams/my-team"),
+        Uri.parse("${ApiConfig.baseUrl}/api/v1/teams/my-team"),
         headers: {
           "Authorization": "Bearer ${widget.token}",
         },
@@ -65,7 +66,7 @@ class _CaptainGroupTabState extends State<CaptainGroupTab> {
 
     try {
       final response = await http.post(
-        Uri.parse("http://10.0.2.2:8080/api/v1/teams"),
+        Uri.parse("${ApiConfig.baseUrl}/api/v1/teams"),
         headers: {
           "Authorization": "Bearer ${widget.token}",
           "Content-Type": "application/json",
@@ -99,7 +100,7 @@ class _CaptainGroupTabState extends State<CaptainGroupTab> {
   Future<void> _addMember(String studentId) async {
     try {
       final response = await http.post(
-        Uri.parse("http://10.0.2.2:8080/api/v1/teams/my-team/add-member?studentId=$studentId"),
+        Uri.parse("${ApiConfig.baseUrl}/api/v1/teams/my-team/add-member?studentId=$studentId"),
         headers: {
           "Authorization": "Bearer ${widget.token}",
         },
@@ -127,7 +128,7 @@ class _CaptainGroupTabState extends State<CaptainGroupTab> {
   Future<void> _removeMember(String studentId, String name) async {
     try {
       final response = await http.post(
-        Uri.parse("http://10.0.2.2:8080/api/v1/teams/my-team/remove-request?studentId=$studentId"),
+        Uri.parse("${ApiConfig.baseUrl}/api/v1/teams/my-team/remove-request?studentId=$studentId"),
         headers: {
           "Authorization": "Bearer ${widget.token}",
         },

@@ -1,3 +1,4 @@
+import 'package:spdms_app/core/config/api_config.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -56,7 +57,7 @@ class _StageDetailsPageState extends State<StageDetailsPage> {
   Future<void> _fetchSubgroups() async {
     try {
       final response = await http.get(
-        Uri.parse('http://10.0.2.2:8080/api/v1/admin/stages'),
+        Uri.parse('${ApiConfig.baseUrl}/api/v1/admin/stages'),
         headers: {'Authorization': 'Bearer ${widget.token}'},
       );
       if (response.statusCode == 200) {
@@ -94,7 +95,7 @@ class _StageDetailsPageState extends State<StageDetailsPage> {
     try {
       final response = await http.post(
         Uri.parse(
-            'http://10.0.2.2:8080/api/v1/admin/stages/${widget.stageId}/subgroups'),
+            '${ApiConfig.baseUrl}/api/v1/admin/stages/${widget.stageId}/subgroups'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer ${widget.token}',
@@ -146,7 +147,7 @@ class _StageDetailsPageState extends State<StageDetailsPage> {
   Future<void> _deleteSubgroup(int subId) async {
     try {
       final response = await http.delete(
-        Uri.parse('http://10.0.2.2:8080/api/v1/admin/subgroups/$subId'),
+        Uri.parse('${ApiConfig.baseUrl}/api/v1/admin/subgroups/$subId'),
         headers: {'Authorization': 'Bearer ${widget.token}'},
       );
       if (!mounted) return;
@@ -170,7 +171,7 @@ class _StageDetailsPageState extends State<StageDetailsPage> {
       int subId, String fullName, int threshold) async {
     try {
       final response = await http.put(
-        Uri.parse('http://10.0.2.2:8080/api/v1/admin/subgroups/$subId'),
+        Uri.parse('${ApiConfig.baseUrl}/api/v1/admin/subgroups/$subId'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer ${widget.token}',
@@ -199,53 +200,7 @@ class _StageDetailsPageState extends State<StageDetailsPage> {
     }
   }
 
-  Future<void> _assignFaculty(int subId, int? userId) async {
-    try {
-      final response = await http.put(
-        Uri.parse(
-            'http://10.0.2.2:8080/api/v1/admin/subgroups/$subId/assign-faculty'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer ${widget.token}',
-        },
-        body: jsonEncode({'userId': userId}),
-      );
-      final data = jsonDecode(response.body) as Map<String, dynamic>;
-      if (!mounted) return;
-      if (response.statusCode == 200 && data['success'] == true) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-              content: Text('Faculty assigned successfully!'),
-              backgroundColor: Colors.green),
-        );
-        _fetchSubgroups();
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content: Text(data['message'] ?? 'Failed to assign faculty')),
-        );
-      }
-    } catch (_) {
-      setState(() {
-        for (final sub in _subgroups) {
-          if (sub['id'] == subId) {
-            if (userId == null) {
-              sub['assignedFacultyId'] = null;
-              sub['assignedFacultyName'] = null;
-            } else {
-              final teacher = widget.teachersList.cast<Map<String, dynamic>?>().firstWhere(
-                (t) => t?['id'] == userId,
-                orElse: () => null,
-              );
-              sub['assignedFacultyId'] = userId;
-              sub['assignedFacultyName'] =
-                  teacher != null ? teacher['fullName'] : 'Assigned';
-            }
-          }
-        }
-      });
-    }
-  }
+
 
   // ── Helpers ───────────────────────────────────────────────────────────────
 
@@ -431,64 +386,7 @@ class _StageDetailsPageState extends State<StageDetailsPage> {
     );
   }
 
-  void _showAssignFacultyDialog(int subId, int? currentFacultyId) {
-    int? selected = currentFacultyId;
-    showDialog<void>(
-      context: context,
-      builder: (ctx) {
-        return StatefulBuilder(
-          builder: (ctx, setDialogState) {
-            return AlertDialog(
-              title: const Text('Assign Faculty',
-                  style: TextStyle(fontWeight: FontWeight.bold)),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                      'Select a faculty member responsible for points allocation:'),
-                  const SizedBox(height: 15),
-                  DropdownButton<int?>(
-                    value: selected,
-                    isExpanded: true,
-                    items: [
-                      const DropdownMenuItem<int?>(
-                        value: null,
-                        child: Text('Unassigned (All teachers)'),
-                      ),
-                      ...widget.teachersList.map((t) {
-                        return DropdownMenuItem<int?>(
-                          value: t['id'] as int?,
-                          child: Text('${t["fullName"]} (${t["username"]})'),
-                        );
-                      }),
-                    ],
-                    onChanged: (val) =>
-                        setDialogState(() => selected = val),
-                  ),
-                ],
-              ),
-              actions: [
-                TextButton(
-                    onPressed: () => Navigator.pop(ctx),
-                    child: const Text('Cancel')),
-                ElevatedButton(
-                  onPressed: () {
-                    Navigator.pop(ctx);
-                    _assignFaculty(subId, selected);
-                  },
-                  style:
-                      ElevatedButton.styleFrom(backgroundColor: _primary),
-                  child: const Text('Save',
-                      style: TextStyle(color: Colors.white)),
-                ),
-              ],
-            );
-          },
-        );
-      },
-    );
-  }
+
 
   // ── Build ─────────────────────────────────────────────────────────────────
 
@@ -649,37 +547,8 @@ class _StageDetailsPageState extends State<StageDetailsPage> {
                                                         .grey.shade600,
                                                     fontSize: 13),
                                               ),
-                                              const SizedBox(height: 4),
-                                              Text(
-                                                'Faculty: ${sub["assignedFacultyName"] ?? "All Teachers"}',
-                                                style: TextStyle(
-                                                  color: sub['assignedFacultyName'] !=
-                                                          null
-                                                      ? Colors.teal
-                                                      : Colors
-                                                          .grey.shade500,
-                                                  fontSize: 13,
-                                                  fontWeight: sub['assignedFacultyName'] !=
-                                                          null
-                                                      ? FontWeight.bold
-                                                      : FontWeight.normal,
-                                                ),
-                                              ),
                                             ],
                                           ),
-                                        ),
-                                        IconButton(
-                                          icon: const Icon(
-                                              Icons
-                                                  .assignment_ind_outlined,
-                                              color: Colors.teal,
-                                              size: 22),
-                                          tooltip: 'Assign Faculty',
-                                          onPressed: () =>
-                                              _showAssignFacultyDialog(
-                                                  sub['id'] as int,
-                                                  sub['assignedFacultyId']
-                                                      as int?),
                                         ),
                                         IconButton(
                                           icon: const Icon(

@@ -1,3 +1,4 @@
+import 'package:spdms_app/core/config/api_config.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -47,7 +48,7 @@ class _LeaderboardTabState extends State<LeaderboardTab> {
     try {
       // 1. Fetch current user profile to get studentId and name
       final profileResponse = await http.get(
-        Uri.parse("http://10.0.2.2:8080/api/v1/auth/me"),
+        Uri.parse("${ApiConfig.baseUrl}/api/v1/auth/me"),
         headers: {
           "Authorization": "Bearer ${widget.token}",
         },
@@ -64,7 +65,7 @@ class _LeaderboardTabState extends State<LeaderboardTab> {
 
       // 2. Fetch all students from backend
       final studentsResponse = await http.get(
-        Uri.parse("http://10.0.2.2:8080/api/v1/students?page=0&size=1000&sortBy=fullName"),
+        Uri.parse("${ApiConfig.baseUrl}/api/v1/students?page=0&size=1000&sortBy=fullName"),
         headers: {
           "Authorization": "Bearer ${widget.token}",
         },

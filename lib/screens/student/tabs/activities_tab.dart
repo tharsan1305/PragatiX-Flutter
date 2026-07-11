@@ -1,3 +1,4 @@
+import 'package:spdms_app/core/config/api_config.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -40,7 +41,7 @@ class _ActivitiesTabState extends State<ActivitiesTab> {
     try {
       // 1. Fetch profile to get studentId
       final response = await http.get(
-        Uri.parse("http://10.0.2.2:8080/api/v1/auth/me"),
+        Uri.parse("${ApiConfig.baseUrl}/api/v1/auth/me"),
         headers: {"Authorization": "Bearer ${widget.token}"},
       );
       if (response.statusCode == 200) {
@@ -68,43 +69,71 @@ class _ActivitiesTabState extends State<ActivitiesTab> {
   Future<void> _initializeData() async {
     try {
       final response = await http.get(
-        Uri.parse("http://10.0.2.2:8080/api/v1/admin/stages"),
+        Uri.parse("${ApiConfig.baseUrl}/api/v1/admin/stages"),
         headers: {"Authorization": "Bearer ${widget.token}"},
       );
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data["success"] == true) {
           final List<dynamic> fetchedStages = data["data"] ?? [];
-          final mapped = fetchedStages.map<Map<String, dynamic>>((st) {
+          final List<Map<String, dynamic>> mapped = [];
+
+          for (var st in fetchedStages) {
             final List<dynamic> fetchedSubgroups = st["subgroups"] ?? [];
-            return {
+            final List<Map<String, dynamic>> substages = [];
+
+            for (var sub in fetchedSubgroups) {
+              final subId = sub["id"];
+              List<dynamic> activitiesList = [];
+
+              // Fetch activities for this subgroup
+              try {
+                final actResponse = await http.get(
+                  Uri.parse("${ApiConfig.baseUrl}/api/v1/admin/subgroups/$subId/activities"),
+                  headers: {"Authorization": "Bearer ${widget.token}"},
+                );
+                if (actResponse.statusCode == 200) {
+                  final actData = jsonDecode(actResponse.body);
+                  if (actData["success"] == true) {
+                    activitiesList = actData["data"] ?? [];
+                  }
+                }
+              } catch (e) {
+                debugPrint("Error fetching activities for subgroup $subId: $e");
+              }
+
+              substages.add({
+                "name": sub["name"],
+                "threshold": sub["threshold"] ?? 0,
+                "activities": activitiesList.map((act) {
+                  return {
+                    "name": act["name"] ?? act["activityName"] ?? "",
+                    "description": act["description"] ?? act["activityDescription"] ?? "",
+                    "points": int.tryParse(act["xp"]?.toString() ?? act["xpReward"]?.toString() ?? "0") ?? 0,
+                    "isDone": false,
+                  };
+                }).toList(),
+              });
+            }
+
+            mapped.add({
               "id": st["id"],
               "name": st["name"],
-              "description": st["description"],
-              "substages": fetchedSubgroups.map((sub) {
-                final List<dynamic> fetchedActivities = sub["activities"] ?? [];
-                return {
-                  "name": sub["name"],
-                  "threshold": sub["threshold"] ?? 0,
-                  "activities": fetchedActivities.map((act) {
-                    return {
-                      "name": act["name"],
-                      "description": act["description"] ?? "",
-                      "points": int.tryParse(act["xpReward"]?.toString() ?? "0") ?? 0,
-                      "isDone": false,
-                    };
-                  }).toList(),
-                };
-              }).toList(),
-            };
-          }).toList();
+              "description": st["description"] ?? "",
+              "substages": substages,
+            });
+          }
+
+          // Sort stages by id to guarantee sequential progression
+          mapped.sort((a, b) => (a["id"] as num).compareTo(b["id"] as num));
+
           setState(() {
             stages = mapped;
           });
         }
       }
     } catch (e) {
-      // ignore
+      debugPrint("Error in _initializeData: $e");
     }
   }
 
@@ -121,11 +150,29 @@ class _ActivitiesTabState extends State<ActivitiesTab> {
 
   // Calculate current accumulated score of a substage
   int _getSubstageScore(Map<String, dynamic> substage, List<dynamic> history) {
+    if (isSimulationActive) {
+      int score = 0;
+      final List<dynamic> activities = substage["activities"] ?? [];
+      for (var act in activities) {
+        if (act["isDone"] == true) {
+          score += act["points"] as int;
+        }
+      }
+      return score;
+    }
+
     int score = 0;
     final List<dynamic> activities = substage["activities"] ?? [];
-    for (var act in activities) {
-      if (_isActivityDone(act, history)) {
-        score += act["points"] as int;
+    final Set<String> activityNames = activities
+        .map((act) => act["name"].toString().trim().toLowerCase())
+        .toSet();
+
+    for (var tx in history) {
+      if (tx["status"] == "APPROVED") {
+        final txActName = tx["activityName"].toString().trim().toLowerCase();
+        if (activityNames.contains(txActName)) {
+          score += (tx["xpPoints"] as num?)?.toInt() ?? 0;
+        }
       }
     }
     return score;

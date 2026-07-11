@@ -1,3 +1,4 @@
+import 'package:spdms_app/core/config/api_config.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -303,7 +304,7 @@ class _LevelsBadgesTabState extends State<LevelsBadgesTab> with SingleTickerProv
     try {
       // Fetch user profile to get discipline points (score)
       final response = await http.get(
-        Uri.parse("http://10.0.2.2:8080/api/v1/auth/me"),
+        Uri.parse("${ApiConfig.baseUrl}/api/v1/auth/me"),
         headers: {
           "Authorization": "Bearer ${widget.token}",
         },
@@ -326,7 +327,7 @@ class _LevelsBadgesTabState extends State<LevelsBadgesTab> with SingleTickerProv
     // Try fetching student's badges from server if any
     try {
       final badgesResponse = await http.get(
-        Uri.parse("http://10.0.2.2:8080/api/v1/badges/student/me"),
+        Uri.parse("${ApiConfig.baseUrl}/api/v1/badges/student/me"),
         headers: {
           "Authorization": "Bearer ${widget.token}",
         },
@@ -368,7 +369,7 @@ class _LevelsBadgesTabState extends State<LevelsBadgesTab> with SingleTickerProv
   Future<void> _submitBadgeClaim(String badgeName, String evidenceUrl) async {
     try {
       final response = await http.post(
-        Uri.parse("http://10.0.2.2:8080/api/v1/badges/submit"),
+        Uri.parse("${ApiConfig.baseUrl}/api/v1/badges/submit"),
         headers: {
           "Authorization": "Bearer ${widget.token}",
           "Content-Type": "application/json",

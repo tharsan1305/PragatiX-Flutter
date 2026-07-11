@@ -1,3 +1,4 @@
+import 'package:spdms_app/core/config/api_config.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -7,7 +8,7 @@ import '../teacher_student_detail.dart';
 Future<List<dynamic>> _apiGetDepartments(String token) async {
   try {
     final response = await http.get(
-      Uri.parse("http://10.0.2.2:8080/api/v1/admin/departments"),
+      Uri.parse("${ApiConfig.baseUrl}/api/v1/admin/departments"),
       headers: {"Authorization": "Bearer $token"},
     );
     if (response.statusCode == 200) {
@@ -107,13 +108,13 @@ class _StudentsTabState extends State<StudentsTab> {
     try {
       final headers = {"Authorization": "Bearer ${widget.token}"};
       final results = await Future.wait([
-        http.get(Uri.parse("http://10.0.2.2:8080/api/v1/admin/departments"), headers: headers),
-        http.get(Uri.parse("http://10.0.2.2:8080/api/v1/admin/academic-years"), headers: headers),
-        http.get(Uri.parse("http://10.0.2.2:8080/api/v1/admin/years"), headers: headers),
-        http.get(Uri.parse("http://10.0.2.2:8080/api/v1/admin/semesters"), headers: headers),
-        http.get(Uri.parse("http://10.0.2.2:8080/api/v1/admin/genders"), headers: headers),
-        http.get(Uri.parse("http://10.0.2.2:8080/api/v1/admin/sections"), headers: headers),
-        http.get(Uri.parse("http://10.0.2.2:8080/api/v1/teams"), headers: headers),
+        http.get(Uri.parse("${ApiConfig.baseUrl}/api/v1/admin/departments"), headers: headers),
+        http.get(Uri.parse("${ApiConfig.baseUrl}/api/v1/admin/academic-years"), headers: headers),
+        http.get(Uri.parse("${ApiConfig.baseUrl}/api/v1/admin/years"), headers: headers),
+        http.get(Uri.parse("${ApiConfig.baseUrl}/api/v1/admin/semesters"), headers: headers),
+        http.get(Uri.parse("${ApiConfig.baseUrl}/api/v1/admin/genders"), headers: headers),
+        http.get(Uri.parse("${ApiConfig.baseUrl}/api/v1/admin/sections"), headers: headers),
+        http.get(Uri.parse("${ApiConfig.baseUrl}/api/v1/teams"), headers: headers),
       ]);
 
       if (!mounted) return;
@@ -156,7 +157,7 @@ class _StudentsTabState extends State<StudentsTab> {
       return;
     }
 
-    String url = "http://10.0.2.2:8080/api/v1/students?page=0&size=100&sortBy=fullName";
+    String url = "${ApiConfig.baseUrl}/api/v1/students?page=0&size=100&sortBy=fullName";
     if (isHod) {
       url += "&year=$filterYear";
       if (filterSectionController.text.trim().isNotEmpty) {
@@ -201,7 +202,7 @@ class _StudentsTabState extends State<StudentsTab> {
     setState(() => isLoading = true);
     try {
       final response = await http.get(
-        Uri.parse("http://10.0.2.2:8080/api/v1/students/search?keyword=${Uri.encodeComponent(query.trim())}"),
+        Uri.parse("${ApiConfig.baseUrl}/api/v1/students/search?keyword=${Uri.encodeComponent(query.trim())}"),
         headers: {
           "Authorization": "Bearer ${widget.token}",
         },
@@ -252,7 +253,7 @@ class _StudentsTabState extends State<StudentsTab> {
 
     try {
       final response = await http.post(
-        Uri.parse("http://10.0.2.2:8080/api/v1/students"),
+        Uri.parse("${ApiConfig.baseUrl}/api/v1/students"),
         headers: {
           "Content-Type": "application/json",
           "Authorization": "Bearer ${widget.token}",
@@ -334,7 +335,7 @@ class _StudentsTabState extends State<StudentsTab> {
 
       final request = http.MultipartRequest(
         "POST",
-        Uri.parse("http://10.0.2.2:8080/api/v1/students/bulk-parse"),
+        Uri.parse("${ApiConfig.baseUrl}/api/v1/students/bulk-parse"),
       );
       request.headers["Authorization"] = "Bearer ${widget.token}";
       request.files.add(await http.MultipartFile.fromPath('file', filePath));
@@ -668,7 +669,7 @@ class _StudentsTabState extends State<StudentsTab> {
             void loadGroups() async {
               try {
                 final response = await http.get(
-                  Uri.parse("http://10.0.2.2:8080/api/v1/teams"),
+                  Uri.parse("${ApiConfig.baseUrl}/api/v1/teams"),
                   headers: {"Authorization": "Bearer ${widget.token}"},
                 );
                 if (response.statusCode == 200) {
@@ -774,7 +775,7 @@ class _StudentsTabState extends State<StudentsTab> {
                                       final messenger = ScaffoldMessenger.of(context);
                                       try {
                                         final response = await http.post(
-                                          Uri.parse("http://10.0.2.2:8080/api/v1/teams"),
+                                          Uri.parse("${ApiConfig.baseUrl}/api/v1/teams"),
                                           headers: {
                                             "Content-Type": "application/json",
                                             "Authorization": "Bearer ${widget.token}",
@@ -912,7 +913,7 @@ class _StudentsTabState extends State<StudentsTab> {
 
                             try {
                               final studentResponse = await http.get(
-                                Uri.parse("http://10.0.2.2:8080/api/v1/students/search?keyword=$sId"),
+                                Uri.parse("${ApiConfig.baseUrl}/api/v1/students/search?keyword=$sId"),
                                 headers: {"Authorization": "Bearer ${widget.token}"},
                               );
                               final studentData = jsonDecode(studentResponse.body);
@@ -922,7 +923,7 @@ class _StudentsTabState extends State<StudentsTab> {
                                 if (match != null) {
                                   final int dbId = match["id"];
                                   final logsResponse = await http.get(
-                                    Uri.parse("http://10.0.2.2:8080/api/v1/students/$dbId/discipline-logs"),
+                                    Uri.parse("${ApiConfig.baseUrl}/api/v1/students/$dbId/discipline-logs"),
                                     headers: {"Authorization": "Bearer ${widget.token}"},
                                   );
                                   final logsData = jsonDecode(logsResponse.body);
@@ -1045,7 +1046,7 @@ class _StudentsTabState extends State<StudentsTab> {
 
     try {
       final response = await http.put(
-        Uri.parse("http://10.0.2.2:8080/api/v1/students/$id"),
+        Uri.parse("${ApiConfig.baseUrl}/api/v1/students/$id"),
         headers: {
           "Content-Type": "application/json",
           "Authorization": "Bearer ${widget.token}",
@@ -1095,7 +1096,7 @@ class _StudentsTabState extends State<StudentsTab> {
   Future<void> _deleteStudent(int id) async {
     try {
       final response = await http.delete(
-        Uri.parse("http://10.0.2.2:8080/api/v1/students/$id"),
+        Uri.parse("${ApiConfig.baseUrl}/api/v1/students/$id"),
         headers: {
           "Authorization": "Bearer ${widget.token}",
         },
@@ -1733,7 +1734,7 @@ class _BulkVerificationScreenState extends State<BulkVerificationScreen> {
 
     try {
       final response = await http.post(
-        Uri.parse("http://10.0.2.2:8080/api/v1/students/bulk-import"),
+        Uri.parse("${ApiConfig.baseUrl}/api/v1/students/bulk-import"),
         headers: {
           "Content-Type": "application/json",
           "Authorization": "Bearer ${widget.token}",

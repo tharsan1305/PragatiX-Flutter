@@ -1,3 +1,4 @@
+import 'package:spdms_app/core/config/api_config.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -24,7 +25,7 @@ class _HodPerformanceTabState extends State<HodPerformanceTab> {
   Future<void> _fetchPerformance() async {
     try {
       final response = await http.get(
-        Uri.parse("http://10.0.2.2:8080/api/v1/students/department-performance"),
+        Uri.parse("${ApiConfig.baseUrl}/api/v1/students/department-performance"),
         headers: {"Authorization": "Bearer ${widget.token}"},
       );
       final data = jsonDecode(response.body);

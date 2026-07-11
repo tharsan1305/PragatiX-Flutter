@@ -150,7 +150,7 @@ class _EditActivityPageState extends State<EditActivityPage>
               ),
               flexibleSpace: FlexibleSpaceBar(
                 title: const Text(
-                  'Edit Activity',
+                  'Edit Event',
                   style: TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.w700,
@@ -190,7 +190,6 @@ class _EditActivityPageState extends State<EditActivityPage>
               }
               return ActivityForm(
                 key: _formKey,
-                departments: widget.provider.departments,
                 allTeachers: widget.provider.allTeachers,
                 sections: widget.provider.sections,
                 initialData: widget.activity,

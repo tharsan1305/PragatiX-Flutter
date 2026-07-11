@@ -1,3 +1,4 @@
+import 'package:spdms_app/core/config/api_config.dart';
 // ─────────────────────────────────────────────────────────────────────────────
 // Activity module – shared constants.
 // No Flutter imports here; this file is import-free (pure Dart).
@@ -7,7 +8,7 @@ class ActivityConstants {
   ActivityConstants._();
 
   // ── API ──────────────────────────────────────────────────────────────────
-  static const String baseUrl = 'http://10.0.2.2:8080/api/v1/admin';
+  static const String baseUrl = '${ApiConfig.baseUrl}/api/v1/admin';
 
   // ── Form options ──────────────────────────────────────────────────────────
   static const List<String> frequencies = [
