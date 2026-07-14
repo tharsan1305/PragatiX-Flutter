@@ -192,6 +192,8 @@ class _EditActivityPageState extends State<EditActivityPage>
                 key: _formKey,
                 allTeachers: widget.provider.allTeachers,
                 sections: widget.provider.sections,
+                token: widget.provider.token,
+                provider: widget.provider,
                 initialData: widget.activity,
                 isCc: widget.isCc,
               );

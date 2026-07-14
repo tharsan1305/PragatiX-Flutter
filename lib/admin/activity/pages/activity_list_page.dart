@@ -8,7 +8,9 @@ import '../widgets/activity_card.dart';
 import 'create_activity_page.dart';
 import 'edit_activity_page.dart';
 import 'activity_execution_page.dart';
+import 'group_activity_year_page.dart';
 import 'admin_activity_detail_page.dart';
+import 'assign_faculty_page.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Activity List Page – entry point from SubgroupDetailsPage.
@@ -103,6 +105,29 @@ class _ActivityListPageState extends State<ActivityListPage> {
           provider: _provider,
           subgroupId: widget.subgroupId,
           isCc: widget.isCc,
+        ),
+      ),
+    );
+    if (saved == true && mounted) {
+      if (widget.isMyActivitiesOnly) {
+        await _provider.loadMyActivities();
+      } else {
+        await _provider.loadActivities(widget.subgroupId);
+      }
+      if (widget.isAdmin && _provider.activities.isNotEmpty) {
+        final newAct = _provider.activities.last;
+        await _openAssign(newAct);
+      }
+    }
+  }
+
+  Future<void> _openAssign(ActivityModel activity) async {
+    final saved = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => AssignFacultyPage(
+          provider: _provider,
+          activity: activity,
         ),
       ),
     );
@@ -239,6 +264,7 @@ class _ActivityListPageState extends State<ActivityListPage> {
                           activity: act,
                           onEdit: () => _openEdit(act),
                           onDelete: () => _confirmDelete(act),
+                          onAssign: widget.isAdmin ? () => _openAssign(act) : null,
                           isCc: widget.isCc,
                           isReadOnly: widget.isMyActivitiesOnly,
                           onTap: widget.isAdmin
@@ -259,10 +285,20 @@ class _ActivityListPageState extends State<ActivityListPage> {
                                       Navigator.push(
                                         context,
                                         MaterialPageRoute(
-                                          builder: (_) => ActivityExecutionPage(
-                                            token: widget.token,
-                                            activityId: act.id,
-                                          ),
+                                          builder: (_) {
+                                            bool isGroupActivity = act.type.toLowerCase().contains('group');
+                                            if (isGroupActivity) {
+                                              return GroupActivityYearPage(
+                                                token: widget.token,
+                                                activityId: act.id,
+                                              );
+                                            } else {
+                                              return ActivityExecutionPage(
+                                                token: widget.token,
+                                                activityId: act.id,
+                                              );
+                                            }
+                                          },
                                         ),
                                       );
                                     }

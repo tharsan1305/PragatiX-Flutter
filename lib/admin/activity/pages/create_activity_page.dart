@@ -136,6 +136,8 @@ class _CreateActivityPageState extends State<CreateActivityPage>
                 key: _formKey,
                 allTeachers: widget.provider.allTeachers,
                 sections: widget.provider.sections,
+                token: widget.provider.token,
+                provider: widget.provider,
                 isCc: widget.isCc,
               );
             },

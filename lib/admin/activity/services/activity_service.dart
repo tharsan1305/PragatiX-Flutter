@@ -65,6 +65,51 @@ class ActivityService {
     throw Exception('Failed to fetch users (status ${response.statusCode})');
   }
 
+  Future<List<dynamic>> fetchClassCoordinators() async {
+    final response = await http.get(
+      Uri.parse('${ActivityConstants.baseUrl}/departments/class-coordinators'),
+      headers: _authHeaders,
+    );
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body) as Map<String, dynamic>;
+      if (data['success'] == true) {
+        return (data['data'] as List?) ?? [];
+      }
+    }
+    throw Exception('Failed to fetch class coordinators (status ${response.statusCode})');
+  }
+
+  Future<List<dynamic>> fetchCustomFrequencies() async {
+    final response = await http.get(
+      Uri.parse('${ActivityConstants.baseUrl}/frequencies/custom'),
+      headers: _authHeaders,
+    );
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body) as Map<String, dynamic>;
+      if (data['success'] == true) {
+        return (data['data'] as List?) ?? [];
+      }
+    }
+    throw Exception('Failed to fetch custom frequencies (status ${response.statusCode})');
+  }
+
+  Future<Map<String, dynamic>> createCustomFrequency(Map<String, dynamic> body) async {
+    final response = await http.post(
+      Uri.parse('${ActivityConstants.baseUrl}/frequencies/custom'),
+      headers: _jsonHeaders,
+      body: jsonEncode(body),
+    );
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      final data = jsonDecode(response.body) as Map<String, dynamic>;
+      if (data['success'] == true) {
+        return data['data'] as Map<String, dynamic>;
+      }
+      throw Exception(data['message'] ?? 'Failed to create custom frequency');
+    }
+    final data = jsonDecode(response.body) as Map<String, dynamic>;
+    throw Exception(data['message'] ?? 'Failed to create custom frequency (status ${response.statusCode})');
+  }
+
   Future<Map<String, dynamic>> createActivity(
       int subgroupId, Map<String, dynamic> body) async {
     final response = await http.post(
@@ -110,6 +155,8 @@ class ActivityService {
       Uri.parse('${ActivityConstants.baseUrl}/sections'),
       headers: _authHeaders,
     );
+    print('DEBUG_LOG: fetchSections API Response status: ${response.statusCode}');
+    print('DEBUG_LOG: fetchSections API Response body: ${response.body}');
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body) as Map<String, dynamic>;
       if (data['success'] == true) {
@@ -136,6 +183,23 @@ class ActivityService {
     throw Exception(data['message'] ?? 'Failed to assign activity');
   }
 
+  Future<void> saveAssignments(
+      int activityId, bool globalEnabled, List<Map<String, dynamic>> assignments, {bool ccEnabled = false}) async {
+    final response = await http.post(
+      Uri.parse('${ActivityConstants.baseUrl}/activities/$activityId/assign'),
+      headers: _jsonHeaders,
+      body: jsonEncode({
+        'globalEnabled': globalEnabled,
+        'ccEnabled': ccEnabled,
+        'assignments': assignments,
+      }),
+    );
+    if (response.statusCode != 200 && response.statusCode != 201) {
+      final data = jsonDecode(response.body) as Map<String, dynamic>;
+      throw Exception(data['message'] ?? 'Failed to save assignments');
+    }
+  }
+
   Future<List<dynamic>> fetchMyActivities() async {
     final response = await http.get(
       Uri.parse('${ActivityConstants.baseUrl}/my-activities'),
@@ -150,10 +214,19 @@ class ActivityService {
     throw Exception('Failed to fetch my activities (status ${response.statusCode})');
   }
 
-  Future<Map<String, dynamic>> fetchExecutionStudents(int activityId) async {
+  Future<Map<String, dynamic>> fetchExecutionStudents(int activityId, {String? year, int? departmentId, int? sectionId}) async {
     final rootUrl = ActivityConstants.baseUrl.replaceAll('/admin', '');
+    
+    // Build query parameters
+    final Map<String, String> queryParams = {};
+    if (year != null && year.isNotEmpty) queryParams['year'] = year;
+    if (departmentId != null) queryParams['departmentId'] = departmentId.toString();
+    if (sectionId != null) queryParams['sectionId'] = sectionId.toString();
+    
+    final uri = Uri.parse('$rootUrl/my-activities/$activityId/students').replace(queryParameters: queryParams);
+    
     final response = await http.get(
-      Uri.parse('$rootUrl/my-activities/$activityId/students'),
+      uri,
       headers: _authHeaders,
     );
     final data = jsonDecode(response.body) as Map<String, dynamic>;
@@ -169,6 +242,7 @@ class ActivityService {
     required int assignmentId,
     required int xp,
     required String remarks,
+    String result = 'PASS',
   }) async {
     final rootUrl = ActivityConstants.baseUrl.replaceAll('/admin', '');
     final response = await http.post(
@@ -180,6 +254,7 @@ class ActivityService {
         'assignmentId': assignmentId,
         'xp': xp,
         'remarks': remarks,
+        'result': result,
       }),
     );
     final data = jsonDecode(response.body) as Map<String, dynamic>;

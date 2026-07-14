@@ -54,6 +54,12 @@ class ActivityExecutionDetailModel {
   final List<String> evidence;
   final String frequency;
   final String type;
+  final bool awardEnabled;
+  final int awardXp;
+  final bool penaltyEnabled;
+  final int penaltyXp;
+  final String xpCategory;
+  final int cap;
 
   ActivityExecutionDetailModel({
     required this.id,
@@ -63,10 +69,38 @@ class ActivityExecutionDetailModel {
     required this.evidence,
     required this.frequency,
     required this.type,
+    required this.awardEnabled,
+    required this.awardXp,
+    required this.penaltyEnabled,
+    required this.penaltyXp,
+    required this.xpCategory,
+    required this.cap,
   });
 
   factory ActivityExecutionDetailModel.fromJson(Map<String, dynamic> json) {
     final listRaw = json['evidence'] as List<dynamic>? ?? [];
+    final pAwardXp = (json['awardXp'] as num?)?.toInt() ?? 0;
+
+    bool parsedAwardEnabled = true;
+    bool parsedPenaltyEnabled = false;
+    int parsedPenaltyXp = (json['penaltyXp'] as num?)?.toInt() ?? 0;
+
+    if (json.containsKey('awardEnabled')) {
+      parsedAwardEnabled = json['awardEnabled'] as bool? ?? true;
+    }
+    if (json.containsKey('penaltyEnabled')) {
+      parsedPenaltyEnabled = json['penaltyEnabled'] as bool? ?? false;
+    }
+    if (!json.containsKey('awardEnabled') && !json.containsKey('penaltyEnabled')) {
+      final pX = (json['passXp'] as num?)?.toInt() ?? 0;
+      final fX = (json['failXp'] as num?)?.toInt() ?? 0;
+      if (pX > 0 || fX > 0) {
+        parsedAwardEnabled = pX > 0;
+        parsedPenaltyEnabled = fX > 0;
+        parsedPenaltyXp = fX;
+      }
+    }
+
     return ActivityExecutionDetailModel(
       id: json['id'] as int? ?? 0,
       name: json['name'] as String? ?? '',
@@ -75,6 +109,12 @@ class ActivityExecutionDetailModel {
       evidence: listRaw.map((e) => e.toString()).toList(),
       frequency: json['frequency'] as String? ?? '',
       type: json['type'] as String? ?? '',
+      awardEnabled: parsedAwardEnabled,
+      awardXp: pAwardXp,
+      penaltyEnabled: parsedPenaltyEnabled,
+      penaltyXp: parsedPenaltyXp,
+      xpCategory: json['xpCategory'] as String? ?? '',
+      cap: (json['cap'] as num?)?.toInt() ?? 1,
     );
   }
 }
@@ -83,11 +123,15 @@ class AssignmentExecutionDetailModel {
   final int id;
   final String assignedBy;
   final String assignedAt;
+  final String assignedFacultyName;
+  final String assignmentMode;
 
   AssignmentExecutionDetailModel({
     required this.id,
     required this.assignedBy,
     required this.assignedAt,
+    required this.assignedFacultyName,
+    required this.assignmentMode,
   });
 
   factory AssignmentExecutionDetailModel.fromJson(Map<String, dynamic> json) {
@@ -95,6 +139,8 @@ class AssignmentExecutionDetailModel {
       id: json['id'] as int? ?? 0,
       assignedBy: json['assignedBy'] as String? ?? '',
       assignedAt: json['assignedAt'] as String? ?? '',
+      assignedFacultyName: json['assignedFacultyName'] as String? ?? '',
+      assignmentMode: json['assignmentMode'] as String? ?? '',
     );
   }
 }

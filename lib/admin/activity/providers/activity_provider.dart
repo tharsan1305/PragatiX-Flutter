@@ -13,12 +13,16 @@ class ActivityProvider extends ChangeNotifier {
 
   ActivityProvider(this._repository);
 
+  String get token => _repository.token;
+
   // ── List state ────────────────────────────────────────────────────────────
   List<ActivityModel> activities = [];
   List<MyActivityModel> myActivities = [];
   List<dynamic> departments = [];
   List<dynamic> allTeachers = [];
   List<dynamic> sections = [];
+  List<dynamic> classCoordinators = [];
+  List<dynamic> customFrequencies = [];
 
   bool isLoadingActivities = false;
   bool isLoadingDependencies = false;
@@ -73,8 +77,22 @@ class ActivityProvider extends ChangeNotifier {
     }
     try {
       sections = await _repository.getSections();
-    } catch (_) {
+      print('DEBUG_LOG: Provider loaded sections count: ${sections.length}, data: $sections');
+    } catch (e) {
+      print('DEBUG_LOG: Provider failed to load sections: $e');
       sections = [];
+    }
+    try {
+      classCoordinators = await _repository.getClassCoordinators();
+      print('DEBUG_LOG: Provider loaded class coordinators count: ${classCoordinators.length}');
+    } catch (e) {
+      print('DEBUG_LOG: Provider failed to load class coordinators: $e');
+      classCoordinators = [];
+    }
+    try {
+      customFrequencies = await _repository.getCustomFrequencies();
+    } catch (e) {
+      customFrequencies = [];
     }
     isLoadingDependencies = false;
     notifyListeners();
@@ -96,6 +114,21 @@ class ActivityProvider extends ChangeNotifier {
     } finally {
       isSaving = false;
       notifyListeners();
+    }
+  }
+
+  Future<Map<String, dynamic>?> createCustomFrequency(Map<String, dynamic> body) async {
+    error = null;
+    notifyListeners();
+    try {
+      final newFreq = await _repository.createCustomFrequency(body);
+      customFrequencies = [...customFrequencies, newFreq];
+      notifyListeners();
+      return newFreq;
+    } catch (e) {
+      error = e.toString();
+      notifyListeners();
+      return null;
     }
   }
 
@@ -141,6 +174,22 @@ class ActivityProvider extends ChangeNotifier {
     } catch (e) {
       error = e.toString();
       return false;
+    } finally {
+      isSaving = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> saveAssignments(
+      int activityId, bool globalEnabled, List<Map<String, dynamic>> assignments, {bool ccEnabled = false}) async {
+    isSaving = true;
+    error = null;
+    notifyListeners();
+    try {
+      await _repository.saveAssignments(activityId, globalEnabled, assignments, ccEnabled: ccEnabled);
+    } catch (e) {
+      error = e.toString();
+      rethrow;
     } finally {
       isSaving = false;
       notifyListeners();

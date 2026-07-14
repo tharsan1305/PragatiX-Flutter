@@ -91,13 +91,54 @@ class _StudentsTabState extends State<StudentsTab> {
     super.dispose();
   }
 
+  String? ccYear;
+  int? ccDeptId;
+  String? ccDeptName;
+  String? ccSection;
+
+  Future<void> _fetchMeProfile() async {
+    try {
+      final response = await http.get(
+        Uri.parse("${ApiConfig.baseUrl}/api/v1/auth/me"),
+        headers: {"Authorization": "Bearer ${widget.token}"},
+      );
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data["success"] == true) {
+          final profile = data["data"];
+          setState(() {
+            ccYear = profile["year"]?.toString();
+            ccDeptName = profile["department"]?.toString();
+            ccSection = profile["section"]?.toString();
+            _resolveCcDeptId();
+          });
+        }
+      }
+    } catch (_) {}
+  }
+
+  void _resolveCcDeptId() {
+    if (ccDeptName != null && departments.isNotEmpty) {
+      final match = departments.firstWhere(
+        (d) => (d["name"] ?? "").toString().toLowerCase() == ccDeptName!.toLowerCase() ||
+               (d["code"] ?? "").toString().toLowerCase() == ccDeptName!.toLowerCase(),
+        orElse: () => null,
+      );
+      if (match != null) {
+        ccDeptId = match["id"];
+      }
+    }
+  }
+
   @override
   void initState() {
     super.initState();
     bool isHod = widget.subRoles.contains("HOD");
     bool isCc = widget.subRoles.contains("CC");
     if (isCc) {
-      _fetchStudents();
+      _fetchMeProfile().then((_) {
+        _fetchStudents();
+      });
     } else {
       isLoading = false;
     }
@@ -129,12 +170,31 @@ class _StudentsTabState extends State<StudentsTab> {
         groups = jsonDecode(results[6].body)["data"] ?? [];
         isLoadingLookups = false;
 
+        _resolveCcDeptId();
+
         if (departments.isNotEmpty) selectedDeptId = departments.first["id"];
       });
     } catch (e) {
       if (!mounted) return;
       setState(() => isLoadingLookups = false);
     }
+  }
+
+  int _getYearNumber(String yr) {
+    final y = yr.toLowerCase();
+    if (y.contains("1") || y == "i" || y.contains("first")) return 1;
+    if (y.contains("2") || y == "ii" || y.contains("second")) return 2;
+    if (y.contains("3") || y == "iii" || y.contains("third")) return 3;
+    if (y.contains("4") || y == "iv" || y.contains("fourth")) return 4;
+    return -1;
+  }
+
+  String _normalizeSectionName(String name) {
+    String cleaned = name.trim().toLowerCase();
+    if (cleaned.startsWith("section ")) {
+      cleaned = cleaned.substring(8).trim();
+    }
+    return cleaned;
   }
 
   Future<void> _fetchStudents() async {
@@ -157,13 +217,9 @@ class _StudentsTabState extends State<StudentsTab> {
       return;
     }
 
-    String url = "${ApiConfig.baseUrl}/api/v1/students?page=0&size=100&sortBy=fullName";
-    if (isHod) {
-      url += "&year=$filterYear";
-      if (filterSectionController.text.trim().isNotEmpty) {
-        url += "&section=${Uri.encodeComponent(filterSectionController.text.trim())}";
-      }
-    }
+    String url = "${ApiConfig.baseUrl}/api/v1/students?page=0&size=1000&sortBy=fullName";
+    print("Requested URL: $url");
+    print("Request parameters: page=0, size=1000, sortBy=fullName");
 
     try {
       final response = await http.get(
@@ -172,19 +228,23 @@ class _StudentsTabState extends State<StudentsTab> {
           "Authorization": "Bearer ${widget.token}",
         },
       );
+      print("Response status: ${response.statusCode}");
+      print("Response body: ${response.body}");
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data["success"] == true) {
+          final rawList = data["data"]["content"] as List? ?? [];
+          print("Parsed students count: ${rawList.length}");
           setState(() {
-            studentsList = data["data"]["content"] ?? [];
+            studentsList = rawList;
             isLoading = false;
           });
           return;
         }
       }
     } catch (e) {
-      // Fallback
+      print("Error fetching students: $e");
     }
 
     setState(() {
@@ -202,7 +262,7 @@ class _StudentsTabState extends State<StudentsTab> {
     setState(() => isLoading = true);
     try {
       final response = await http.get(
-        Uri.parse("${ApiConfig.baseUrl}/api/v1/students/search?keyword=${Uri.encodeComponent(query.trim())}"),
+        Uri.parse("${ApiConfig.baseUrl}/api/v1/students/search?keyword=${Uri.encodeComponent(query.trim())}&page=0&size=1000"),
         headers: {
           "Authorization": "Bearer ${widget.token}",
         },
@@ -210,8 +270,39 @@ class _StudentsTabState extends State<StudentsTab> {
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data["success"] == true) {
+          final rawList = data["data"]["content"] as List? ?? [];
           setState(() {
-            studentsList = data["data"]["content"] ?? [];
+            if (widget.subRoles.contains("CC")) {
+              studentsList = rawList.where((s) {
+                final sYear = s["year"]?.toString()?.trim()?.toLowerCase() ?? "";
+                final sDeptName = s["departmentName"]?.toString()?.trim()?.toLowerCase() ?? "";
+                final sSection = s["section"]?.toString()?.trim()?.toLowerCase() ?? "";
+
+                final targetYear = ccYear?.trim()?.toLowerCase() ?? "";
+                final targetDeptName = ccDeptName?.trim()?.toLowerCase() ?? "";
+                final targetSection = ccSection?.trim()?.toLowerCase() ?? "";
+
+                bool yearMatches = false;
+                if (targetYear.isEmpty) {
+                  yearMatches = true;
+                } else {
+                  final targetNo = _getYearNumber(targetYear);
+                  final sNo = _getYearNumber(sYear);
+                  if (targetNo != -1 && sNo != -1) {
+                    yearMatches = (targetNo == sNo);
+                  } else {
+                    yearMatches = (sYear == targetYear);
+                  }
+                }
+
+                bool deptMatches = targetDeptName.isEmpty || sDeptName == targetDeptName;
+                bool sectionMatches = targetSection.isEmpty || sSection == targetSection;
+
+                return yearMatches && deptMatches && sectionMatches;
+              }).toList();
+            } else {
+              studentsList = rawList;
+            }
             isLoading = false;
           });
           return;
@@ -348,12 +439,45 @@ class _StudentsTabState extends State<StudentsTab> {
       setState(() => isLoading = false);
 
       if (response.statusCode == 200 && data["success"] == true) {
-        final List<dynamic> parsedStudents = data["data"] ?? [];
+        List<dynamic> parsedStudents = data["data"] ?? [];
         if (parsedStudents.isEmpty) {
           messenger.showSnackBar(
             const SnackBar(content: Text("No valid student records found in the Excel sheet."), backgroundColor: Colors.orange),
           );
           return;
+        }
+
+        // For CC: auto-inject department, year, and section into each student
+        if (widget.subRoles.contains("CC")) {
+          // Resolve year ID
+          int? ccYearId;
+          if (ccYear != null) {
+            final yMatch = years.firstWhere(
+                (y) => y["yearNo"]?.toString() == ccYear || "Year ${y["yearNo"]}" == ccYear,
+                orElse: () => null);
+            if (yMatch != null) ccYearId = yMatch["id"];
+          }
+
+          // Resolve section ID
+          int? ccSectionId;
+          if (ccSection != null && ccSection!.isNotEmpty && ccDeptId != null) {
+            final sMatch = sections.firstWhere((sec) {
+              final depId = sec["department"] != null ? sec["department"]["id"] : sec["departmentId"];
+              final sName = _normalizeSectionName(sec["sectionName"] ?? "");
+              final targetSec = _normalizeSectionName(ccSection!);
+              return depId == ccDeptId && sName == targetSec;
+            }, orElse: () => null);
+            if (sMatch != null) ccSectionId = sMatch["id"];
+          }
+
+          parsedStudents = parsedStudents.map((s) {
+            final student = Map<String, dynamic>.from(s);
+            if (ccDeptId != null) student["departmentId"] = ccDeptId;
+            if (ccYearId != null) student["yearId"] = ccYearId;
+            if (ccSectionId != null) student["sectionId"] = ccSectionId;
+            if (ccSection != null && ccSection!.isNotEmpty) student["section"] = ccSection;
+            return student;
+          }).toList();
         }
 
         final bool? importCompleted = await navigator.push<bool>(
@@ -383,6 +507,7 @@ class _StudentsTabState extends State<StudentsTab> {
       );
     }
   }
+
 
   void _clearControllers() {
     nameController.clear();
@@ -434,14 +559,17 @@ class _StudentsTabState extends State<StudentsTab> {
     );
   }
 
+
   void _showSingleStudentDialog() {
     _clearControllers();
-    int? selectedDeptId = departments.isNotEmpty ? departments.first["id"] : null;
-    int? selectedAcademicYearId = academicYears.isNotEmpty ? academicYears.first["id"] : null;
-    int? selectedYearId = years.isNotEmpty ? years.first["id"] : null;
-    int? selectedSemesterId = semesters.isNotEmpty ? semesters.first["id"] : null;
-    int? selectedGenderId = genders.isNotEmpty ? genders.first["id"] : null;
+    final isCc = widget.subRoles.contains("CC");
+
+    int? selectedDeptId;
+    int? selectedYearId;
     int? selectedSectionId;
+    int? selectedAcademicYearId;
+    int? selectedSemesterId;
+    int? selectedGenderId;
     int? selectedGroupId;
     final TextEditingController addressController = TextEditingController();
 
@@ -450,11 +578,114 @@ class _StudentsTabState extends State<StudentsTab> {
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setDialogState) {
-            // Filter sections by department ID
-            final filteredSections = sections.where((sec) => sec["departmentId"] == selectedDeptId).toList();
-            if (selectedSectionId != null && !filteredSections.any((sec) => sec["id"] == selectedSectionId)) {
+            // Perform CC resolution inside builder if not resolved yet
+            if (isCc) {
+              if (selectedDeptId == null) {
+                selectedDeptId = ccDeptId;
+                if (selectedDeptId == null && ccDeptName != null && ccDeptName!.isNotEmpty) {
+                  final dMatch = departments.firstWhere(
+                      (d) => (d["name"] ?? "").toString().toLowerCase() == ccDeptName!.toLowerCase() ||
+                             (d["code"] ?? "").toString().toLowerCase() == ccDeptName!.toLowerCase(),
+                      orElse: () => null);
+                  if (dMatch != null) selectedDeptId = dMatch["id"];
+                }
+                // Fallback department from student list
+                if (selectedDeptId == null && studentsList.isNotEmpty) {
+                  final firstStudentDeptName = studentsList.first["departmentName"];
+                  if (firstStudentDeptName != null) {
+                    final dMatch = departments.firstWhere(
+                        (d) => (d["name"] ?? "").toString().toLowerCase() == firstStudentDeptName.toString().toLowerCase() ||
+                               (d["code"] ?? "").toString().toLowerCase() == firstStudentDeptName.toString().toLowerCase() ||
+                               (d["deptName"] ?? "").toString().toLowerCase() == firstStudentDeptName.toString().toLowerCase() ||
+                               (d["deptCode"] ?? "").toString().toLowerCase() == firstStudentDeptName.toString().toLowerCase(),
+                        orElse: () => null);
+                    if (dMatch != null) selectedDeptId = dMatch["id"];
+                  }
+                }
+              }
+
+              if (selectedYearId == null) {
+                if (ccYear != null && ccYear!.isNotEmpty) {
+                  final yMatch = years.firstWhere(
+                      (y) => y["yearNo"]?.toString() == ccYear || "Year ${y["yearNo"]}" == ccYear,
+                      orElse: () => null);
+                  if (yMatch != null) selectedYearId = yMatch["id"];
+                }
+                // Fallback year from student list
+                if (selectedYearId == null && studentsList.isNotEmpty) {
+                  final firstStudentYear = studentsList.first["year"];
+                  if (firstStudentYear != null) {
+                    final yMatch = years.firstWhere(
+                        (y) => y["yearNo"]?.toString() == firstStudentYear.toString() ||
+                               "Year ${y["yearNo"]}" == firstStudentYear.toString(),
+                        orElse: () => null);
+                    if (yMatch != null) selectedYearId = yMatch["id"];
+                  }
+                }
+                if (selectedYearId == null && years.isNotEmpty) selectedYearId = years.first["id"];
+              }
+
+              if (selectedSectionId == null) {
+                if (ccSection != null && ccSection!.isNotEmpty) {
+                  final sMatch = sections.firstWhere((sec) {
+                    final depId = sec["department"] != null ? sec["department"]["id"] : sec["departmentId"];
+                    final sName = _normalizeSectionName(sec["sectionName"] ?? "");
+                    final targetSec = _normalizeSectionName(ccSection!);
+                    return depId == selectedDeptId && sName == targetSec;
+                  }, orElse: () => null);
+                  if (sMatch != null) selectedSectionId = sMatch["id"];
+                }
+                // Fallback section from student list
+                if (selectedSectionId == null && studentsList.isNotEmpty) {
+                  final firstStudentSection = studentsList.first["section"];
+                  if (firstStudentSection != null) {
+                    final sMatch = sections.firstWhere((sec) {
+                      final depId = sec["department"] != null ? sec["department"]["id"] : sec["departmentId"];
+                      final sName = _normalizeSectionName(sec["sectionName"] ?? "");
+                      final targetSec = _normalizeSectionName(firstStudentSection);
+                      return depId == selectedDeptId && sName == targetSec;
+                    }, orElse: () => null);
+                    if (sMatch != null) selectedSectionId = sMatch["id"];
+                  }
+                }
+              }
+            } else {
+              if (selectedDeptId == null && departments.isNotEmpty) {
+                selectedDeptId = departments.first["id"];
+              }
+            }
+
+            if (selectedAcademicYearId == null && academicYears.isNotEmpty) {
+              selectedAcademicYearId = academicYears.first["id"];
+            }
+            if (selectedSemesterId == null && semesters.isNotEmpty) {
+              selectedSemesterId = semesters.first["id"];
+            }
+            if (selectedGenderId == null && genders.isNotEmpty) {
+              selectedGenderId = genders.first["id"];
+            }
+
+            // Filter sections by department ID (Section entity nests department as a sub-object)
+            final filteredSections = sections.where((sec) {
+              final depId = sec["department"] != null ? sec["department"]["id"] : sec["departmentId"];
+              return depId == selectedDeptId;
+            }).toList();
+            if (!isCc && selectedSectionId != null && !filteredSections.any((sec) => sec["id"] == selectedSectionId)) {
               selectedSectionId = null;
             }
+
+            // Resolve display strings for CC locked fields
+            String ccDeptDisplay = ccDeptName ?? "";
+            if (isCc && selectedDeptId != null) {
+              final d = departments.firstWhere((d) => d["id"] == selectedDeptId, orElse: () => null);
+              if (d != null) ccDeptDisplay = d["code"] ?? d["name"] ?? "";
+            }
+            String ccYearDisplay = ccYear != null ? "Year $ccYear" : "";
+            if (isCc && selectedYearId != null) {
+              final y = years.firstWhere((y) => y["id"] == selectedYearId, orElse: () => null);
+              if (y != null) ccYearDisplay = "Year ${y["yearNo"]}";
+            }
+            String ccSectionDisplay = ccSection != null && ccSection!.isNotEmpty ? ccSection! : "None";
 
             return AlertDialog(
               title: const Text("Register Single Student", style: TextStyle(fontWeight: FontWeight.bold)),
@@ -506,22 +737,131 @@ class _StudentsTabState extends State<StudentsTab> {
                       ],
                     ),
                     const SizedBox(height: 10),
-                    DropdownButtonFormField<int>(
-                      value: selectedDeptId,
-                      decoration: const InputDecoration(labelText: "Department *"),
-                      items: departments.map((d) {
-                        return DropdownMenuItem<int>(
-                          value: d["id"],
-                          child: Text(d["code"] ?? d["name"]),
-                        );
-                      }).toList(),
-                      onChanged: (value) {
-                        setDialogState(() {
-                          selectedDeptId = value;
-                          selectedSectionId = null; // Clear Section on department change
-                        });
-                      },
-                    ),
+
+                    // -- CC locked fields shown as info rows --
+                    if (isCc) ...[
+                      Container(
+                        decoration: BoxDecoration(
+                          border: Border.all(color: Colors.grey.shade300),
+                          borderRadius: BorderRadius.circular(8),
+                          color: Colors.grey.shade100,
+                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                        margin: const EdgeInsets.only(bottom: 8),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text("Department", style: TextStyle(color: Colors.grey, fontSize: 12)),
+                            Row(
+                              children: [
+                                Text(ccDeptDisplay, style: const TextStyle(fontWeight: FontWeight.bold)),
+                                const SizedBox(width: 4),
+                                const Icon(Icons.lock_outline, size: 14, color: Colors.grey),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                      Container(
+                        decoration: BoxDecoration(
+                          border: Border.all(color: Colors.grey.shade300),
+                          borderRadius: BorderRadius.circular(8),
+                          color: Colors.grey.shade100,
+                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                        margin: const EdgeInsets.only(bottom: 8),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text("Year", style: TextStyle(color: Colors.grey, fontSize: 12)),
+                            Row(
+                              children: [
+                                Text(ccYearDisplay, style: const TextStyle(fontWeight: FontWeight.bold)),
+                                const SizedBox(width: 4),
+                                const Icon(Icons.lock_outline, size: 14, color: Colors.grey),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                      Container(
+                        decoration: BoxDecoration(
+                          border: Border.all(color: Colors.grey.shade300),
+                          borderRadius: BorderRadius.circular(8),
+                          color: Colors.grey.shade100,
+                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                        margin: const EdgeInsets.only(bottom: 8),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text("Section", style: TextStyle(color: Colors.grey, fontSize: 12)),
+                            Row(
+                              children: [
+                                Text(ccSectionDisplay, style: const TextStyle(fontWeight: FontWeight.bold)),
+                                const SizedBox(width: 4),
+                                const Icon(Icons.lock_outline, size: 14, color: Colors.grey),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ] else ...[
+                      // Non-CC: full editable dropdowns
+                      DropdownButtonFormField<int>(
+                        value: selectedDeptId,
+                        decoration: const InputDecoration(labelText: "Department *"),
+                        items: departments.map((d) {
+                          return DropdownMenuItem<int>(
+                            value: d["id"],
+                            child: Text(d["code"] ?? d["name"]),
+                          );
+                        }).toList(),
+                        onChanged: (value) {
+                          setDialogState(() {
+                            selectedDeptId = value;
+                            selectedSectionId = null;
+                          });
+                        },
+                      ),
+                      DropdownButtonFormField<int>(
+                        value: selectedYearId,
+                        decoration: const InputDecoration(labelText: "Year *"),
+                        items: years.map((y) {
+                          return DropdownMenuItem<int>(
+                            value: y["id"],
+                            child: Text(y["yearNo"] != null ? "Year ${y["yearNo"]}" : ""),
+                          );
+                        }).toList(),
+                        onChanged: (value) {
+                          setDialogState(() {
+                            selectedYearId = value;
+                          });
+                        },
+                      ),
+                      DropdownButtonFormField<int?>(
+                        value: filteredSections.any((sec) => sec["id"] == selectedSectionId) ? selectedSectionId : null,
+                        decoration: const InputDecoration(labelText: "Section (Optional)"),
+                        items: [
+                          const DropdownMenuItem<int?>(
+                            value: null,
+                            child: Text("No Section Selected (Optional)"),
+                          ),
+                          ...filteredSections.map((sec) {
+                            return DropdownMenuItem<int?>(
+                              value: sec["id"],
+                              child: Text(sec["sectionName"] ?? ""),
+                            );
+                          })
+                        ],
+                        onChanged: (value) {
+                          setDialogState(() {
+                            selectedSectionId = value;
+                          });
+                        },
+                      ),
+                    ],
+
                     DropdownButtonFormField<int>(
                       value: selectedAcademicYearId,
                       decoration: const InputDecoration(labelText: "Academic Year *"),
@@ -534,21 +874,6 @@ class _StudentsTabState extends State<StudentsTab> {
                       onChanged: (value) {
                         setDialogState(() {
                           selectedAcademicYearId = value;
-                        });
-                      },
-                    ),
-                    DropdownButtonFormField<int>(
-                      value: selectedYearId,
-                      decoration: const InputDecoration(labelText: "Year *"),
-                      items: years.map((y) {
-                        return DropdownMenuItem<int>(
-                          value: y["id"],
-                          child: Text(y["yearNo"] != null ? "Year ${y["yearNo"]}" : ""),
-                        );
-                      }).toList(),
-                      onChanged: (value) {
-                        setDialogState(() {
-                          selectedYearId = value;
                         });
                       },
                     ),
@@ -579,27 +904,6 @@ class _StudentsTabState extends State<StudentsTab> {
                       onChanged: (value) {
                         setDialogState(() {
                           selectedGenderId = value;
-                        });
-                      },
-                    ),
-                    DropdownButtonFormField<int?>(
-                      value: selectedSectionId,
-                      decoration: const InputDecoration(labelText: "Section (Optional)"),
-                      items: [
-                        const DropdownMenuItem<int?>(
-                          value: null,
-                          child: Text("No Section Selected (Optional)"),
-                        ),
-                        ...filteredSections.map((sec) {
-                          return DropdownMenuItem<int?>(
-                            value: sec["id"],
-                            child: Text(sec["sectionName"] ?? ""),
-                          );
-                        })
-                      ],
-                      onChanged: (value) {
-                        setDialogState(() {
-                          selectedSectionId = value;
                         });
                       },
                     ),
@@ -1187,6 +1491,15 @@ class _StudentsTabState extends State<StudentsTab> {
     }
 
     int? selectedSectionId = student["sectionId"];
+    if (selectedSectionId == null && student["section"] != null) {
+      final match = sections.firstWhere((sec) {
+        final depId = sec["department"] != null ? sec["department"]["id"] : sec["departmentId"];
+        final sName = _normalizeSectionName(sec["sectionName"] ?? "");
+        final targetSec = _normalizeSectionName(student["section"].toString());
+        return depId == selectedDeptId && sName == targetSec;
+      }, orElse: () => null);
+      if (match != null) selectedSectionId = match["id"];
+    }
     int? selectedGroupId = student["groupId"];
     bool active = student["active"] ?? true;
 
@@ -1195,7 +1508,11 @@ class _StudentsTabState extends State<StudentsTab> {
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setDialogState) {
-            final filteredSections = sections.where((sec) => sec["departmentId"] == selectedDeptId).toList();
+            // Filter sections by department ID (Section entity nests department as a sub-object)
+            final filteredSections = sections.where((sec) {
+              final depId = sec["department"] != null ? sec["department"]["id"] : sec["departmentId"];
+              return depId == selectedDeptId;
+            }).toList();
             if (selectedSectionId != null && !filteredSections.any((sec) => sec["id"] == selectedSectionId)) {
               selectedSectionId = null;
             }

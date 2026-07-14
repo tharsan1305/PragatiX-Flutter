@@ -12,6 +12,8 @@ class ActivityRepository {
 
   ActivityRepository(ActivityService service) : _service = service;
 
+  String get token => _service.token;
+
   Future<List<MyActivityModel>> getMyActivities() async {
     final raw = await _service.fetchMyActivities();
     return raw
@@ -42,6 +44,18 @@ class ActivityRepository {
     }).toList();
   }
 
+  Future<List<dynamic>> getClassCoordinators() async {
+    return _service.fetchClassCoordinators();
+  }
+
+  Future<List<dynamic>> getCustomFrequencies() async {
+    return _service.fetchCustomFrequencies();
+  }
+
+  Future<Map<String, dynamic>> createCustomFrequency(Map<String, dynamic> body) async {
+    return _service.createCustomFrequency(body);
+  }
+
   Future<ActivityModel> create(
       int subgroupId, Map<String, dynamic> body) async {
     final result = await _service.createActivity(subgroupId, body);
@@ -69,5 +83,10 @@ class ActivityRepository {
   Future<Map<String, dynamic>> assign(
       int activityId, int? sectionId, int teacherId) async {
     return _service.assignActivity(activityId, sectionId, teacherId);
+  }
+
+  Future<void> saveAssignments(
+      int activityId, bool globalEnabled, List<Map<String, dynamic>> assignments, {bool ccEnabled = false}) async {
+    await _service.saveAssignments(activityId, globalEnabled, assignments, ccEnabled: ccEnabled);
   }
 }

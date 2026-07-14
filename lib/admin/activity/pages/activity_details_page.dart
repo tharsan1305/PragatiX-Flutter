@@ -72,9 +72,9 @@ class ActivityDetailsPage extends StatelessWidget {
               Expanded(
                 child: _DetailCard(
                   icon: Icons.star_rounded,
-                  title: 'XP',
+                  title: activity.xpType == 'Penalty' ? 'Penalty XP' : 'Award XP',
                   content: activity.xp.isNotEmpty ? activity.xp : '—',
-                  color: Colors.green,
+                  color: activity.xpType == 'Penalty' ? Colors.red : Colors.green,
                 ),
               ),
               const SizedBox(width: 12),

@@ -2,6 +2,8 @@ import 'package:spdms_app/core/config/api_config.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'students_tab.dart';
+import '../../../admin/activity/pages/group_activity_year_page.dart';
 
 class PerformanceActivitiesTab extends StatefulWidget {
   final String token;
@@ -16,7 +18,10 @@ class _PerformanceActivitiesTabState extends State<PerformanceActivitiesTab> {
   // Navigation Flow State
   // 0: Category Grid Selection
   // 1: Event List (filtered by category)
-  // 2: Student Selection List & Award Screen
+  // 2: Year Selection
+  // 3: Department Selection
+  // 4: Section Selection
+  // 5: Student Selection List & Award Screen
   int _currentFlowStep = 0;
 
   String? _selectedCategory;
@@ -24,15 +29,38 @@ class _PerformanceActivitiesTabState extends State<PerformanceActivitiesTab> {
   bool _isLoadingActivities = false;
 
   dynamic _selectedEvent; // Activity representation
+  List<dynamic> _rawEligibleStudents = [];
   List<dynamic> _eligibleStudents = [];
   bool _isLoadingStudents = false;
   int? _assignmentId;
-  
+
   // Selection State
   final Set<int> _selectedStudentIds = {};
   bool _selectAll = false;
   final TextEditingController _remarksController = TextEditingController();
   bool _isAwarding = false;
+
+  // Drill-down selection state
+  dynamic _selectedYear;
+  dynamic _selectedDept;
+  String? _selectedSection;
+
+  List<dynamic> _availableYearsList = [];
+  List<dynamic> _availableDeptsList = [];
+  List<dynamic> _availableSectionsList = [];
+  bool _hasSections = false;
+
+  // Search queries
+  String _eventSearchQuery = '';
+  String _deptSearchQuery = '';
+  String _studentSearchQuery = '';
+
+  final List<Map<String, dynamic>> _fixedYears = [
+    {'yearName': '1st Year', 'yearNo': 1},
+    {'yearName': '2nd Year', 'yearNo': 2},
+    {'yearName': '3rd Year', 'yearNo': 3},
+    {'yearName': '4th Year', 'yearNo': 4},
+  ];
 
   final Map<String, Map<String, dynamic>> _categoryStyles = {
     "ACADEMIC": {"color": Colors.blue, "icon": Icons.school_rounded, "label": "Academic"},
@@ -59,30 +87,214 @@ class _PerformanceActivitiesTabState extends State<PerformanceActivitiesTab> {
     super.dispose();
   }
 
+  List<String> _getYearAliases(dynamic selectedYear) {
+    if (selectedYear == null) return [];
+    final yearName = selectedYear['yearName']?.toString()?.trim()?.toLowerCase() ?? '';
+    final yearNo = (selectedYear['yearNo'] as num?)?.toInt() ?? -1;
+
+    final List<String> aliases = [];
+    if (yearName.isNotEmpty) {
+      aliases.add(yearName);
+    }
+    if (yearNo != -1) {
+      aliases.add(yearNo.toString());
+      if (yearNo == 1) {
+        aliases.addAll(["i", "first", "1st", "1"]);
+      } else if (yearNo == 2) {
+        aliases.addAll(["ii", "second", "2nd", "2"]);
+      } else if (yearNo == 3) {
+        aliases.addAll(["iii", "third", "3rd", "3"]);
+      } else if (yearNo == 4) {
+        aliases.addAll(["iv", "fourth", "4th", "4"]);
+      }
+    }
+    return aliases;
+  }
+
+  List<Map<String, dynamic>> get _availableYears {
+    final studentYears = _rawEligibleStudents
+        .map((s) => s['year']?.toString()?.trim()?.toLowerCase() ?? '')
+        .where((y) => y.isNotEmpty)
+        .toSet()
+        .toList();
+
+    final List<Map<String, dynamic>> list = [];
+    for (final yr in _fixedYears) {
+      final aliases = _getYearAliases(yr);
+      final hasStudents = studentYears.any((sy) => aliases.contains(sy));
+      if (hasStudents) {
+        list.add(yr);
+      }
+    }
+    return list.isNotEmpty ? list : _fixedYears;
+  }
+
+  List<Map<String, dynamic>> get _availableDepartments {
+    if (_selectedYear == null) return [];
+    final yearAliases = _getYearAliases(_selectedYear);
+    
+    final deptNames = _rawEligibleStudents
+        .where((s) {
+          final sYear = s['year']?.toString()?.trim()?.toLowerCase() ?? '';
+          return yearAliases.contains(sYear);
+        })
+        .map((s) => s['departmentName']?.toString()?.trim() ?? '')
+        .where((name) => name.isNotEmpty)
+        .toSet()
+        .toList();
+
+    final list = deptNames.map((name) => {'name': name}).toList();
+    if (_deptSearchQuery.trim().isEmpty) return list;
+    final query = _deptSearchQuery.toLowerCase();
+    return list.where((d) => d['name'].toString().toLowerCase().contains(query)).toList();
+  }
+
+  List<dynamic> get _filteredStudentsList {
+    if (_studentSearchQuery.trim().isEmpty) return _eligibleStudents;
+    final query = _studentSearchQuery.toLowerCase();
+    return _eligibleStudents.where((s) {
+      final name = (s['fullName'] as String? ?? '').toLowerCase();
+      final sId = (s['studentId'] as String? ?? '').toLowerCase();
+      return name.contains(query) || sId.contains(query);
+    }).toList();
+  }
+
   Future<void> _fetchMyActivities() async {
     setState(() {
       _isLoadingActivities = true;
     });
+    final url = "${ApiConfig.baseUrl}/api/v1/admin/my-activities";
+    print("Requested URL: $url");
+    print("Request parameters: None");
     try {
       final response = await http.get(
-        Uri.parse("${ApiConfig.baseUrl}/api/v1/admin/my-activities"),
+        Uri.parse(url),
+        headers: {"Authorization": "Bearer ${widget.token}"},
+      );
+      print("Response status: ${response.statusCode}");
+      print("Response body: ${response.body}");
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data["success"] == true) {
+          final List<dynamic> list = data["data"] ?? [];
+          print("Parsed activities count: ${list.length}");
+          setState(() {
+            _myActivities = list;
+          });
+        }
+      }
+    } catch (e) {
+      print("Error fetching my activities: $e");
+    }
+    setState(() {
+      _isLoadingActivities = false;
+    });
+  }
+
+  Future<void> _fetchYearsForEvent(dynamic event) async {
+    setState(() {
+      _isLoadingStudents = true;
+      _availableYearsList = [];
+    });
+    try {
+      final activityId = event["activityId"];
+      final response = await http.get(
+        Uri.parse("${ApiConfig.baseUrl}/api/v1/my-activities/$activityId/years"),
+        headers: {"Authorization": "Bearer ${widget.token}"},
+      );
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data["success"] == true) {
+          final List<dynamic> yrs = data["data"] ?? [];
+          setState(() {
+            _availableYearsList = _fixedYears.where((fy) {
+              final aliases = _getYearAliases(fy);
+              return yrs.any((y) => aliases.contains(y.toString().toLowerCase().trim()));
+            }).toList();
+          });
+        }
+      }
+    } catch (e) {
+      print("Error fetching years: $e");
+    } finally {
+      setState(() {
+        _isLoadingStudents = false;
+      });
+    }
+  }
+
+  Future<void> _fetchDeptsForYear(dynamic year) async {
+    setState(() {
+      _isLoadingStudents = true;
+      _availableDeptsList = [];
+    });
+    try {
+      final activityId = _selectedEvent["activityId"];
+      final yearNo = year['yearNo'];
+      String yearParam = "I";
+      if (yearNo == 2) yearParam = "II";
+      if (yearNo == 3) yearParam = "III";
+      if (yearNo == 4) yearParam = "IV";
+
+      final response = await http.get(
+        Uri.parse("${ApiConfig.baseUrl}/api/v1/my-activities/$activityId/departments?year=$yearParam"),
         headers: {"Authorization": "Bearer ${widget.token}"},
       );
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data["success"] == true) {
           setState(() {
-            _myActivities = data["data"] ?? [];
+            _availableDeptsList = data["data"] ?? [];
           });
         }
       }
-    } catch (_) {}
-    setState(() {
-      _isLoadingActivities = false;
-    });
+    } catch (e) {
+      print("Error fetching departments: $e");
+    } finally {
+      setState(() {
+        _isLoadingStudents = false;
+      });
+    }
   }
 
-  Future<void> _fetchStudentsForEvent(dynamic event) async {
+  Future<void> _fetchSectionsForDept(dynamic dept) async {
+    setState(() {
+      _isLoadingStudents = true;
+      _availableSectionsList = [];
+    });
+    try {
+      final activityId = _selectedEvent["activityId"];
+      final yearNo = _selectedYear['yearNo'];
+      String yearParam = "I";
+      if (yearNo == 2) yearParam = "II";
+      if (yearNo == 3) yearParam = "III";
+      if (yearNo == 4) yearParam = "IV";
+      final deptId = dept["id"];
+
+      final response = await http.get(
+        Uri.parse("${ApiConfig.baseUrl}/api/v1/my-activities/$activityId/sections?year=$yearParam&departmentId=$deptId"),
+        headers: {"Authorization": "Bearer ${widget.token}"},
+      );
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data["success"] == true) {
+          final List<dynamic> list = data["data"] ?? [];
+          setState(() {
+            _availableSectionsList = list;
+            _hasSections = list.isNotEmpty;
+          });
+        }
+      }
+    } catch (e) {
+      print("Error fetching sections: $e");
+    } finally {
+      setState(() {
+        _isLoadingStudents = false;
+      });
+    }
+  }
+
+  Future<void> _fetchStudentsFinal(dynamic section) async {
     setState(() {
       _isLoadingStudents = true;
       _eligibleStudents = [];
@@ -91,9 +303,22 @@ class _PerformanceActivitiesTabState extends State<PerformanceActivitiesTab> {
       _assignmentId = null;
     });
     try {
-      final activityId = event["activityId"];
+      final activityId = _selectedEvent["activityId"];
+      final yearNo = _selectedYear['yearNo'];
+      String yearParam = "I";
+      if (yearNo == 2) yearParam = "II";
+      if (yearNo == 3) yearParam = "III";
+      if (yearNo == 4) yearParam = "IV";
+      final deptId = _selectedDept["id"];
+
+      String url = "${ApiConfig.baseUrl}/api/v1/my-activities/$activityId/students?year=$yearParam&departmentId=$deptId";
+      if (section != null) {
+        final secId = section["id"];
+        url += "&sectionId=$secId";
+      }
+
       final response = await http.get(
-        Uri.parse("${ApiConfig.baseUrl}/api/v1/my-activities/$activityId/students"),
+        Uri.parse(url),
         headers: {"Authorization": "Bearer ${widget.token}"},
       );
       if (response.statusCode == 200) {
@@ -104,41 +329,14 @@ class _PerformanceActivitiesTabState extends State<PerformanceActivitiesTab> {
             final assignData = data["data"]["assignment"];
             _assignmentId = assignData != null ? (assignData["id"] as num?)?.toInt() : null;
           });
-        } else {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(data["message"] ?? "Failed to load students"),
-                backgroundColor: Colors.redAccent,
-              ),
-            );
-          }
-        }
-      } else {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text("Error ${response.statusCode}: Failed to load students"),
-              backgroundColor: Colors.redAccent,
-            ),
-          );
         }
       }
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text("Error loading students: $e"),
-            backgroundColor: Colors.redAccent,
-          ),
-        );
-      }
+      print("Error fetching students: $e");
     } finally {
-      if (mounted) {
-        setState(() {
-          _isLoadingStudents = false;
-        });
-      }
+      setState(() {
+        _isLoadingStudents = false;
+      });
     }
   }
 
@@ -210,35 +408,99 @@ class _PerformanceActivitiesTabState extends State<PerformanceActivitiesTab> {
         ),
       );
     } finally {
-      if (mounted) {
-        setState(() {
-          _isAwarding = false;
-        });
-      }
+      setState(() {
+        _isAwarding = false;
+      });
     }
   }
 
   void _onCategorySelected(String categoryKey) {
     setState(() {
       _selectedCategory = categoryKey;
+      _eventSearchQuery = '';
       _currentFlowStep = 1;
     });
   }
 
   void _onEventSelected(dynamic event) {
+    final type = event['type']?.toString().toLowerCase() ?? 'individual';
+    if (type.contains('group')) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => GroupActivityYearPage(
+            token: widget.token,
+            activityId: event['activityId'],
+          ),
+        ),
+      );
+      return;
+    }
+
     setState(() {
       _selectedEvent = event;
+      _selectedYear = null;
+      _selectedDept = null;
+      _selectedSection = null;
       _currentFlowStep = 2;
     });
-    _fetchStudentsForEvent(event);
+    _fetchYearsForEvent(event);
   }
 
   List<dynamic> get _filteredEvents {
     if (_selectedCategory == null) return [];
-    return _myActivities.where((a) {
+    final list = _myActivities.where((a) {
       final cat = a["xpCategory"]?.toString()?.toUpperCase() ?? "";
       return cat == _selectedCategory;
     }).toList();
+    if (_eventSearchQuery.trim().isEmpty) return list;
+    final query = _eventSearchQuery.toLowerCase();
+    return list.where((a) {
+      final name = (a['name'] as String? ?? '').toLowerCase();
+      final desc = (a['description'] as String? ?? '').toLowerCase();
+      return name.contains(query) || desc.contains(query);
+    }).toList();
+  }
+
+  void _onYearSelected(dynamic year) {
+    setState(() {
+      _selectedYear = year;
+      _deptSearchQuery = '';
+      _currentFlowStep = 3;
+    });
+    _fetchDeptsForYear(year);
+  }
+
+  void _onDeptSelected(dynamic dept) async {
+    setState(() {
+      _selectedDept = dept;
+      _selectedSection = null;
+    });
+    await _fetchSectionsForDept(dept);
+    if (_hasSections) {
+      setState(() {
+        _currentFlowStep = 4;
+      });
+    } else {
+      setState(() {
+        _currentFlowStep = 5;
+      });
+      _fetchStudentsFinal(null);
+    }
+  }
+
+  void _onSectionSelected(dynamic sec) {
+    setState(() {
+      _selectedSection = sec['sectionName'] ?? sec['name'];
+      _currentFlowStep = 5;
+    });
+    _fetchStudentsFinal(sec);
+  }
+
+  List<dynamic> get _filteredDepts {
+    if (_deptSearchQuery.trim().isEmpty) return _availableDeptsList;
+    final query = _deptSearchQuery.toLowerCase();
+    return _availableDeptsList.where((d) => d['name'].toString().toLowerCase().contains(query)).toList();
   }
 
   @override
@@ -247,7 +509,15 @@ class _PerformanceActivitiesTabState extends State<PerformanceActivitiesTab> {
       onWillPop: () async {
         if (_currentFlowStep > 0) {
           setState(() {
-            _currentFlowStep--;
+            if (_currentFlowStep == 5) {
+              if (_hasSections) {
+                _currentFlowStep = 4;
+              } else {
+                _currentFlowStep = 3;
+              }
+            } else {
+              _currentFlowStep--;
+            }
           });
           return false;
         }
@@ -260,7 +530,13 @@ class _PerformanceActivitiesTabState extends State<PerformanceActivitiesTab> {
                 ? "Performance Activities"
                 : (_currentFlowStep == 1
                     ? "${_categoryStyles[_selectedCategory]?['label']} Events"
-                    : "${_selectedEvent?['name']}"),
+                    : (_currentFlowStep == 2
+                        ? "Select Year"
+                        : (_currentFlowStep == 3
+                            ? "Select Department"
+                            : (_currentFlowStep == 4
+                                ? "Select Section"
+                                : "${_selectedEvent?['name']}")))),
             style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
           ),
           backgroundColor: const Color(0xFF1E293B),
@@ -270,11 +546,37 @@ class _PerformanceActivitiesTabState extends State<PerformanceActivitiesTab> {
                   icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 20),
                   onPressed: () {
                     setState(() {
-                      _currentFlowStep--;
+                      if (_currentFlowStep == 5) {
+                        if (_hasSections) {
+                          _currentFlowStep = 4;
+                        } else {
+                          _currentFlowStep = 3;
+                        }
+                      } else {
+                        _currentFlowStep--;
+                      }
                     });
                   },
                 )
               : null,
+          actions: [
+            if (widget.subRoles.contains("CC") && _currentFlowStep == 0)
+              IconButton(
+                icon: const Icon(Icons.people_alt_rounded, color: Colors.white),
+                tooltip: "Students Directory",
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => StudentsTab(
+                        token: widget.token,
+                        subRoles: widget.subRoles,
+                      ),
+                    ),
+                  );
+                },
+              ),
+          ],
         ),
         body: _buildAwardXpTabBody(),
       ),
@@ -292,6 +594,12 @@ class _PerformanceActivitiesTabState extends State<PerformanceActivitiesTab> {
       case 1:
         return _buildEventList();
       case 2:
+        return _buildYearSelection();
+      case 3:
+        return _buildDeptSelection();
+      case 4:
+        return _buildSectionSelection();
+      case 5:
         return _buildStudentListAndAward();
       default:
         return _buildCategoryGrid();
@@ -379,21 +687,6 @@ class _PerformanceActivitiesTabState extends State<PerformanceActivitiesTab> {
 
   Widget _buildEventList() {
     final list = _filteredEvents;
-    if (list.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.event_busy_rounded, size: 48, color: Colors.grey.shade400),
-            const SizedBox(height: 12),
-            Text(
-              "No Events assigned under this category",
-              style: TextStyle(fontSize: 14, color: Colors.grey.shade500),
-            ),
-          ],
-        ),
-      );
-    }
 
     return Padding(
       padding: const EdgeInsets.all(16.0),
@@ -405,46 +698,290 @@ class _PerformanceActivitiesTabState extends State<PerformanceActivitiesTab> {
             style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
           ),
           const SizedBox(height: 16),
+          TextFormField(
+            initialValue: _eventSearchQuery,
+            style: const TextStyle(color: Color(0xFF1E293B), fontSize: 14),
+            decoration: InputDecoration(
+              hintText: 'Search Event…',
+              hintStyle: TextStyle(fontSize: 13, color: Colors.grey.shade400),
+              prefixIcon: const Icon(Icons.search_rounded, size: 20, color: Colors.grey),
+              filled: true,
+              fillColor: Colors.grey.shade50,
+              contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: Colors.grey.shade200),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: Colors.grey.shade200),
+              ),
+            ),
+            onChanged: (val) {
+              setState(() {
+                _eventSearchQuery = val;
+              });
+            },
+          ),
+          const SizedBox(height: 16),
+          Expanded(
+            child: list.isEmpty
+                ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.event_busy_rounded, size: 48, color: Colors.grey.shade400),
+                        const SizedBox(height: 12),
+                        Text(
+                          "No Events found",
+                          style: TextStyle(fontSize: 14, color: Colors.grey.shade500),
+                        ),
+                      ],
+                    ),
+                  )
+                : ListView.builder(
+                    itemCount: list.length,
+                    itemBuilder: (context, index) {
+                      final item = list[index];
+                      final String name = item["name"] ?? "";
+                      final String desc = item["description"] ?? "No description";
+                      final String xp = item["xp"] ?? "0";
+                      final String xpType = item["xpType"] ?? "Reward";
+
+                      return Card(
+                        elevation: 2,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        margin: const EdgeInsets.only(bottom: 12),
+                        child: ListTile(
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                          title: Text(
+                            name,
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF1E293B)),
+                          ),
+                          subtitle: Padding(
+                            padding: const EdgeInsets.only(top: 6.0),
+                            child: Text(
+                              desc,
+                              style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          trailing: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: (xpType == 'Penalty' ? Colors.red : const Color(0xFF11998e)).withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text(
+                              "$xp XP",
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold, 
+                                color: xpType == 'Penalty' ? Colors.red : const Color(0xFF11998e), 
+                                fontSize: 13
+                              ),
+                            ),
+                          ),
+                          onTap: () => _onEventSelected(item),
+                        ),
+                      );
+                    },
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildYearSelection() {
+    if (_isLoadingStudents) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    final years = _availableYearsList;
+
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            "Select Year",
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF1E293B)),
+          ),
+          const SizedBox(height: 16),
+          Expanded(
+            child: years.isEmpty
+                ? const Center(child: Text("No years found"))
+                : ListView.builder(
+                    itemCount: years.length,
+                    itemBuilder: (ctx, idx) {
+                      final year = years[idx];
+                      final yearName = year['yearName'] ?? '';
+                      return Card(
+                        margin: const EdgeInsets.only(bottom: 12),
+                        elevation: 1.5,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(16),
+                          onTap: () => _onYearSelected(year),
+                          child: Padding(
+                            padding: const EdgeInsets.all(20),
+                            child: Row(
+                              children: [
+                                CircleAvatar(
+                                  backgroundColor: Colors.blue.withOpacity(0.1),
+                                  child: const Icon(Icons.calendar_today, color: Colors.blue),
+                                ),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: Text(
+                                    yearName,
+                                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF1E293B)),
+                                  ),
+                                ),
+                                const Icon(Icons.arrow_forward_ios_rounded, size: 16, color: Colors.grey),
+                              ],
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDeptSelection() {
+    final depts = _filteredDepts;
+
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            "Select Department",
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF1E293B)),
+          ),
+          const SizedBox(height: 16),
+          TextFormField(
+            initialValue: _deptSearchQuery,
+            style: const TextStyle(color: Color(0xFF1E293B), fontSize: 14),
+            decoration: InputDecoration(
+              hintText: 'Search Department…',
+              hintStyle: TextStyle(fontSize: 13, color: Colors.grey.shade400),
+              prefixIcon: const Icon(Icons.search_rounded, size: 20, color: Colors.grey),
+              filled: true,
+              fillColor: Colors.grey.shade50,
+              contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: Colors.grey.shade200),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: Colors.grey.shade200),
+              ),
+            ),
+            onChanged: (val) {
+              setState(() {
+                _deptSearchQuery = val;
+              });
+            },
+          ),
+          const SizedBox(height: 16),
+          Expanded(
+            child: depts.isEmpty
+                ? const Center(child: Text("No departments found"))
+                : ListView.builder(
+                    itemCount: depts.length,
+                    itemBuilder: (ctx, idx) {
+                      final dept = depts[idx];
+                      final name = dept['name'] ?? '';
+                      return Card(
+                        margin: const EdgeInsets.only(bottom: 12),
+                        elevation: 1.5,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(16),
+                          onTap: () => _onDeptSelected(dept),
+                          child: Padding(
+                            padding: const EdgeInsets.all(20),
+                            child: Row(
+                              children: [
+                                CircleAvatar(
+                                  backgroundColor: Colors.indigo.withOpacity(0.1),
+                                  child: const Icon(Icons.business, color: Colors.indigo),
+                                ),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: Text(
+                                    name,
+                                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF1E293B)),
+                                  ),
+                                ),
+                                const Icon(Icons.arrow_forward_ios_rounded, size: 16, color: Colors.grey),
+                              ],
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSectionSelection() {
+    final uniqueSections = _availableSectionsList;
+
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            "Select Section",
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF1E293B)),
+          ),
+          const SizedBox(height: 16),
           Expanded(
             child: ListView.builder(
-              itemCount: list.length,
-              itemBuilder: (context, index) {
-                final item = list[index];
-                final String name = item["name"] ?? "";
-                final String desc = item["description"] ?? "No description";
-                final String xp = item["xp"] ?? "0";
-
+              itemCount: uniqueSections.length,
+              itemBuilder: (ctx, idx) {
+                final sec = uniqueSections[idx];
+                final secName = sec['sectionName'] ?? sec['name'] ?? '';
                 return Card(
-                  elevation: 2,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                   margin: const EdgeInsets.only(bottom: 12),
-                  child: ListTile(
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                    title: Text(
-                      name,
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF1E293B)),
-                    ),
-                    subtitle: Padding(
-                      padding: const EdgeInsets.only(top: 6.0),
-                      child: Text(
-                        desc,
-                        style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
+                  elevation: 1.5,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(16),
+                    onTap: () => _onSectionSelected(sec),
+                    child: Padding(
+                      padding: const EdgeInsets.all(20),
+                      child: Row(
+                        children: [
+                          CircleAvatar(
+                            backgroundColor: Colors.teal.withOpacity(0.1),
+                            child: const Icon(Icons.class_rounded, color: Colors.teal),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Text(
+                              "Section $secName",
+                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF1E293B)),
+                            ),
+                          ),
+                          const Icon(Icons.arrow_forward_ios_rounded, size: 16, color: Colors.grey),
+                        ],
                       ),
                     ),
-                    trailing: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF11998e).withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        "$xp XP",
-                        style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF11998e), fontSize: 13),
-                      ),
-                    ),
-                    onTap: () => _onEventSelected(item),
                   ),
                 );
               },
@@ -460,23 +997,9 @@ class _PerformanceActivitiesTabState extends State<PerformanceActivitiesTab> {
       return const Center(child: CircularProgressIndicator());
     }
 
-    if (_eligibleStudents.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.people_outline, size: 48, color: Colors.grey.shade400),
-            const SizedBox(height: 12),
-            Text(
-              "No students assigned to this section/department",
-              style: TextStyle(fontSize: 14, color: Colors.grey.shade500),
-            ),
-          ],
-        ),
-      );
-    }
-
     final String xpValue = _selectedEvent?["xp"] ?? "0";
+    final String xpType = _selectedEvent?["xpType"] ?? "Reward";
+    final showStudents = _filteredStudentsList;
 
     return Column(
       children: [
@@ -495,16 +1018,46 @@ class _PerformanceActivitiesTabState extends State<PerformanceActivitiesTab> {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(
-                      color: Colors.orange.shade50,
+                      color: (xpType == 'Penalty' ? Colors.red : Colors.orange).shade50,
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.orange.shade200),
+                      border: Border.all(color: (xpType == 'Penalty' ? Colors.red : Colors.orange).shade200),
                     ),
                     child: Text(
-                      "Award: $xpValue XP",
-                      style: TextStyle(fontWeight: FontWeight.bold, color: Colors.orange.shade800, fontSize: 13),
+                      "${xpType == 'Penalty' ? 'Penalty' : 'Award'}: $xpValue XP",
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold, 
+                        color: (xpType == 'Penalty' ? Colors.red : Colors.orange).shade800, 
+                        fontSize: 13
+                      ),
                     ),
                   )
                 ],
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                initialValue: _studentSearchQuery,
+                style: const TextStyle(color: Color(0xFF1E293B), fontSize: 14),
+                decoration: InputDecoration(
+                  hintText: 'Search Student by Name/ID…',
+                  hintStyle: TextStyle(fontSize: 13, color: Colors.grey.shade400),
+                  prefixIcon: const Icon(Icons.search_rounded, size: 20, color: Colors.grey),
+                  filled: true,
+                  fillColor: Colors.grey.shade50,
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: Colors.grey.shade200),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: Colors.grey.shade200),
+                  ),
+                ),
+                onChanged: (val) {
+                  setState(() {
+                    _studentSearchQuery = val;
+                  });
+                },
               ),
               const SizedBox(height: 12),
               CheckboxListTile(
@@ -514,12 +1067,12 @@ class _PerformanceActivitiesTabState extends State<PerformanceActivitiesTab> {
                   style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                 ),
                 value: _selectAll,
-                activeColor: const Color(0xFF11998e),
+                activeColor: xpType == 'Penalty' ? Colors.red : const Color(0xFF11998e),
                 onChanged: (val) {
                   setState(() {
                     _selectAll = val ?? false;
                     if (_selectAll) {
-                      _selectedStudentIds.addAll(_eligibleStudents.map((s) => s["id"] as int));
+                      _selectedStudentIds.addAll(showStudents.map((s) => s["id"] as int));
                     } else {
                       _selectedStudentIds.clear();
                     }
@@ -531,39 +1084,41 @@ class _PerformanceActivitiesTabState extends State<PerformanceActivitiesTab> {
         ),
         const Divider(height: 1),
         Expanded(
-          child: ListView.builder(
-            itemCount: _eligibleStudents.length,
-            itemBuilder: (context, index) {
-              final student = _eligibleStudents[index];
-              final int studentId = student["id"] as int;
-              final String name = student["fullName"] ?? "";
-              final String studentIdStr = student["studentId"] ?? "";
-              final isChecked = _selectedStudentIds.contains(studentId);
+          child: showStudents.isEmpty
+              ? const Center(child: Text("No students match search criteria"))
+              : ListView.builder(
+                  itemCount: showStudents.length,
+                  itemBuilder: (context, index) {
+                    final student = showStudents[index];
+                    final int studentId = student["id"] as int;
+                    final String name = student["fullName"] ?? "";
+                    final String studentIdStr = student["studentId"] ?? "";
+                    final isChecked = _selectedStudentIds.contains(studentId);
 
-              return CheckboxListTile(
-                value: isChecked,
-                activeColor: const Color(0xFF11998e),
-                title: Text(
-                  name,
-                  style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: Color(0xFF1E293B)),
+                    return CheckboxListTile(
+                      value: isChecked,
+                      activeColor: xpType == 'Penalty' ? Colors.red : const Color(0xFF11998e),
+                      title: Text(
+                        name,
+                        style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: Color(0xFF1E293B)),
+                      ),
+                      subtitle: Text(
+                        studentIdStr,
+                        style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
+                      ),
+                      onChanged: (val) {
+                        setState(() {
+                          if (val == true) {
+                            _selectedStudentIds.add(studentId);
+                          } else {
+                            _selectedStudentIds.remove(studentId);
+                            _selectAll = false;
+                          }
+                        });
+                      },
+                    );
+                  },
                 ),
-                subtitle: Text(
-                  studentIdStr,
-                  style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
-                ),
-                onChanged: (val) {
-                  setState(() {
-                    if (val == true) {
-                      _selectedStudentIds.add(studentId);
-                    } else {
-                      _selectedStudentIds.remove(studentId);
-                      _selectAll = false;
-                    }
-                  });
-                },
-              );
-            },
-          ),
         ),
         Container(
           padding: const EdgeInsets.all(16),
@@ -604,7 +1159,7 @@ class _PerformanceActivitiesTabState extends State<PerformanceActivitiesTab> {
                 height: 48,
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF11998e),
+                    backgroundColor: xpType == 'Penalty' ? Colors.red : const Color(0xFF11998e),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
                   onPressed: _isAwarding ? null : _submitAward,
@@ -615,7 +1170,7 @@ class _PerformanceActivitiesTabState extends State<PerformanceActivitiesTab> {
                           child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
                         )
                       : Text(
-                          "Award XP to ${_selectedStudentIds.length} Students",
+                          "${xpType == 'Penalty' ? 'Deduct XP from' : 'Award XP to'} ${_selectedStudentIds.length} Students",
                           style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
                         ),
                 ),

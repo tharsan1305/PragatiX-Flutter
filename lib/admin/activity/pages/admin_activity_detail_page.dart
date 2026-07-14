@@ -971,7 +971,7 @@ Widget _buildActivityHeaderCard(ActivityModel act) {
             spacing: 8,
             runSpacing: 8,
             children: [
-              _buildBadge(Icons.star, 'XP: ${act.xp}'),
+              _buildBadge(Icons.star, act.xpType == 'Penalty' ? 'Penalty XP: ${act.xp}' : 'Award XP: ${act.xp}'),
               _buildBadge(Icons.category, 'Category: ${act.xpCategory.isNotEmpty ? act.xpCategory : "Academic"}'),
               _buildBadge(Icons.timer, 'Freq: ${act.frequency}'),
               _buildBadge(Icons.security, 'Cap: ${act.cap}'),

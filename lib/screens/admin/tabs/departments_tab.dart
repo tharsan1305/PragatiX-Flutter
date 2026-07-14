@@ -290,51 +290,186 @@ class _DepartmentsTabState extends State<DepartmentsTab> {
   void _showEditDeptDialog(Map<String, dynamic> dept) {
     nameController.text = dept["name"] ?? '';
     codeController.text = dept["code"] ?? '';
+    final sectionNameController = TextEditingController();
 
     showDialog(
       context: context,
       builder: (context) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: Text("Edit Department: ${dept["code"]}", style: const TextStyle(fontWeight: FontWeight.bold)),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: nameController,
-                  decoration: const InputDecoration(
-                    labelText: "Department Name *",
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.business),
+        List<dynamic> deptSections = [];
+        bool loadingSections = true;
+
+        Future<void> fetchDeptSections(StateSetter dialogSetState) async {
+          dialogSetState(() => loadingSections = true);
+          try {
+            final response = await http.get(
+              Uri.parse("${ApiConfig.baseUrl}/api/v1/admin/departments/${dept["id"]}/sections"),
+              headers: {"Authorization": "Bearer ${widget.token}"},
+            );
+            if (response.statusCode == 200) {
+              final data = jsonDecode(response.body);
+              if (data["success"] == true) {
+                dialogSetState(() {
+                  deptSections = data["data"] ?? [];
+                  loadingSections = false;
+                });
+                return;
+              }
+            }
+          } catch (e) {
+            print("Error fetching dept sections: $e");
+          }
+          dialogSetState(() => loadingSections = false);
+        }
+
+        Future<void> addSection(StateSetter dialogSetState) async {
+          final secName = sectionNameController.text.trim().toUpperCase();
+          if (secName.isEmpty) return;
+          try {
+            final response = await http.post(
+              Uri.parse("${ApiConfig.baseUrl}/api/v1/admin/departments/${dept["id"]}/sections"),
+              headers: {
+                "Content-Type": "application/json",
+                "Authorization": "Bearer ${widget.token}",
+              },
+              body: jsonEncode({"sectionName": secName}),
+            );
+            if (response.statusCode == 201 || response.statusCode == 200) {
+              sectionNameController.clear();
+              fetchDeptSections(dialogSetState);
+            } else {
+              final data = jsonDecode(response.body);
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text(data["message"] ?? "Failed to add section"), backgroundColor: Colors.red),
+              );
+            }
+          } catch (e) {
+            print("Error adding section: $e");
+          }
+        }
+
+        Future<void> deleteSection(int sectionId, StateSetter dialogSetState) async {
+          try {
+            final response = await http.delete(
+              Uri.parse("${ApiConfig.baseUrl}/api/v1/admin/departments/${dept["id"]}/sections/$sectionId"),
+              headers: {"Authorization": "Bearer ${widget.token}"},
+            );
+            if (response.statusCode == 200) {
+              fetchDeptSections(dialogSetState);
+            }
+          } catch (e) {
+            print("Error deleting section: $e");
+          }
+        }
+
+        return StatefulBuilder(
+          builder: (context, dialogSetState) {
+            if (loadingSections && deptSections.isEmpty) {
+              Future.microtask(() => fetchDeptSections(dialogSetState));
+            }
+
+            return AlertDialog(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              title: Text("Edit Department: ${dept["code"]}", style: const TextStyle(fontWeight: FontWeight.bold)),
+              content: SizedBox(
+                width: 400,
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text("DEPARTMENT DETAILS", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.blueGrey)),
+                      const SizedBox(height: 8),
+                      TextField(
+                        controller: nameController,
+                        decoration: const InputDecoration(
+                          labelText: "Department Name *",
+                          border: OutlineInputBorder(),
+                          prefixIcon: Icon(Icons.business),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      TextField(
+                        controller: codeController,
+                        decoration: const InputDecoration(
+                          labelText: "Department Code *",
+                          border: OutlineInputBorder(),
+                          prefixIcon: Icon(Icons.code),
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      const Divider(),
+                      const SizedBox(height: 8),
+                      const Text("SECTIONS MANAGEMENT", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.blueGrey)),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: TextField(
+                              controller: sectionNameController,
+                              decoration: const InputDecoration(
+                                labelText: "Add Section (e.g. A, B)",
+                                border: OutlineInputBorder(),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          ElevatedButton(
+                            onPressed: () => addSection(dialogSetState),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF1E293B),
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                            ),
+                            child: const Icon(Icons.add, color: Colors.white),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      loadingSections
+                          ? const Center(child: CircularProgressIndicator())
+                          : (deptSections.isEmpty
+                              ? const Padding(
+                                  padding: EdgeInsets.symmetric(vertical: 8.0),
+                                  child: Text("No sections created yet.", style: TextStyle(color: Colors.grey, fontStyle: FontStyle.italic)),
+                                )
+                              : ListView.builder(
+                                  shrinkWrap: true,
+                                  physics: const NeverScrollableScrollPhysics(),
+                                  itemCount: deptSections.length,
+                                  itemBuilder: (context, idx) {
+                                    final sec = deptSections[idx];
+                                    return ListTile(
+                                      title: Text("Section ${sec["sectionName"] ?? sec["name"] ?? ''}", style: const TextStyle(fontWeight: FontWeight.bold)),
+                                      trailing: IconButton(
+                                        icon: const Icon(Icons.delete_outline, color: Colors.red),
+                                        onPressed: () => deleteSection(sec["id"], dialogSetState),
+                                      ),
+                                    );
+                                  },
+                                )),
+                    ],
                   ),
                 ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: codeController,
-                  decoration: const InputDecoration(
-                    labelText: "Department Code *",
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.code),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text("Cancel", style: TextStyle(color: Colors.grey)),
-            ),
-            ElevatedButton(
-              onPressed: () => _editDepartment(dept["id"]),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF1E293B),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
               ),
-              child: const Text("Save", style: TextStyle(color: Colors.white)),
-            )
-          ],
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                  },
+                  child: const Text("Cancel", style: TextStyle(color: Colors.grey)),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    _editDepartment(dept["id"]);
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF1E293B),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                  child: const Text("Save", style: TextStyle(color: Colors.white)),
+                )
+              ],
+            );
+          },
         );
       },
     );

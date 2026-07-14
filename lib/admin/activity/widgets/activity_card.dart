@@ -9,6 +9,7 @@ class ActivityCard extends StatelessWidget {
   final ActivityModel activity;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
+  final VoidCallback? onAssign;
   final VoidCallback? onTap;
   final bool isCc;
   final bool isReadOnly;
@@ -20,6 +21,7 @@ class ActivityCard extends StatelessWidget {
     required this.activity,
     required this.onEdit,
     required this.onDelete,
+    this.onAssign,
     this.onTap,
     this.isCc = false,
     this.isReadOnly = false,
@@ -55,6 +57,15 @@ class ActivityCard extends StatelessWidget {
                   ),
                 ),
                 if (!isReadOnly) ...[
+                  if (onAssign != null)
+                    IconButton(
+                      icon: const Icon(Icons.assignment_ind_outlined,
+                          color: Colors.green, size: 20),
+                      onPressed: onAssign,
+                      tooltip: 'Assign Faculty',
+                      visualDensity: VisualDensity.compact,
+                      padding: EdgeInsets.zero,
+                    ),
                   IconButton(
                     icon: Icon(
                         isCc ? Icons.assignment_ind_outlined : Icons.edit_outlined,
@@ -96,7 +107,10 @@ class ActivityCard extends StatelessWidget {
               spacing: 8,
               runSpacing: 6,
               children: [
-                _Tag('XP: ${activity.xp}', Colors.green),
+                if (activity.awardEnabled)
+                  _Tag('Award: ${activity.awardXp}', Colors.green),
+                if (activity.penaltyEnabled)
+                  _Tag('Penalty: ${activity.penaltyXp}', Colors.red),
                 _Tag('Cap: ${activity.cap}', Colors.teal),
                 _Tag('Freq: ${activity.awardFrequency}',
                     Colors.amber.shade800),
@@ -133,12 +147,16 @@ class ActivityCard extends StatelessWidget {
                       const Icon(Icons.assignment_ind_outlined,
                           size: 15, color: Colors.blue),
                       const SizedBox(width: 6),
-                      Text(
-                        'Assignments (${activity.ownerDepartment}):',
-                        style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey.shade800,
-                            fontWeight: FontWeight.bold),
+                      Expanded(
+                        child: Text(
+                          activity.assignmentMode == 'GLOBAL'
+                              ? 'Assignment Mode: Global (All Departments)'
+                              : 'Assignments (${activity.ownerDepartment}):',
+                          style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey.shade800,
+                              fontWeight: FontWeight.bold),
+                        ),
                       ),
                     ],
                   ),

@@ -15,11 +15,14 @@ class _CaptainGroupTabState extends State<CaptainGroupTab> {
   bool _isLoading = true;
   Map<String, dynamic>? _groupData;
   List<dynamic> _members = [];
+  List<Map<String, dynamic>> _classmates = [];
+  bool _isLoadingClassmates = false;
 
   @override
   void initState() {
     super.initState();
     _fetchMyGroup();
+    _fetchClassmates();
   }
 
   Future<void> _fetchMyGroup() async {
@@ -55,6 +58,31 @@ class _CaptainGroupTabState extends State<CaptainGroupTab> {
       // Network error
     } finally {
       setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _fetchClassmates() async {
+    setState(() => _isLoadingClassmates = true);
+    try {
+      final response = await http.get(
+        Uri.parse("${ApiConfig.baseUrl}/api/v1/teams/my-classmates"),
+        headers: {
+          "Authorization": "Bearer ${widget.token}",
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        if (data["success"] == true) {
+          setState(() {
+            _classmates = List<Map<String, dynamic>>.from(data["data"] ?? []);
+          });
+        }
+      }
+    } catch (e) {
+      // Network error
+    } finally {
+      setState(() => _isLoadingClassmates = false);
     }
   }
 
@@ -211,20 +239,54 @@ class _CaptainGroupTabState extends State<CaptainGroupTab> {
   }
 
   void _showAddMemberDialog() {
-    final idCtrl = TextEditingController();
+    Map<String, dynamic>? selectedStudent;
 
     showDialog(
       context: context,
       builder: (context) {
         return AlertDialog(
           title: const Text("Add Group Member"),
-          content: TextField(
-            controller: idCtrl,
-            decoration: const InputDecoration(
-              labelText: "Student Register ID",
-              hintText: "e.g., R2402022",
-            ),
-          ),
+          content: _isLoadingClassmates
+              ? const SizedBox(
+                  height: 100,
+                  child: Center(child: CircularProgressIndicator()),
+                )
+              : Autocomplete<Map<String, dynamic>>(
+                  optionsBuilder: (TextEditingValue textEditingValue) {
+                    if (textEditingValue.text.isEmpty) {
+                      return const Iterable<Map<String, dynamic>>.empty();
+                    }
+                    final query = textEditingValue.text.toLowerCase();
+                    return _classmates.where((student) {
+                      final name = (student["fullName"] ?? "").toString().toLowerCase();
+                      final studentId = (student["studentId"] ?? "").toString().toLowerCase();
+                      final regNo = (student["regNo"] ?? "").toString().toLowerCase();
+                      final sprNo = (student["sprNo"] ?? "").toString().toLowerCase();
+                      return name.contains(query) ||
+                          studentId.contains(query) ||
+                          regNo.contains(query) ||
+                          sprNo.contains(query);
+                    });
+                  },
+                  displayStringForOption: (Map<String, dynamic> option) => 
+                      "${option['fullName']} (${option['studentId']})",
+                  onSelected: (Map<String, dynamic> selection) {
+                    selectedStudent = selection;
+                  },
+                  fieldViewBuilder: (context, controller, focusNode, onEditingComplete) {
+                    return TextField(
+                      controller: controller,
+                      focusNode: focusNode,
+                      onEditingComplete: onEditingComplete,
+                      decoration: const InputDecoration(
+                        labelText: "Search by Name, RegNo, SPR...",
+                        hintText: "e.g., John Doe",
+                        border: OutlineInputBorder(),
+                        prefixIcon: Icon(Icons.search),
+                      ),
+                    );
+                  },
+                ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
@@ -232,13 +294,14 @@ class _CaptainGroupTabState extends State<CaptainGroupTab> {
             ),
             ElevatedButton(
               onPressed: () {
-                if (idCtrl.text.trim().isEmpty) {
+                if (selectedStudent == null) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Register ID is required!')),
+                    const SnackBar(content: Text('Please select a student from the list')),
                   );
                   return;
                 }
-                _addMember(idCtrl.text.trim());
+                Navigator.pop(context);
+                _addMember(selectedStudent!["studentId"]);
               },
               style: ElevatedButton.styleFrom(backgroundColor: Colors.amber),
               child: const Text("Add"),

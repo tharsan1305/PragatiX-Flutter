@@ -20,10 +20,10 @@ Future<List<dynamic>> _apiGetDepartments(String token) async {
   }
   return [
     {"id": 1, "name": "Computer Science and Engineering", "code": "CSE"},
-    {"name": "Electronics and Communication", "code": "ECE"},
-    {"name": "Mechanical Engineering", "code": "MECH"},
-    {"name": "Civil Engineering", "code": "CIVIL"},
-    {"name": "Business Administration", "code": "MBA"}
+    {"id": 2, "name": "Electronics and Communication", "code": "ECE"},
+    {"id": 3, "name": "Mechanical Engineering", "code": "MECH"},
+    {"id": 4, "name": "Civil Engineering", "code": "CIVIL"},
+    {"id": 5, "name": "Business Administration", "code": "MBA"}
   ];
 }
 
@@ -47,6 +47,24 @@ Future<List<dynamic>> _apiGetRoles(String token) async {
     {"name": "ROLE_TEACHER"},
     {"name": "ROLE_STUDENT"}
   ];
+}
+
+Future<List<dynamic>> _apiGetSections(String token) async {
+  try {
+    final response = await http.get(
+      Uri.parse("${ApiConfig.baseUrl}/api/v1/admin/sections"),
+      headers: {"Authorization": "Bearer $token"},
+    );
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      if (data["success"] == true) {
+        return data["data"] ?? [];
+      }
+    }
+  } catch (e) {
+    // Catch
+  }
+  return [];
 }
 
 Future<List<dynamic>> _apiGetSubjects(String token) async {
@@ -80,6 +98,7 @@ class _TeachersTabState extends State<TeachersTab> {
   List<dynamic> departments = [];
   List<dynamic> availableRoles = [];
   List<dynamic> subjectsList = [];
+  List<dynamic> sections = [];
   bool isLoading = true;
 
   // Add/Edit Dialog controllers
@@ -89,9 +108,49 @@ class _TeachersTabState extends State<TeachersTab> {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController sectionController = TextEditingController();
   int? selectedDeptId;
+  int? selectedSectionId;
   String selectedMainRole = "ROLE_TEACHER";
   Set<String> selectedSubRoles = {};
   String? selectedYear;
+
+  List<dynamic> dialogSections = [];
+  bool isLoadingSections = false;
+  int? lastFetchedDeptId;
+
+  Future<void> _fetchSectionsForDept(int? deptId, void Function(void Function()) setDialogState) async {
+    if (deptId == null) {
+      setDialogState(() {
+        dialogSections = [];
+        lastFetchedDeptId = null;
+      });
+      return;
+    }
+    setDialogState(() {
+      isLoadingSections = true;
+      lastFetchedDeptId = deptId;
+    });
+    try {
+      final response = await http.get(
+        Uri.parse("${ApiConfig.baseUrl}/api/v1/admin/departments/$deptId/sections"),
+        headers: {"Authorization": "Bearer ${widget.token}"},
+      );
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data["success"] == true) {
+          final List<dynamic> list = data["data"] ?? [];
+          setDialogState(() {
+            dialogSections = list;
+          });
+        }
+      }
+    } catch (e) {
+      print("Error fetching dialog sections: $e");
+    } finally {
+      setDialogState(() {
+        isLoadingSections = false;
+      });
+    }
+  }
 
   @override
   void initState() {
@@ -104,10 +163,12 @@ class _TeachersTabState extends State<TeachersTab> {
     final depts = await _apiGetDepartments(widget.token);
     final roles = await _apiGetRoles(widget.token);
     final subjects = await _apiGetSubjects(widget.token);
+    final secs = await _apiGetSections(widget.token);
     setState(() {
       departments = depts;
       availableRoles = roles;
       subjectsList = subjects;
+      sections = secs;
       if (departments.isNotEmpty) {
         selectedDeptId = departments.first["id"];
       }
@@ -196,7 +257,7 @@ class _TeachersTabState extends State<TeachersTab> {
           "departmentId": selectedDeptId,
           "roles": [selectedMainRole],
           "subRoles": selectedSubRoles.toList(),
-          "section": selectedSubRoles.contains("CC") && sectionController.text.trim().isNotEmpty ? sectionController.text.trim() : null,
+          "sectionId": selectedSubRoles.contains("CC") ? selectedSectionId : null,
           "year": selectedSubRoles.contains("CC") ? selectedYear : null
         }),
       );
@@ -232,7 +293,9 @@ class _TeachersTabState extends State<TeachersTab> {
           "subRoles": selectedSubRoles.toList(),
           "departmentId": selectedDeptId,
           "departmentName": departments.firstWhere((d) => d["id"] == selectedDeptId, orElse: () => {"name": "CSE"})["name"],
-          "section": selectedSubRoles.contains("CC") && sectionController.text.trim().isNotEmpty ? sectionController.text.trim() : null,
+          "sectionId": selectedSubRoles.contains("CC") ? selectedSectionId : null,
+          "sectionName": selectedSubRoles.contains("CC") && selectedSectionId != null ? sections.firstWhere((s) => s["id"] == selectedSectionId, orElse: () => {"sectionName": ""})["sectionName"] : null,
+          "section": selectedSubRoles.contains("CC") && selectedSectionId != null ? sections.firstWhere((s) => s["id"] == selectedSectionId, orElse: () => {"sectionName": ""})["sectionName"] : null,
           "year": selectedSubRoles.contains("CC") ? selectedYear : null
         });
       });
@@ -269,7 +332,7 @@ class _TeachersTabState extends State<TeachersTab> {
           "departmentId": selectedDeptId,
           "roles": [selectedMainRole],
           "subRoles": selectedSubRoles.toList(),
-          "section": selectedSubRoles.contains("CC") && sectionController.text.trim().isNotEmpty ? sectionController.text.trim() : null,
+          "sectionId": selectedSubRoles.contains("CC") ? selectedSectionId : null,
           "year": selectedSubRoles.contains("CC") ? selectedYear : null,
           "active": true
         }),
@@ -304,7 +367,9 @@ class _TeachersTabState extends State<TeachersTab> {
           usersList[index]["departmentId"] = selectedDeptId;
           usersList[index]["roles"] = [selectedMainRole];
           usersList[index]["subRoles"] = selectedSubRoles.toList();
-          usersList[index]["section"] = selectedSubRoles.contains("CC") && sectionController.text.trim().isNotEmpty ? sectionController.text.trim() : null;
+          usersList[index]["sectionId"] = selectedSubRoles.contains("CC") ? selectedSectionId : null;
+          usersList[index]["sectionName"] = selectedSubRoles.contains("CC") && selectedSectionId != null ? sections.firstWhere((s) => s["id"] == selectedSectionId, orElse: () => {"sectionName": ""})["sectionName"] : null;
+          usersList[index]["section"] = selectedSubRoles.contains("CC") && selectedSectionId != null ? sections.firstWhere((s) => s["id"] == selectedSectionId, orElse: () => {"sectionName": ""})["sectionName"] : null;
           usersList[index]["year"] = selectedSubRoles.contains("CC") ? selectedYear : null;
           usersList[index]["departmentName"] = departments.firstWhere((d) => d["id"] == selectedDeptId, orElse: () => {"name": "CSE"})["name"];
         }
@@ -506,11 +571,15 @@ class _TeachersTabState extends State<TeachersTab> {
 
   void _showAddTeacherDialog() {
     _clearControllers();
+    lastFetchedDeptId = null;
     showDialog(
       context: context,
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setDialogState) {
+            if (lastFetchedDeptId != selectedDeptId) {
+              Future.microtask(() => _fetchSectionsForDept(selectedDeptId, setDialogState));
+            }
             return AlertDialog(
               title: const Text("Add New Staff / User", style: TextStyle(fontWeight: FontWeight.bold)),
               content: SingleChildScrollView(
@@ -523,18 +592,22 @@ class _TeachersTabState extends State<TeachersTab> {
                     TextField(controller: emailController, decoration: const InputDecoration(labelText: "Email *")),
                     TextField(controller: passwordController, obscureText: true, decoration: const InputDecoration(labelText: "Password *")),
                     const SizedBox(height: 15),
-                    DropdownButtonFormField<int>(
-                      value: selectedDeptId,
+                    DropdownButtonFormField<int?>(
+                      value: departments.any((d) => (d["id"] != null ? int.tryParse(d["id"].toString()) : null) == selectedDeptId) ? selectedDeptId : null,
                       decoration: const InputDecoration(labelText: "Department"),
-                      items: departments.map((d) {
-                        return DropdownMenuItem<int>(
-                          value: d["id"],
-                          child: Text(d["code"] ?? d["name"]),
-                        );
-                      }).toList(),
+                      items: departments
+                          .where((d) => d["id"] != null)
+                          .map((d) {
+                            final dId = int.tryParse(d["id"].toString());
+                            return DropdownMenuItem<int?>(
+                              value: dId,
+                              child: Text((d["code"] ?? d["name"] ?? d["deptCode"] ?? d["deptName"] ?? "").toString()),
+                            );
+                          }).toList(),
                       onChanged: (value) {
                         setDialogState(() {
                           selectedDeptId = value;
+                          selectedSectionId = null;
                         });
                       },
                     ),
@@ -565,12 +638,12 @@ class _TeachersTabState extends State<TeachersTab> {
                           onChanged: (bool? checked) {
                             setDialogState(() {
                               if (checked == true) {
-                                selectedSubRoles.add(subRole);
+                                  selectedSubRoles.add(subRole);
                               } else {
                                 selectedSubRoles.remove(subRole);
                                 if (subRole == "CC") {
                                   selectedYear = null;
-                                  sectionController.clear();
+                                  selectedSectionId = null;
                                 }
                               }
                             });
@@ -579,8 +652,8 @@ class _TeachersTabState extends State<TeachersTab> {
                       }),
                       if (selectedSubRoles.contains("CC")) ...[
                         const SizedBox(height: 8),
-                        DropdownButtonFormField<String>(
-                          value: selectedYear,
+                        DropdownButtonFormField<String?>(
+                          value: ["I", "II", "III", "IV"].contains(selectedYear) ? selectedYear : null,
                           decoration: const InputDecoration(
                             labelText: "Coordinator Year *",
                             border: OutlineInputBorder(),
@@ -598,13 +671,36 @@ class _TeachersTabState extends State<TeachersTab> {
                           },
                         ),
                         const SizedBox(height: 8),
-                        TextField(
-                          controller: sectionController,
-                          decoration: const InputDecoration(
-                            labelText: "Coordinator Section Name (Optional)",
-                            hintText: "e.g. CSE-A or Section A",
-                            border: OutlineInputBorder(),
-                          ),
+                        StatefulBuilder(
+                          builder: (context, setSectionState) {
+                            final filteredSections = dialogSections;
+                            final hasSecs = filteredSections.isNotEmpty;
+
+                            return DropdownButtonFormField<int?>(
+                              value: filteredSections.any((sec) => sec["id"] == selectedSectionId) ? selectedSectionId : null,
+                              decoration: const InputDecoration(
+                                labelText: "Coordinator Section *",
+                                border: OutlineInputBorder(),
+                              ),
+                              items: [
+                                DropdownMenuItem<int?>(
+                                  value: null,
+                                  child: Text(hasSecs ? "Select Section" : "No Sections Available"),
+                                ),
+                                ...filteredSections.map((sec) {
+                                  return DropdownMenuItem<int?>(
+                                    value: sec["id"],
+                                    child: Text("Section ${sec["sectionName"] ?? ""}"),
+                                  );
+                                })
+                              ],
+                              onChanged: (value) {
+                                setDialogState(() {
+                                  selectedSectionId = value;
+                                });
+                              },
+                            );
+                          }
                         ),
                       ],
                       const SizedBox(height: 10),
@@ -654,9 +750,11 @@ class _TeachersTabState extends State<TeachersTab> {
   }
 
   void _showEditTeacherDialog(Map<String, dynamic> teacher) {
+    print("DEBUG EDIT DIALOG: teacher: $teacher");
+    print("DEBUG EDIT DIALOG: departments list: $departments");
     nameController.text = teacher["fullName"] ?? '';
     emailController.text = teacher["email"] ?? '';
-    selectedDeptId = teacher["departmentId"];
+    selectedDeptId = teacher["departmentId"] != null ? int.tryParse(teacher["departmentId"].toString()) : null;
     
     final List<dynamic> rolesList = teacher["roles"] ?? [];
     if (rolesList.isNotEmpty) {
@@ -667,14 +765,37 @@ class _TeachersTabState extends State<TeachersTab> {
 
     final List<dynamic> subRolesList = teacher["subRoles"] ?? [];
     selectedSubRoles = subRolesList.map((e) => e.toString()).toSet();
-    sectionController.text = teacher["section"] ?? '';
-    selectedYear = teacher["year"]?.toString();
+    selectedSectionId = teacher["sectionId"] != null ? int.tryParse(teacher["sectionId"].toString()) : null;
+    if (selectedSectionId == null && teacher["section"] != null && selectedDeptId != null) {
+      final match = sections.firstWhere((sec) {
+        final depId = sec["department"] != null ? sec["department"]["id"] : sec["departmentId"];
+        return depId == selectedDeptId && sec["sectionName"]?.toString().trim().toLowerCase() == teacher["section"].toString().trim().toLowerCase();
+      }, orElse: () => null);
+      if (match != null) {
+        selectedSectionId = match["id"];
+      }
+    }
+    final String? rawYear = teacher["year"]?.toString();
+    if (rawYear == "1" || rawYear == "I") {
+      selectedYear = "I";
+    } else if (rawYear == "2" || rawYear == "II") {
+      selectedYear = "II";
+    } else if (rawYear == "3" || rawYear == "III") {
+      selectedYear = "III";
+    } else if (rawYear == "4" || rawYear == "IV") {
+      selectedYear = "IV";
+    } else {
+      selectedYear = null;
+    }
 
     showDialog(
       context: context,
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setDialogState) {
+            if (lastFetchedDeptId != selectedDeptId) {
+              Future.microtask(() => _fetchSectionsForDept(selectedDeptId, setDialogState));
+            }
             return AlertDialog(
               title: Text("Edit User: ${teacher["username"]}", style: const TextStyle(fontWeight: FontWeight.bold)),
               content: SingleChildScrollView(
@@ -685,18 +806,22 @@ class _TeachersTabState extends State<TeachersTab> {
                     TextField(controller: nameController, decoration: const InputDecoration(labelText: "Full Name *")),
                     TextField(controller: emailController, decoration: const InputDecoration(labelText: "Email *")),
                     const SizedBox(height: 15),
-                    DropdownButtonFormField<int>(
-                      value: selectedDeptId,
+                    DropdownButtonFormField<int?>(
+                      value: departments.any((d) => (d["id"] != null ? int.tryParse(d["id"].toString()) : null) == selectedDeptId) ? selectedDeptId : null,
                       decoration: const InputDecoration(labelText: "Department"),
-                      items: departments.map((d) {
-                        return DropdownMenuItem<int>(
-                          value: d["id"],
-                          child: Text(d["code"] ?? d["name"]),
-                        );
-                      }).toList(),
+                      items: departments
+                          .where((d) => d["id"] != null)
+                          .map((d) {
+                            final dId = int.tryParse(d["id"].toString());
+                            return DropdownMenuItem<int?>(
+                              value: dId,
+                              child: Text((d["code"] ?? d["name"] ?? d["deptCode"] ?? d["deptName"] ?? "").toString()),
+                            );
+                          }).toList(),
                       onChanged: (value) {
                         setDialogState(() {
                           selectedDeptId = value;
+                          selectedSectionId = null;
                         });
                       },
                     ),
@@ -732,7 +857,7 @@ class _TeachersTabState extends State<TeachersTab> {
                                 selectedSubRoles.remove(subRole);
                                 if (subRole == "CC") {
                                   selectedYear = null;
-                                  sectionController.clear();
+                                  selectedSectionId = null;
                                 }
                               }
                             });
@@ -741,8 +866,8 @@ class _TeachersTabState extends State<TeachersTab> {
                       }),
                       if (selectedSubRoles.contains("CC")) ...[
                         const SizedBox(height: 8),
-                        DropdownButtonFormField<String>(
-                          value: selectedYear,
+                        DropdownButtonFormField<String?>(
+                          value: ["I", "II", "III", "IV"].contains(selectedYear) ? selectedYear : null,
                           decoration: const InputDecoration(
                             labelText: "Coordinator Year *",
                             border: OutlineInputBorder(),
@@ -760,13 +885,36 @@ class _TeachersTabState extends State<TeachersTab> {
                           },
                         ),
                         const SizedBox(height: 8),
-                        TextField(
-                          controller: sectionController,
-                          decoration: const InputDecoration(
-                            labelText: "Coordinator Section Name (Optional)",
-                            hintText: "e.g. CSE-A or Section A",
-                            border: OutlineInputBorder(),
-                          ),
+                        StatefulBuilder(
+                          builder: (context, setSectionState) {
+                            final filteredSections = dialogSections;
+                            final hasSecs = filteredSections.isNotEmpty;
+
+                            return DropdownButtonFormField<int?>(
+                              value: filteredSections.any((sec) => sec["id"] == selectedSectionId) ? selectedSectionId : null,
+                              decoration: const InputDecoration(
+                                labelText: "Coordinator Section *",
+                                border: OutlineInputBorder(),
+                              ),
+                              items: [
+                                DropdownMenuItem<int?>(
+                                  value: null,
+                                  child: Text(hasSecs ? "Select Section" : "No Sections Available"),
+                                ),
+                                ...filteredSections.map((sec) {
+                                  return DropdownMenuItem<int?>(
+                                    value: sec["id"],
+                                    child: Text("Section ${sec["sectionName"] ?? ""}"),
+                                  );
+                                })
+                              ],
+                              onChanged: (value) {
+                                setDialogState(() {
+                                  selectedSectionId = value;
+                                });
+                              },
+                            );
+                          }
                         ),
                       ],
                       const SizedBox(height: 10),

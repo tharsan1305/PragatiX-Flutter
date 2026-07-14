@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'package:spdms_app/core/config/api_config.dart';
 import '../models/activity_model.dart';
+import '../providers/activity_provider.dart';
 import '../utils/validators.dart';
 import 'activity_section.dart';
 import 'evidence_selector.dart';
@@ -13,15 +17,18 @@ import 'type_selector.dart';
 class ActivityForm extends StatefulWidget {
   final List<dynamic> allTeachers;
   final List<dynamic> sections;
+  final String token;
 
-  /// Pass existing activity to pre-fill form (edit mode). null = create mode.
   final ActivityModel? initialData;
   final bool isCc;
+  final ActivityProvider provider;
 
   const ActivityForm({
     super.key,
     required this.allTeachers,
     required this.sections,
+    required this.token,
+    required this.provider,
     this.initialData,
     this.isCc = false,
   });
@@ -45,7 +52,10 @@ class ActivityFormState extends State<ActivityForm> {
   final _teacherSearchCtrl = TextEditingController();
   final _capCtrl = TextEditingController(text: '1');
   final _displayOrderCtrl = TextEditingController(text: '0');
+  bool _awardEnabled = true;
+  bool _penaltyEnabled = false;
   final _awardXpCtrl = TextEditingController(text: '0');
+  final _penaltyXpCtrl = TextEditingController(text: '0');
   String _selectedStatus = 'ACTIVE';
 
   // ── Selection state ───────────────────────────────────────────────────────
@@ -58,6 +68,7 @@ class ActivityFormState extends State<ActivityForm> {
   String _selectedType = 'Individual';
   String _teacherSearchQuery = '';
   String? _selectedXpCategory;
+  String _selectedXpType = 'Reward';
   static const List<String> _xpCategories = [
     'Academic',
     'Skill',
@@ -71,9 +82,6 @@ class ActivityFormState extends State<ActivityForm> {
     'Cultural',
   ];
 
-  static const List<String> _awardFrequencies = [
-    'One Time', 'Daily', 'Weekly', 'Monthly', 'Manual',
-  ];
 
   static const List<String> _workingDays = [
     'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday',
@@ -81,10 +89,145 @@ class ActivityFormState extends State<ActivityForm> {
 
   bool _submitted = false;
 
+  String? _ccYear;
+  int? _ccDeptId;
+  String? _ccDeptName;
+  String? _ccSection;
+  bool _isLoadingCcProfile = false;
+
+  Future<void> _fetchMeProfile() async {
+    if (!widget.isCc) return;
+    setState(() => _isLoadingCcProfile = true);
+    try {
+      final response = await http.get(
+        Uri.parse("${ApiConfig.baseUrl}/api/v1/auth/me"),
+        headers: {"Authorization": "Bearer ${widget.token}"},
+      );
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data["success"] == true) {
+          final profile = data["data"];
+          setState(() {
+            _ccYear = profile["year"]?.toString();
+            _ccDeptId = profile["departmentId"] != null ? (profile["departmentId"] as num).toInt() : null;
+            _ccDeptName = profile["departmentName"]?.toString();
+            _ccSection = profile["section"]?.toString();
+
+            // Auto-select the CC's own section if it matches!
+            if (_ccSection != null && _ccSection!.isNotEmpty) {
+              try {
+                _selectedSection = _filteredSections.firstWhere(
+                  (s) => s['sectionName']?.toString()?.toLowerCase() == _ccSection!.toLowerCase(),
+                );
+              } catch (_) {}
+            }
+          });
+        }
+      }
+    } catch (_) {}
+    setState(() => _isLoadingCcProfile = false);
+  }
+
+  void _showCustomFrequencyDialog() {
+    String name = '';
+    String capType = 'UNLIMITED';
+    String maxCountStr = '1';
+
+    showDialog(
+      context: context,
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (ctx, setStateDialog) {
+            return AlertDialog(
+              title: const Text('New Custom Frequency', style: TextStyle(fontWeight: FontWeight.bold)),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    decoration: const InputDecoration(labelText: 'Frequency Name (e.g. Assignment)'),
+                    onChanged: (val) => name = val,
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Radio<String>(
+                        value: 'UNLIMITED',
+                        groupValue: capType,
+                        onChanged: (val) => setStateDialog(() => capType = val!),
+                      ),
+                      const Text('Unlimited'),
+                      Radio<String>(
+                        value: 'MANUAL_CAP',
+                        groupValue: capType,
+                        onChanged: (val) => setStateDialog(() => capType = val!),
+                      ),
+                      const Text('Manual Cap'),
+                    ],
+                  ),
+                  if (capType == 'MANUAL_CAP')
+                    TextField(
+                      decoration: const InputDecoration(labelText: 'Maximum Count'),
+                      keyboardType: TextInputType.number,
+                      onChanged: (val) => maxCountStr = val,
+                    ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx),
+                  child: const Text('Cancel'),
+                ),
+                ElevatedButton(
+                  onPressed: () async {
+                    if (name.trim().isEmpty) return;
+                    int defaultCap = 0;
+                    if (capType == 'MANUAL_CAP') {
+                      defaultCap = int.tryParse(maxCountStr) ?? 1;
+                      if (defaultCap <= 0) defaultCap = 1;
+                    }
+                    final res = await widget.provider.createCustomFrequency({
+                      'name': name.trim(),
+                      'capType': capType,
+                      'defaultCap': defaultCap,
+                    });
+                    if (res != null) {
+                      Navigator.pop(ctx, res);
+                    } else {
+                      ScaffoldMessenger.of(ctx).showSnackBar(
+                        SnackBar(content: Text(widget.provider.error ?? 'Error creating frequency')),
+                      );
+                    }
+                  },
+                  child: const Text('Save'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    ).then((result) {
+      if (result != null && result is Map) {
+        setState(() {
+          _selectedAwardFrequency = result['name'];
+          if (result['capType'] == 'UNLIMITED') {
+            _capCtrl.text = '1';
+          } else {
+            _capCtrl.text = result['defaultCap'].toString();
+          }
+        });
+      } else {
+        if (_selectedAwardFrequency == 'Manual') {
+            setState(() => _selectedAwardFrequency = 'One Time');
+        }
+      }
+    });
+  }
+
   // ── Lifecycle ─────────────────────────────────────────────────────────────
   @override
   void initState() {
     super.initState();
+    _fetchMeProfile();
     final d = widget.initialData;
     if (d != null) {
       _nameCtrl.text = d.name;
@@ -93,13 +236,46 @@ class ActivityFormState extends State<ActivityForm> {
       _capCtrl.text = d.cap.toString();
       _displayOrderCtrl.text = d.displayOrder.toString();
       _selectedStatus = d.status.isNotEmpty ? d.status : 'ACTIVE';
+      _awardEnabled = d.awardEnabled;
+      _penaltyEnabled = d.penaltyEnabled;
       _awardXpCtrl.text = d.awardXp.toString();
+      _penaltyXpCtrl.text = d.penaltyXp.toString();
       _selectedAwardType = d.awardType.isNotEmpty ? d.awardType : 'Fixed XP';
       _selectedAwardFrequency = d.awardFrequency.isNotEmpty ? d.awardFrequency : 'One Time';
       _selectedAwardDays = Set<String>.from(d.awardDays);
       _selectedType = d.type.isNotEmpty ? d.type : 'Individual';
       _selectedEvidence = Set<String>.from(d.evidence);
       _selectedXpCategory = _normalizeXpCategory(d.xpCategory);
+      _selectedXpType = d.xpType.isNotEmpty ? d.xpType : 'Reward';
+
+      if (widget.isCc && d.assignmentSummary.isNotEmpty) {
+        final assign = d.assignmentSummary.first;
+        final tId = assign['teacherId'];
+        if (tId != null) {
+          if (tId == 0 || tId.toString() == '0') {
+            _selectedTeacher = {
+              'id': 0,
+              'fullName': 'Any Faculty',
+              'username': 'any',
+              'departmentName': 'Global'
+            };
+          } else {
+            try {
+              _selectedTeacher = widget.allTeachers.firstWhere(
+                (t) => t['id'].toString() == tId.toString(),
+              );
+            } catch (_) {}
+          }
+        }
+        final secId = assign['sectionId'];
+        if (secId != null) {
+          try {
+            _selectedSection = widget.sections.firstWhere(
+              (s) => s['id'].toString() == secId.toString(),
+            );
+          } catch (_) {}
+        }
+      }
     }
   }
 
@@ -112,6 +288,7 @@ class ActivityFormState extends State<ActivityForm> {
     _justCtrl.dispose();
     _teacherSearchCtrl.dispose();
     _awardXpCtrl.dispose();
+    _penaltyXpCtrl.dispose();
     super.dispose();
   }
 
@@ -128,19 +305,41 @@ class ActivityFormState extends State<ActivityForm> {
 
   // ── Helpers ───────────────────────────────────────────────────────────────
   List<dynamic> get _searchedTeachers {
+    final virtualAny = {
+      'id': 0,
+      'fullName': 'Any Faculty',
+      'username': 'any',
+      'departmentName': 'Global'
+    };
     if (_teacherSearchQuery.trim().isEmpty) {
-      return widget.allTeachers;
+      return [virtualAny, ...widget.allTeachers];
     }
     final query = _teacherSearchQuery.toLowerCase();
-    return widget.allTeachers.where((t) {
+    final matchesVirtual = 'any faculty'.contains(query) || 'any'.contains(query) || 'global'.contains(query);
+    final filtered = widget.allTeachers.where((t) {
       final name = (t['fullName'] as String? ?? '').toLowerCase();
       final username = (t['username'] as String? ?? '').toLowerCase();
       final dept = (t['departmentName'] as String? ?? '').toLowerCase();
       return name.contains(query) || username.contains(query) || dept.contains(query);
     }).toList();
+    return matchesVirtual ? [virtualAny, ...filtered] : filtered;
   }
 
   List<dynamic> get _filteredSections {
+    if (widget.isCc) {
+      return widget.sections.where((s) {
+        final sName = s['sectionName']?.toString()?.trim()?.toLowerCase() ?? '';
+        final sDeptId = s['department'] != null ? s['department']['id'] : null;
+
+        final targetSection = _ccSection?.trim()?.toLowerCase() ?? '';
+        final targetDeptId = _ccDeptId;
+
+        bool sectionMatches = targetSection.isEmpty || sName == targetSection;
+        bool deptMatches = targetDeptId == null || sDeptId == targetDeptId;
+
+        return sectionMatches && deptMatches;
+      }).toList();
+    }
     return widget.sections;
   }
 
@@ -270,26 +469,38 @@ class ActivityFormState extends State<ActivityForm> {
 
     final int cap = int.tryParse(_capCtrl.text.trim()) ?? 1;
     final bool capLocked = _selectedAwardFrequency == 'One Time' || _selectedAwardFrequency == 'Manual';
+    final bool isEveryPeriod = _selectedAwardFrequency == 'Every Period';
 
-    return {
+    final payload = {
       'name': _nameCtrl.text.trim(),
       'description': _descCtrl.text.trim(),
       'teacherId': '',
       'ownerSubrole': '',
       'evidence': _selectedEvidence.toList(),
-      'xp': _awardXpCtrl.text.trim(),
+      'xp': _awardEnabled ? _awardXpCtrl.text.trim() : '0',
       'type': _selectedType,
       'justification': _justCtrl.text.trim(),
       'xpCategory': _selectedXpCategory,
-      'cap': capLocked ? 1 : cap,
+      'cap': isEveryPeriod ? 8 : (capLocked ? 1 : cap),
       'awardFrequency': _selectedAwardFrequency,
       'awardDays': _selectedAwardFrequency == 'Weekly' ? _selectedAwardDays.toList() : [],
       'displayOrder': int.tryParse(_displayOrderCtrl.text.trim()) ?? 0,
       'status': _selectedStatus,
-      'awardXp': int.tryParse(_awardXpCtrl.text.trim()) ?? 0,
+      'awardXp': _awardEnabled ? (int.tryParse(_awardXpCtrl.text.trim()) ?? 0) : 0,
+      'awardEnabled': _awardEnabled,
+      'penaltyEnabled': _penaltyEnabled,
+      'penaltyXp': _penaltyEnabled ? (int.tryParse(_penaltyXpCtrl.text.trim()) ?? 0) : 0,
       'awardType': _selectedAwardType,
+      'xpType': _selectedXpType,
     };
+    debugPrint('Award Enabled : ${payload['awardEnabled']}');
+    debugPrint('Award XP : ${payload['awardXp']}');
+    debugPrint('Penalty Enabled : ${payload['penaltyEnabled']}');
+    debugPrint('Penalty XP : ${payload['penaltyXp']}');
+    return payload;
   }
+
+
 
   Map<String, dynamic>? buildCcAssignmentBody() {
     setState(() => _submitted = true);
@@ -306,6 +517,10 @@ class ActivityFormState extends State<ActivityForm> {
   // ── Build ─────────────────────────────────────────────────────────────────
   @override
   Widget build(BuildContext context) {
+    if (widget.isCc && _isLoadingCcProfile) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
     int stepNum = 1;
     final filteredSecs = _filteredSections;
     final hasSections = filteredSecs.isNotEmpty;
@@ -734,24 +949,109 @@ class ActivityFormState extends State<ActivityForm> {
 
   Widget _buildAwardRulesSection() {
     final bool isOneTimeOrManual = _selectedAwardFrequency == 'One Time' || _selectedAwardFrequency == 'Manual';
+    final bool isEveryPeriod = _selectedAwardFrequency == 'Every Period';
+    final bool isCapDisabled = isOneTimeOrManual || isEveryPeriod;
     final bool isWeekly = _selectedAwardFrequency == 'Weekly';
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // ── Award XP ─────────────────────────────────────────────────────────
-        TextFormField(
-          controller: _awardXpCtrl,
-          keyboardType: TextInputType.number,
-          style: const TextStyle(color: _dark, fontSize: 15),
-          decoration: _deco('Award XP', Icons.add_circle_outline_rounded),
-          validator: (val) {
-            if (val == null || val.trim().isEmpty) return 'Award XP is required';
-            final parsed = int.tryParse(val);
-            if (parsed == null || parsed <= 0) return 'Must be an integer greater than zero';
-            return null;
+        // ── XP Configuration Section Header ──
+        const Text(
+          'XP Configuration',
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: _dark),
+        ),
+        const SizedBox(height: 12),
+
+        // ── Award XP SwitchListTile ──
+        SwitchListTile(
+          activeColor: _primary,
+          title: const Text('Award XP', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: _dark)),
+          subtitle: const Text('Award points when student satisfies the activity condition', style: TextStyle(fontSize: 12)),
+          value: _awardEnabled,
+          onChanged: (val) {
+            setState(() {
+              _awardEnabled = val;
+            });
           },
         ),
+        if (_awardEnabled) ...[
+          const SizedBox(height: 8),
+          TextFormField(
+            key: const ValueKey('award_xp_field'),
+            controller: _awardXpCtrl,
+            keyboardType: TextInputType.number,
+            style: const TextStyle(color: _dark, fontSize: 15),
+            decoration: _deco('Award XP Value', Icons.add_circle_outline_rounded),
+            validator: (val) {
+              if (!_awardEnabled) return null;
+              if (val == null || val.trim().isEmpty) return 'Award XP is required when enabled';
+              final parsed = int.tryParse(val);
+              if (_penaltyEnabled) {
+                if (parsed == null || parsed < 0) return 'Must be a non-negative integer';
+              } else {
+                if (parsed == null || parsed <= 0) return 'Must be a positive integer greater than zero';
+              }
+              return null;
+            },
+          ),
+        ],
+        const SizedBox(height: 16),
+
+        // ── Penalty XP SwitchListTile ──
+        SwitchListTile(
+          activeColor: _primary,
+          title: const Text('Penalty XP', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: _dark)),
+          subtitle: const Text('Deduct points when student violates/fails the activity condition', style: TextStyle(fontSize: 12)),
+          value: _penaltyEnabled,
+          onChanged: (val) {
+            setState(() {
+              _penaltyEnabled = val;
+            });
+          },
+        ),
+        if (_penaltyEnabled) ...[
+          const SizedBox(height: 8),
+          TextFormField(
+            key: const ValueKey('penalty_xp_field'),
+            controller: _penaltyXpCtrl,
+            keyboardType: TextInputType.number,
+            style: const TextStyle(color: _dark, fontSize: 15),
+            decoration: _deco('Penalty XP Value', Icons.remove_circle_outline_rounded),
+            validator: (val) {
+              if (!_penaltyEnabled) return null;
+              if (val == null || val.trim().isEmpty) return 'Penalty XP is required when enabled';
+              final parsed = int.tryParse(val);
+              if (parsed == null || parsed <= 0) return 'Must be a positive integer greater than zero';
+              return null;
+            },
+          ),
+        ],
+
+        // ── Global Validation Warning ──
+        if (!_awardEnabled && !_penaltyEnabled) ...[
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.red.shade50,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.red.shade200),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.warning_amber_rounded, color: Colors.red.shade800),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'At least one toggle (Award XP or Penalty XP) must be enabled.',
+                    style: TextStyle(color: Colors.red.shade800, fontSize: 13, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
         const SizedBox(height: 16),
 
         // ── Award Type ───────────────────────────────────────────────────────
@@ -783,7 +1083,11 @@ class ActivityFormState extends State<ActivityForm> {
             isExpanded: true,
             underline: const SizedBox.shrink(),
             icon: const Icon(Icons.expand_more_rounded, color: _primary),
-            items: _awardFrequencies.map((f) {
+            items: [
+              'One Time', 'Daily', 'Weekly', 'Monthly', 'Every Period', 
+              ...widget.provider.customFrequencies.map((f) => f['name'] as String),
+              'Manual'
+            ].map((f) {
               return DropdownMenuItem<String>(
                 value: f,
                 child: Text(f, style: const TextStyle(fontSize: 14, color: _dark)),
@@ -791,19 +1095,33 @@ class ActivityFormState extends State<ActivityForm> {
             }).toList(),
             onChanged: (val) {
               if (val != null) {
-                setState(() {
-                  _selectedAwardFrequency = val;
-                  if (val == 'One Time' || val == 'Manual') {
-                    _capCtrl.text = '1';
-                    _selectedAwardDays = {};
-                  } else if (val == 'Weekly' && _selectedAwardDays.isEmpty) {
-                    // default to Mon-Fri
-                    _selectedAwardDays = {'Monday','Tuesday','Wednesday','Thursday','Friday'};
-                    if (_capCtrl.text == '1') _capCtrl.text = '5';
-                  } else {
-                    if (_capCtrl.text == '1') _capCtrl.text = '1';
-                  }
-                });
+                if (val == 'Manual') {
+                  _showCustomFrequencyDialog();
+                } else {
+                  setState(() {
+                    _selectedAwardFrequency = val;
+                    final customMatch = widget.provider.customFrequencies.where((f) => f['name'] == val).toList();
+                    if (customMatch.isNotEmpty) {
+                        final cf = customMatch.first;
+                        if (cf['capType'] == 'UNLIMITED') {
+                            _capCtrl.text = '1'; // Unlimited bypasses cap on backend anyway
+                        } else {
+                            _capCtrl.text = cf['defaultCap'].toString();
+                        }
+                    } else if (val == 'One Time') {
+                      _capCtrl.text = '1';
+                      _selectedAwardDays = {};
+                    } else if (val == 'Weekly' && _selectedAwardDays.isEmpty) {
+                      _selectedAwardDays = {'Monday','Tuesday','Wednesday','Thursday','Friday'};
+                      if (_capCtrl.text == '1') _capCtrl.text = '5';
+                    } else if (val == 'Every Period') {
+                      _capCtrl.text = '8';
+                      _selectedAwardDays = {};
+                    } else {
+                      if (_capCtrl.text == '1') _capCtrl.text = '1';
+                    }
+                  });
+                }
               }
             },
           ),
@@ -887,20 +1205,23 @@ class ActivityFormState extends State<ActivityForm> {
         ],
 
         // ── Cap ──────────────────────────────────────────────────────────────
+        // ── Cap ──────────────────────────────────────────────────────────────
         AbsorbPointer(
-          absorbing: isOneTimeOrManual,
+          absorbing: isCapDisabled,
           child: Opacity(
-            opacity: isOneTimeOrManual ? 0.5 : 1.0,
+            opacity: isCapDisabled ? 0.5 : 1.0,
             child: TextFormField(
               controller: _capCtrl,
               keyboardType: TextInputType.number,
               style: const TextStyle(color: _dark, fontSize: 15),
               decoration: _deco(
-                isOneTimeOrManual ? 'Cap (fixed at 1)' : 'Cap (max awards per frequency window)',
+                isEveryPeriod
+                    ? 'Cap (fixed at 8)'
+                    : (isOneTimeOrManual ? 'Cap (fixed at 1)' : 'Cap (max awards per frequency window)'),
                 Icons.bar_chart_rounded,
               ),
               validator: (val) {
-                if (isOneTimeOrManual) return null;
+                if (isCapDisabled) return null;
                 if (val == null || val.trim().isEmpty) return 'Cap is required';
                 final parsed = int.tryParse(val);
                 if (parsed == null || parsed <= 0) return 'Must be an integer greater than zero';
@@ -915,12 +1236,13 @@ class ActivityFormState extends State<ActivityForm> {
 
   String _frequencyHint(String freq) {
     switch (freq) {
-      case 'One Time': return 'XP is awarded only once to the student. No repetition allowed.';
-      case 'Daily':    return 'XP can be awarded once per day (resets at midnight).';
-      case 'Weekly':   return 'XP can be awarded on selected days. Cap resets every Monday.';
-      case 'Monthly':  return 'Cap resets at the start of each calendar month.';
-      case 'Manual':   return 'XP is awarded manually by admin reset. Cap is fixed at 1.';
-      default:         return '';
+      case 'One Time':     return 'XP is awarded only once to the student. No repetition allowed.';
+      case 'Daily':        return 'XP can be awarded once per day (resets at midnight).';
+      case 'Weekly':       return 'XP can be awarded on selected days. Cap resets every Monday.';
+      case 'Monthly':      return 'Cap resets at the start of each calendar month.';
+      case 'Every Period': return 'XP can be awarded or penalized up to 8 times per day for each student.';
+      case 'Manual':       return 'XP is awarded manually by admin reset. Cap is fixed at 1.';
+      default:             return '';
     }
   }
 

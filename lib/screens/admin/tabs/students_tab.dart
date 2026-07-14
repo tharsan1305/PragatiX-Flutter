@@ -39,6 +39,45 @@ class _StudentsTabState extends State<StudentsTab> {
   List<dynamic> sections = [];
   List<dynamic> groups = [];
 
+  List<dynamic> dialogSections = [];
+  bool isLoadingSections = false;
+  int? lastFetchedDeptId;
+
+  Future<void> _fetchSectionsForDept(int? deptId, void Function(void Function()) setDialogState) async {
+    if (deptId == null) {
+      setDialogState(() {
+        dialogSections = [];
+        lastFetchedDeptId = null;
+      });
+      return;
+    }
+    setDialogState(() {
+      isLoadingSections = true;
+      lastFetchedDeptId = deptId;
+    });
+    try {
+      final response = await http.get(
+        Uri.parse("${ApiConfig.baseUrl}/api/v1/admin/departments/$deptId/sections"),
+        headers: {"Authorization": "Bearer ${widget.token}"},
+      );
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data["success"] == true) {
+          final List<dynamic> list = data["data"] ?? [];
+          setDialogState(() {
+            dialogSections = list;
+          });
+        }
+      }
+    } catch (e) {
+      print("Error fetching dialog sections: $e");
+    } finally {
+      setDialogState(() {
+        isLoadingSections = false;
+      });
+    }
+  }
+
   bool isLoading = true;
   bool isLoadingLookups = true;
   String searchQuery = '';
@@ -131,6 +170,14 @@ class _StudentsTabState extends State<StudentsTab> {
       studentsList = [];
       isLoading = false;
     });
+  }
+
+  String _normalizeSectionName(String name) {
+    String cleaned = name.trim().toLowerCase();
+    if (cleaned.startsWith("section ")) {
+      cleaned = cleaned.substring(8).trim();
+    }
+    return cleaned;
   }
 
   Future<void> _addStudent({
@@ -323,6 +370,7 @@ class _StudentsTabState extends State<StudentsTab> {
 
   void _showAddStudentDialog() {
     _clearControllers();
+    lastFetchedDeptId = null;
     int? selectedDeptId = departments.isNotEmpty ? departments.first["id"] : null;
     int? selectedAcademicYearId = academicYears.isNotEmpty ? academicYears.first["id"] : null;
     int? selectedYearId = years.isNotEmpty ? years.first["id"] : null;
@@ -337,7 +385,10 @@ class _StudentsTabState extends State<StudentsTab> {
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setDialogState) {
-            final filteredSections = sections.where((sec) => sec["departmentId"] == selectedDeptId).toList();
+            if (lastFetchedDeptId != selectedDeptId) {
+              Future.microtask(() => _fetchSectionsForDept(selectedDeptId, setDialogState));
+            }
+            final filteredSections = dialogSections;
             if (selectedSectionId != null && !filteredSections.any((sec) => sec["id"] == selectedSectionId)) {
               selectedSectionId = null;
             }
@@ -469,12 +520,12 @@ class _StudentsTabState extends State<StudentsTab> {
                       },
                     ),
                     DropdownButtonFormField<int?>(
-                      value: selectedSectionId,
+                      value: filteredSections.any((sec) => sec["id"] == selectedSectionId) ? selectedSectionId : null,
                       decoration: const InputDecoration(labelText: "Section (Optional)"),
                       items: [
-                        const DropdownMenuItem<int?>(
+                        DropdownMenuItem<int?>(
                           value: null,
-                          child: Text("No Section Selected (Optional)"),
+                          child: Text(filteredSections.isNotEmpty ? "No Section Selected (Optional)" : "No Sections Available"),
                         ),
                         ...filteredSections.map((sec) {
                           return DropdownMenuItem<int?>(
@@ -540,6 +591,7 @@ class _StudentsTabState extends State<StudentsTab> {
   }
 
   void _showEditStudentDialog(Map<String, dynamic> student) {
+    lastFetchedDeptId = null;
     final TextEditingController nameCtrl = TextEditingController(text: student["fullName"] ?? '');
     final TextEditingController emailCtrl = TextEditingController(text: student["email"] ?? '');
     final TextEditingController phoneCtrl = TextEditingController(text: student["phone"] ?? '');
@@ -608,7 +660,10 @@ class _StudentsTabState extends State<StudentsTab> {
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setDialogState) {
-            final filteredSections = sections.where((sec) => sec["departmentId"] == selectedDeptId).toList();
+            if (lastFetchedDeptId != selectedDeptId) {
+              Future.microtask(() => _fetchSectionsForDept(selectedDeptId, setDialogState));
+            }
+            final filteredSections = dialogSections;
             if (selectedSectionId != null && !filteredSections.any((sec) => sec["id"] == selectedSectionId)) {
               selectedSectionId = null;
             }
@@ -747,9 +802,9 @@ class _StudentsTabState extends State<StudentsTab> {
                       value: filteredSections.any((sec) => sec["id"] == selectedSectionId) ? selectedSectionId : null,
                       decoration: const InputDecoration(labelText: "Section (Optional)"),
                       items: [
-                        const DropdownMenuItem<int?>(
+                        DropdownMenuItem<int?>(
                           value: null,
-                          child: Text("No Section Selected (Optional)"),
+                          child: Text(filteredSections.isNotEmpty ? "No Section Selected (Optional)" : "No Sections Available"),
                         ),
                         ...filteredSections.map((sec) {
                           return DropdownMenuItem<int?>(
