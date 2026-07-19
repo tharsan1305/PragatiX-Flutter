@@ -218,7 +218,7 @@ class _ActivityTabState extends State<ActivityTab> {
                             'No description';
                         final subgroups =
                             stage['subgroups'] as List<dynamic>? ?? [];
-                        final bool active = stage['isActive'] as bool? ?? stage['active'] as bool? ?? true;
+                        final String statusStr = stage['status'] as String? ?? 'UPCOMING';
                         final displayOrder = stage['displayOrder'] ?? 0;
 
                         return Card(
@@ -267,18 +267,18 @@ class _ActivityTabState extends State<ActivityTab> {
                                             Container(
                                               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                               decoration: BoxDecoration(
-                                                color: active ? Colors.green.shade50 : Colors.grey.shade100,
+                                                color: statusStr == 'ACTIVE' ? Colors.green.shade50 : (statusStr == 'UPCOMING' ? Colors.blue.shade50 : Colors.grey.shade100),
                                                 borderRadius: BorderRadius.circular(8),
                                                 border: Border.all(
-                                                  color: active ? Colors.green.shade300 : Colors.grey.shade400,
+                                                  color: statusStr == 'ACTIVE' ? Colors.green.shade300 : (statusStr == 'UPCOMING' ? Colors.blue.shade300 : Colors.grey.shade400),
                                                 ),
                                               ),
                                               child: Text(
-                                                active ? 'ACTIVE' : 'INACTIVE',
+                                                statusStr,
                                                 style: TextStyle(
                                                   fontSize: 10,
                                                   fontWeight: FontWeight.bold,
-                                                  color: active ? Colors.green.shade800 : Colors.grey.shade700,
+                                                  color: statusStr == 'ACTIVE' ? Colors.green.shade800 : (statusStr == 'UPCOMING' ? Colors.blue.shade800 : Colors.grey.shade700),
                                                 ),
                                               ),
                                             ),

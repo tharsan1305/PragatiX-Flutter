@@ -101,21 +101,9 @@ class _LeaderboardTabState extends State<LeaderboardTab> {
         }
       }
     } catch (e) {
-      // Fallback mockup data if offline
-      allStudentsData = [
-        {"studentId": "24CS036", "fullName": "Sharugesh", "departmentName": "CSE", "year": "III", "section": "A", "score": 95},
-        {"studentId": "25CS010", "fullName": "Priya K", "departmentName": "CSE", "year": "I", "section": "A", "score": 92},
-        {"studentId": "24CS002", "fullName": "Venkat", "departmentName": "CSE", "year": "III", "section": "A", "score": 90},
-        {"studentId": "24IT089", "fullName": "Jagadheesh", "departmentName": "IT", "year": "III", "section": "B", "score": 88},
-        {"studentId": "22CS045", "fullName": "Rahul Kumar", "departmentName": "CSE", "year": "IV", "section": "A", "score": 85},
-        {"studentId": "25IT004", "fullName": "Sanjay M", "departmentName": "IT", "year": "I", "section": "B", "score": 84},
-        {"studentId": "24EE015", "fullName": "Divya T", "departmentName": "EEE", "year": "III", "section": "B", "score": 81},
-        {"studentId": "23EE012", "fullName": "Kavya S", "departmentName": "EEE", "year": "II", "section": "A", "score": 80},
-        {"studentId": "22ME022", "fullName": "Arjun P", "departmentName": "MECH", "year": "IV", "section": "C", "score": 79},
-        {"studentId": "23ME033", "fullName": "Vijay R", "departmentName": "MECH", "year": "II", "section": "B", "score": 75},
-      ];
-      deptOptions = ["All", "CSE", "IT", "EEE", "MECH"];
-      sectionOptions = ["All", "A", "B", "C"];
+      allStudentsData = [];
+      deptOptions = ["All"];
+      sectionOptions = ["All"];
     }
 
     _applyFilters();

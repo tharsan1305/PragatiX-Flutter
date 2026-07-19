@@ -1,0 +1,128 @@
+﻿Folder PATH listing for volume New Volume
+Volume serial number is 000001CE 8A87:A31E
+H:\UPDATING SPDMS\UPDATING_DISCIPLINE_MONITOR_FRONTEND\LIB
+|   dart_files_list.txt
+|   main.dart
+|   
++---admin
+|   \---activity
+|       +---models
+|       |       activity_model.dart
+|       |       execution_student_model.dart
+|       |       my_activity_model.dart
+|       |       
+|       +---pages
+|       |       activity_details_page.dart
+|       |       activity_execution_page.dart
+|       |       activity_execution_page_v2.dart
+|       |       activity_list_page.dart
+|       |       admin_activity_detail_page.dart
+|       |       assign_faculty_page.dart
+|       |       create_activity_page.dart
+|       |       create_group_page.dart
+|       |       edit_activity_page.dart
+|       |       group_activity_dept_page.dart
+|       |       group_activity_execution_page.dart
+|       |       group_activity_sec_page.dart
+|       |       group_activity_year_page.dart
+|       |       group_details_page.dart
+|       |       
+|       +---providers
+|       |       activity_provider.dart
+|       |       
+|       +---repository
+|       |       activity_repository.dart
+|       |       
+|       +---services
+|       |       activity_service.dart
+|       |       
+|       +---utils
+|       |       constants.dart
+|       |       validators.dart
+|       |       
+|       \---widgets
+|               activity_card.dart
+|               activity_form.dart
+|               activity_section.dart
+|               cap_selector.dart
+|               evidence_selector.dart
+|               frequency_selector.dart
+|               owner_selector.dart
+|               sticky_bottom_buttons.dart
+|               type_selector.dart
+|               xp_selector.dart
+|               
++---core
+|   \---config
+|           api_config.dart
+|           
++---models
+|       student.dart
+|       team.dart
+|       
++---providers
+|       badge_provider.dart
+|       xp_provider.dart
+|       
++---repositories
+|       badge_repository.dart
+|       
++---screens
+|   +---admin
+|   |   |   admin_dashboard.dart
+|   |   |   create_stage_page.dart
+|   |   |   edit_stage_page.dart
+|   |   |   stage_details_page.dart
+|   |   |   
+|   |   \---tabs
+|   |           activity_tab.dart
+|   |           departments_tab.dart
+|   |           overview_tab.dart
+|   |           profile_tab.dart
+|   |           students_tab.dart
+|   |           teachers_tab.dart
+|   |           
+|   +---captain
+|   |   |   captain_dashboard_page.dart
+|   |   |   
+|   |   \---tabs
+|   |           activities_tab.dart
+|   |           captain_group_tab.dart
+|   |           dashboard_tab.dart
+|   |           leaderboard_tab.dart
+|   |           point_review_tab.dart
+|   |           profile_tab.dart
+|   |           
+|   +---login
+|   |       login_page.dart
+|   |       
+|   +---student
+|   |   |   student_dashboard_page.dart
+|   |   |   
+|   |   \---tabs
+|   |           activities_tab.dart
+|   |           dashboard_tab.dart
+|   |           leaderboard_tab.dart
+|   |           levels_badges_tab.dart
+|   |           point_review_tab.dart
+|   |           profile_tab.dart
+|   |           
+|   \---teacher
+|       |   teacher_dashboard.dart
+|       |   teacher_student_detail.dart
+|       |   
+|       \---tabs
+|               activity_tab.dart
+|               badge_claims_tab.dart
+|               hod_performance_tab.dart
+|               leaderboard_tab.dart
+|               performance_activities_tab.dart
+|               profile_tab.dart
+|               removal_requests_tab.dart
+|               students_tab.dart
+|               teacher_group_management_tab.dart
+|               
+\---services
+        group_activity_service.dart
+        student_service.dart
+        

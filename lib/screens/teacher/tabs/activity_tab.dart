@@ -2,7 +2,7 @@ import 'package:spdms_app/core/config/api_config.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import '../../../admin/activity/pages/activity_list_page.dart';
+import '../../../features/activity/pages/activity_list_page.dart';
 
 class ActivityTab extends StatefulWidget {
   final String token;

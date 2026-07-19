@@ -26,6 +26,7 @@ class _DashboardTabState extends State<DashboardTab> {
   int rank = 1;
   int currentStage = 1;
   bool isCaptain = false;
+  Map<String, dynamic>? activeStageDetails;
 
   @override
   void initState() {
@@ -37,6 +38,33 @@ class _DashboardTabState extends State<DashboardTab> {
       xpProv.fetchHistory(studentId, widget.token);
       xpProv.fetchStreaks(studentId, widget.token);
     });
+    _fetchStages();
+  }
+  
+  Future<void> _fetchStages() async {
+    if (widget.token == "debug_token") return;
+    try {
+      final response = await http.get(
+        Uri.parse("${ApiConfig.baseUrl}/api/v1/students/stages"),
+        headers: {"Authorization": "Bearer ${widget.token}"},
+      );
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data["success"] == true) {
+          final List<dynamic> stagesList = data["data"] ?? [];
+          final active = stagesList.firstWhere(
+            (s) => s["isActive"] == true || s["active"] == true,
+            orElse: () => null,
+          );
+          if (active != null) {
+            setState(() {
+              activeStageDetails = active;
+              currentStage = active["displayOrder"] ?? 1;
+            });
+          }
+        }
+      }
+    } catch (_) {}
   }
 
   Future<void> _fetchProfileData() async {
@@ -65,8 +93,10 @@ class _DashboardTabState extends State<DashboardTab> {
             year = resData["year"] ?? "III";
             department = resData["department"] ?? "Information Technology";
             score = resData["score"] ?? 95;
-            currentStage = resData["stage"] ?? 1;
             isCaptain = resData["isCaptain"] ?? false;
+            if (resData["stage"] != null && activeStageDetails == null) {
+              currentStage = resData["stage"];
+            }
             isLoading = false;
           });
 
@@ -155,9 +185,19 @@ class _DashboardTabState extends State<DashboardTab> {
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        physics: const BouncingScrollPhysics(),
-        child: Padding(
+      body: RefreshIndicator(
+        onRefresh: () async {
+          await _fetchProfileData();
+          await _fetchStages();
+          final xpProv = Provider.of<XpProvider>(context, listen: false);
+          await xpProv.fetchSummary(studentId, widget.token);
+          await xpProv.fetchHistory(studentId, widget.token);
+          await xpProv.fetchStreaks(studentId, widget.token);
+        },
+        color: const Color(0xFF4F46E5),
+        child: SingleChildScrollView(
+          physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+          child: Padding(
           padding: const EdgeInsets.all(20.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -175,12 +215,16 @@ class _DashboardTabState extends State<DashboardTab> {
               Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  Text(
-                    studentName,
-                    style: const TextStyle(
-                      fontSize: 26,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF1E293B),
+                  Expanded(
+                    child: Text(
+                      studentName,
+                      style: const TextStyle(
+                        fontSize: 26,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF1E293B),
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
                   if (isCaptain) ...[
@@ -272,25 +316,31 @@ class _DashboardTabState extends State<DashboardTab> {
                     const SizedBox(height: 16),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              "Department",
-                              style: TextStyle(color: Colors.white70, fontSize: 12),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              department,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 14,
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                "Department",
+                                style: TextStyle(color: Colors.white70, fontSize: 12),
                               ),
-                            ),
-                          ],
+                              const SizedBox(height: 4),
+                              Text(
+                                department,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 14,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                          ),
                         ),
+                        const SizedBox(width: 16),
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.end,
                           children: [
@@ -395,6 +445,7 @@ class _DashboardTabState extends State<DashboardTab> {
             ],
           ),
         ),
+      ),
       ),
     );
   }
@@ -523,7 +574,7 @@ class _DashboardTabState extends State<DashboardTab> {
             physics: const NeverScrollableScrollPhysics(),
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 2,
-              childAspectRatio: 2.8,
+              childAspectRatio: 2.5,
               crossAxisSpacing: 12,
               mainAxisSpacing: 12,
             ),
@@ -560,11 +611,16 @@ class _DashboardTabState extends State<DashboardTab> {
                             label,
                             style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: Colors.grey),
                             overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
                           ),
                           const SizedBox(height: 2),
-                          Text(
-                            "$val XP",
-                            style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: color),
+                          FittedBox(
+                            fit: BoxFit.scaleDown,
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              "$val XP",
+                              style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: color),
+                            ),
                           ),
                         ],
                       ),
@@ -645,11 +701,15 @@ class _DashboardTabState extends State<DashboardTab> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      name,
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 10, color: Color(0xFF1E293B)),
-                      overflow: TextOverflow.ellipsis,
+                    Expanded(
+                      child: Text(
+                        name,
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 10, color: Color(0xFF1E293B)),
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                      ),
                     ),
+                    const SizedBox(width: 4),
                     Text(isBroken ? "❄️" : "🔥", style: const TextStyle(fontSize: 12)),
                   ],
                 ),
@@ -686,10 +746,15 @@ class _DashboardTabState extends State<DashboardTab> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                "Level $levelNum — $levelTitle",
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF1E293B)),
+              Expanded(
+                child: Text(
+                  "Level $levelNum — $levelTitle",
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF1E293B)),
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
+                ),
               ),
+              const SizedBox(width: 8),
               const Icon(Icons.stars_rounded, color: Colors.indigo, size: 24),
             ],
           ),
@@ -715,37 +780,117 @@ class _DashboardTabState extends State<DashboardTab> {
 
   // Widget 4: Stage Progress Banner
   Widget _buildStageProgressBanner(int currentStage, int totalXp) {
+    if (activeStageDetails == null) {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.red.shade50,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.red.shade200),
+        ),
+        child: const Column(
+          children: [
+            Icon(Icons.lock_clock, color: Colors.red, size: 32),
+            SizedBox(height: 8),
+            Text(
+              "No Active Stage",
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.red),
+            ),
+            SizedBox(height: 4),
+            Text(
+              "No active stage is currently available. Activities are locked.",
+              style: TextStyle(fontSize: 13, color: Colors.red),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      );
+    }
+
+    final int expectedXp = activeStageDetails?['expectedXp'] ?? 1000;
+    String countdown = activeStageDetails?['countdown'] as String? ?? "";
+
+    final double progress = expectedXp > 0 ? (totalXp / expectedXp).clamp(0.0, 1.0) : 0.0;
+
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey.shade100),
+        border: Border.all(color: Colors.grey.shade200),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.02),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          )
+        ]
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            children: List.generate(3, (index) {
-              final stageIdx = index + 1;
-              final isCurrent = stageIdx == currentStage;
-              return Container(
-                margin: const EdgeInsets.symmetric(horizontal: 4),
-                width: 12,
-                height: 12,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: isCurrent ? const Color(0xFF4F46E5) : Colors.grey.shade300,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Text(
+                  "Stage $currentStage Progress",
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF1E293B)),
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
                 ),
-              );
-            }),
+              ),
+              if (countdown.isNotEmpty) ...[
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.orange.shade50,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.timer, size: 12, color: Colors.orange),
+                      const SizedBox(width: 4),
+                      Text(
+                        countdown,
+                        style: TextStyle(color: Colors.orange.shade800, fontSize: 11, fontWeight: FontWeight.bold),
+                      ),
+                    ],
+                  ),
+                ),
+              ]
+            ],
           ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Text(
-              "Stage $currentStage — ${currentStage == 1 ? 'Roots' : currentStage == 2 ? 'Branches' : 'Fruits'} | $totalXp / ${currentStage == 1 ? 500 : 1200} XP",
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF1E293B)),
+          const SizedBox(height: 16),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: LinearProgressIndicator(
+              value: progress,
+              minHeight: 10,
+              backgroundColor: Colors.grey.shade100,
+              valueColor: AlwaysStoppedAnimation<Color>(progress >= 1.0 ? Colors.green : const Color(0xFF4F46E5)),
             ),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                "$totalXp / $expectedXp XP",
+                style: TextStyle(color: Colors.grey.shade700, fontSize: 14, fontWeight: FontWeight.bold),
+              ),
+              Text(
+                "${(progress * 100).toInt()}%",
+                style: TextStyle(
+                  color: progress >= 1.0 ? Colors.green : const Color(0xFF4F46E5),
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -863,10 +1008,15 @@ class _DashboardTabState extends State<DashboardTab> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
-                "My Group: IT Innovators",
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF1E293B)),
+              const Expanded(
+                child: Text(
+                  "My Group: IT Innovators",
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF1E293B)),
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
+                ),
               ),
+              const SizedBox(width: 8),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
@@ -938,14 +1088,20 @@ class _DashboardTabState extends State<DashboardTab> {
               color: Colors.grey.shade500,
               fontWeight: FontWeight.w500,
             ),
+            overflow: TextOverflow.ellipsis,
+            maxLines: 1,
           ),
           const SizedBox(height: 4),
-          Text(
-            value,
-            style: const TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF1E293B),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              value,
+              style: const TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF1E293B),
+              ),
             ),
           ),
         ],

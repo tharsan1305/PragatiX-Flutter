@@ -1,7 +1,9 @@
-import 'package:spdms_app/core/config/api_config.dart';
+  import 'package:spdms_app/core/config/api_config.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:provider/provider.dart';
+import 'package:spdms_app/providers/badge_provider.dart';
 
 class LevelsBadgesTab extends StatefulWidget {
   final String token;
@@ -17,10 +19,6 @@ class _LevelsBadgesTabState extends State<LevelsBadgesTab> with SingleTickerProv
   int _studentXp = 95; // Default fallback score
   String _studentName = "";
   String _selectedPathway = "None";
-  
-  // List of claimed badge IDs to show earned badges
-  List<String> _earnedBadgeNames = ["Attendance Warrior", "Punctuality Pro"];
-  List<String> _pendingBadgeNames = [];
 
   // Theme Colors
   final Color primaryColor = const Color(0xFF4F46E5); // Indigo
@@ -139,152 +137,31 @@ class _LevelsBadgesTabState extends State<LevelsBadgesTab> with SingleTickerProv
     }
   ];
 
-  // 5 Tiers Badges Data
-  final Map<String, List<Map<String, dynamic>>> _badgesByTier = {
-    "Foundation": [
-      {
-        "name": "Attendance Warrior",
-        "description": "Maintain 95% attendance for a full calendar month.",
-        "authority": "Faculty",
-        "rarity": "Common",
-        "icon": Icons.event_available_rounded
-      },
-      {
-        "name": "Participation Star",
-        "description": "Actively participate and answer questions in all class hours for a week.",
-        "authority": "Faculty",
-        "rarity": "Common",
-        "icon": Icons.star_rounded
-      },
-      {
-        "name": "Punctuality Pro",
-        "description": "Arrive before the bell rings without any late entries for 2 consecutive weeks.",
-        "authority": "Faculty",
-        "rarity": "Common",
-        "icon": Icons.access_time_filled_rounded
-      }
-    ],
-    "Achievement": [
-      {
-        "name": "Code Ninja",
-        "description": "Complete daily coding challenges on C/Python for 15 consecutive days.",
-        "authority": "Faculty + Evaluator",
-        "rarity": "Uncommon",
-        "icon": Icons.code_rounded
-      },
-      {
-        "name": "GPA Master",
-        "description": "Score a GPA of 8.5 or higher in the semester examinations.",
-        "authority": "Faculty + Evaluator",
-        "rarity": "Uncommon",
-        "icon": Icons.school_rounded
-      },
-      {
-        "name": "Consistency Champion",
-        "description": "Maintain all active daily streaks for 30 consecutive days.",
-        "authority": "Faculty + Evaluator",
-        "rarity": "Uncommon",
-        "icon": Icons.offline_bolt_rounded
-      },
-      {
-        "name": "Hackathon Finisher",
-        "description": "Participate and submit a working project in an internal department hackathon.",
-        "authority": "Faculty + Evaluator",
-        "rarity": "Uncommon",
-        "icon": Icons.emoji_events_rounded
-      }
-    ],
-    "Excellence": [
-      {
-        "name": "Full Stack Warrior",
-        "description": "Build and host a web application with complete frontend and backend services.",
-        "authority": "Program Management",
-        "rarity": "Rare",
-        "icon": Icons.layers_rounded
-      },
-      {
-        "name": "Interview Slayer",
-        "description": "Clear the first-round technical mock interviews conducted by internal placement cell.",
-        "authority": "Program Management",
-        "rarity": "Rare",
-        "icon": Icons.question_answer_rounded
-      },
-      {
-        "name": "Internship Achiever",
-        "description": "Secure and successfully complete a verified 4-week industry internship.",
-        "authority": "Program Management",
-        "rarity": "Rare",
-        "icon": Icons.work_history_rounded
-      },
-      {
-        "name": "Event Commander",
-        "description": "Lead and organize a technical/non-technical program or seminar in the college.",
-        "authority": "Program Management",
-        "rarity": "Rare",
-        "icon": Icons.campaign_rounded
-      }
-    ],
-    "Elite": [
-      {
-        "name": "Team Captain Badge",
-        "description": "Serve as a team captain and lead the group to an Elite status (4500+ XP).",
-        "authority": "Governance Council",
-        "rarity": "Very Rare",
-        "icon": Icons.verified_user_rounded
-      },
-      {
-        "name": "Mentor Hero",
-        "description": "Conduct peer teaching and mentor at least 5 junior students to improve their grades.",
-        "authority": "Governance Council",
-        "rarity": "Very Rare",
-        "icon": Icons.handshake_rounded
-      },
-      {
-        "name": "Research Pioneer",
-        "description": "Submit a research paper draft accepted/reviewed by the department committee.",
-        "authority": "Governance Council",
-        "rarity": "Very Rare",
-        "icon": Icons.psychology_rounded
-      },
-      {
-        "name": "Innovation Catalyst",
-        "description": "Develop a working prototype in the CoE/D2P Lab validated by an industry mentor.",
-        "authority": "Governance Council",
-        "rarity": "Very Rare",
-        "icon": Icons.lightbulb_rounded
-      }
-    ],
-    "Legacy": [
-      {
-        "name": "Startup Builder",
-        "description": "Create a viable project proposal incubated or registered as a student startup.",
-        "authority": "Dean / Principal",
-        "rarity": "Legendary",
-        "icon": Icons.storefront_rounded
-      },
-      {
-        "name": "Placement Champion",
-        "description": "Get placed in a tier-1 company with a package exceeding threshold limit.",
-        "authority": "Dean / Principal",
-        "rarity": "Legendary",
-        "icon": Icons.star_border_purple500_rounded
-      },
-      {
-        "name": "JJCET Legend",
-        "description": "Reach a lifetime cumulative score of 3500+ XP points.",
-        "authority": "Dean / Principal",
-        "rarity": "Legendary",
-        "icon": Icons.military_tech_rounded
-      },
-      {
-        "name": "Alumni Pioneer",
-        "description": "Act as institutional ambassador and secure industry linkage / MoUs for college.",
-        "authority": "Dean / Principal",
-        "rarity": "Legendary",
-        "icon": Icons.connect_without_contact_rounded
-      }
-    ]
-  };
+  IconData _getIconForBadge(String? iconName) {
+    if (iconName == null || iconName.isEmpty) return Icons.military_tech_rounded;
+    switch (iconName) {
+      case 'event_available_rounded': return Icons.event_available_rounded;
+      case 'star_rounded': return Icons.star_rounded;
+      case 'access_time_filled_rounded': return Icons.access_time_filled_rounded;
+      case 'code_rounded': return Icons.code_rounded;
+      case 'school_rounded': return Icons.school_rounded;
+      case 'offline_bolt_rounded': return Icons.offline_bolt_rounded;
+      case 'emoji_events_rounded': return Icons.emoji_events_rounded;
+      case 'layers_rounded': return Icons.layers_rounded;
+      case 'question_answer_rounded': return Icons.question_answer_rounded;
+      case 'work_history_rounded': return Icons.work_history_rounded;
+      case 'campaign_rounded': return Icons.campaign_rounded;
+      case 'verified_user_rounded': return Icons.verified_user_rounded;
+      case 'handshake_rounded': return Icons.handshake_rounded;
+      case 'psychology_rounded': return Icons.psychology_rounded;
+      case 'lightbulb_rounded': return Icons.lightbulb_rounded;
+      case 'storefront_rounded': return Icons.storefront_rounded;
+      case 'star_border_purple500_rounded': return Icons.star_border_purple500_rounded;
+      case 'military_tech_rounded': return Icons.military_tech_rounded;
+      case 'connect_without_contact_rounded': return Icons.connect_without_contact_rounded;
+      default: return Icons.military_tech_rounded;
+    }
+  }
 
   @override
   void initState() {
@@ -301,6 +178,8 @@ class _LevelsBadgesTabState extends State<LevelsBadgesTab> with SingleTickerProv
 
   Future<void> _loadData() async {
     setState(() => _isLoading = true);
+    
+    // Fetch user profile to get discipline points (score)
     try {
       // Fetch user profile to get discipline points (score)
       final response = await http.get(
@@ -321,35 +200,14 @@ class _LevelsBadgesTabState extends State<LevelsBadgesTab> with SingleTickerProv
         }
       }
     } catch (e) {
-      // Fallback is maintained
+      // Ignore
     }
 
-    // Try fetching student's badges from server if any
-    try {
-      final badgesResponse = await http.get(
-        Uri.parse("${ApiConfig.baseUrl}/api/v1/badges/student/me"),
-        headers: {
-          "Authorization": "Bearer ${widget.token}",
-        },
-      );
-      if (badgesResponse.statusCode == 200) {
-        final data = jsonDecode(badgesResponse.body);
-        if (data["success"] == true && data["data"] != null) {
-          final List<dynamic> list = data["data"];
-          setState(() {
-            _earnedBadgeNames = list
-                .where((b) => b["status"] == "APPROVED")
-                .map((b) => b["badgeName"].toString())
-                .toList();
-            _pendingBadgeNames = list
-                .where((b) => b["status"] == "PENDING")
-                .map((b) => b["badgeName"].toString())
-                .toList();
-          });
-        }
-      }
-    } catch (e) {
-      // Fallback
+    // Fetch Badges using Provider
+    if (mounted) {
+      final bp = Provider.of<BadgeProvider>(context, listen: false);
+      await bp.fetchMyBadges(widget.token);
+      await bp.fetchAllBadges(widget.token);
     }
 
     setState(() => _isLoading = false);
@@ -366,55 +224,11 @@ class _LevelsBadgesTabState extends State<LevelsBadgesTab> with SingleTickerProv
   }
 
   // Submit Badge Claim
-  Future<void> _submitBadgeClaim(String badgeName, String evidenceUrl) async {
-    try {
-      final response = await http.post(
-        Uri.parse("${ApiConfig.baseUrl}/api/v1/badges/submit"),
-        headers: {
-          "Authorization": "Bearer ${widget.token}",
-          "Content-Type": "application/json",
-        },
-        body: jsonEncode({
-          "badgeName": badgeName,
-          "evidenceUrl": evidenceUrl,
-        }),
-      );
-
-      final data = jsonDecode(response.body);
-      if (response.statusCode == 200 && data["success"] == true) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("Badge claim submitted successfully! Starting 6-step verification."),
-            backgroundColor: Colors.green,
-          ),
-        );
-        setState(() {
-          _pendingBadgeNames.add(badgeName);
-        });
-      } else {
-        // Fallback for local validation/mock simulation
-        _simulateBadgeClaim(badgeName);
-      }
-    } catch (e) {
-      _simulateBadgeClaim(badgeName);
-    }
-  }
-
-  void _simulateBadgeClaim(String badgeName) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text("Submitted claim for '$badgeName' (Simulation Mode)."),
-        backgroundColor: primaryColor,
-      ),
-    );
-    setState(() {
-      _pendingBadgeNames.add(badgeName);
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
-    if (_isLoading) {
+    final badgeProvider = Provider.of<BadgeProvider>(context);
+
+    if (_isLoading || badgeProvider.isLoading) {
       return Scaffold(
         backgroundColor: bgColor,
         body: Center(
@@ -894,7 +708,8 @@ class _LevelsBadgesTabState extends State<LevelsBadgesTab> with SingleTickerProv
   }
 
   Widget _buildBadgeGrid(String tier, int currentLevelNum) {
-    final list = _badgesByTier[tier] ?? [];
+    final badgeProvider = Provider.of<BadgeProvider>(context);
+    final list = badgeProvider.availableBadges.where((b) => b["tier"] == tier).toList();
 
     return GridView.builder(
       padding: const EdgeInsets.all(16),
@@ -907,14 +722,11 @@ class _LevelsBadgesTabState extends State<LevelsBadgesTab> with SingleTickerProv
       ),
       itemBuilder: (context, index) {
         final badge = list[index];
-        final String name = badge["name"];
-        final String desc = badge["description"];
-        final String authority = badge["authority"];
-        final String rarity = badge["rarity"];
-        final IconData icon = badge["icon"];
+        final String name = badge["name"] ?? "Unknown";
+        final IconData icon = _getIconForBadge(badge["iconUrl"]);
 
-        final bool isEarned = _earnedBadgeNames.contains(name);
-        final bool isPending = _pendingBadgeNames.contains(name);
+        final bool isEarned = badgeProvider.earnedBadges.any((b) => b["badgeName"] == name);
+        final bool isPending = badgeProvider.pendingBadges.any((b) => b["badgeName"] == name);
 
         return GestureDetector(
           onTap: () => _showBadgeDetailModal(badge, isEarned, isPending),
@@ -996,11 +808,11 @@ class _LevelsBadgesTabState extends State<LevelsBadgesTab> with SingleTickerProv
 
   // ── BADGE MODAL (LIGHT THEME) ─────────────────────────────────────
   void _showBadgeDetailModal(Map<String, dynamic> badge, bool isEarned, bool isPending) {
-    final String name = badge["name"];
-    final String desc = badge["description"];
-    final String authority = badge["authority"];
-    final String rarity = badge["rarity"];
-    final IconData icon = badge["icon"];
+    final String name = badge["name"] ?? "Unknown";
+    final String desc = badge["description"] ?? "No description";
+    final String authority = badge["approvalAuthority"] ?? "Program Management";
+    final String rarity = badge["rarity"] ?? "Common";
+    final IconData icon = _getIconForBadge(badge["iconUrl"]);
 
     final evidenceController = TextEditingController();
 
@@ -1162,8 +974,31 @@ class _LevelsBadgesTabState extends State<LevelsBadgesTab> with SingleTickerProv
                               );
                               return;
                             }
+                            final parsedUrl = Uri.tryParse(link);
+                            if (parsedUrl == null || !parsedUrl.hasAbsolutePath) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text("Please enter a valid URL (e.g. https://github.com/...)")),
+                              );
+                              return;
+                            }
+
                             Navigator.pop(context);
-                            _submitBadgeClaim(name, link);
+                            final provider = Provider.of<BadgeProvider>(context, listen: false);
+                            
+                            debugPrint("Submitting Badge...");
+                            debugPrint("Badge ID/Name: $name");
+                            debugPrint("Evidence URL: $link");
+
+                            provider.submitBadgeClaim(widget.token, name, link).then((response) {
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(response["message"] ?? (response["success"] ? "Claim submitted" : "Failed to claim")),
+                                    backgroundColor: response["success"] ? Colors.green : Colors.red,
+                                  ),
+                                );
+                              }
+                            });
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: primaryColor,

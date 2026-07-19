@@ -33,50 +33,7 @@ class _PointReviewTabState extends State<PointReviewTab> {
     "CULTURAL": {"color": Colors.cyan, "priority": "MEDIUM", "decay": "Permanent ✓"},
   };
 
-  // Activity Master List
-  final List<Map<String, dynamic>> activityMaster = [
-    // Stage 1
-    {"name": "95% Attendance", "xp": 30, "category": "ACADEMIC", "stage": 1, "cap": "cap 120/mo"},
-    {"name": "Assignment On Time", "xp": 10, "category": "ACADEMIC", "stage": 1, "cap": "no cap"},
-    {"name": "MS Word 5 pages", "xp": 50, "category": "SKILL", "stage": 1, "cap": "once"},
-    {"name": "MS Excel 1 sheet", "xp": 50, "category": "SKILL", "stage": 1, "cap": "once"},
-    {"name": "MS PowerPoint 10 slides", "xp": 50, "category": "SKILL", "stage": 1, "cap": "once"},
-    {"name": "Oral Presentation 2min", "xp": 40, "category": "PLACEMENT", "stage": 1, "cap": "cap 120/mo"},
-    {"name": "Resume First Draft", "xp": 50, "category": "PLACEMENT", "stage": 1, "cap": "once"},
-    {"name": "Keyboard Typing 20 WPM", "xp": 20, "category": "SKILL", "stage": 1, "cap": "once"},
-    {"name": "Duolingo 3-day Streak", "xp": 15, "category": "PLACEMENT", "stage": 1, "cap": "cap 45/mo"},
-    {"name": "Newspaper Word of Day", "xp": 5, "category": "ACADEMIC", "stage": 1, "cap": "cap 25/wk"},
-    {"name": "Domain Activity Report", "xp": 50, "category": "SKILL", "stage": 1, "cap": "cap 150/mo"},
-    {"name": "Certificate Course", "xp": 100, "category": "SKILL", "stage": 1, "cap": "cap 200/sem"},
 
-    // Stage 2
-    {"name": "Join/Initiate Club", "xp": 100, "category": "LEADERSHIP", "stage": 2, "cap": "cap 100"},
-    {"name": "Club Meeting Attended", "xp": 15, "category": "LEADERSHIP", "stage": 2, "cap": "cap 60/wk"},
-    {"name": "Non-Tech Event Inside", "xp": 40, "category": "COMMUNITY", "stage": 2, "cap": "cap 80/mo"},
-    {"name": "Non-Tech Event Outside", "xp": 80, "category": "COMMUNITY", "stage": 2, "cap": "cap 160/mo"},
-    {"name": "NPTEL Week 1 Complete", "xp": 75, "category": "SKILL", "stage": 2, "cap": "cap 150/mo"},
-    {"name": "Technical Workshop", "xp": 50, "category": "SKILL", "stage": 2, "cap": "cap 100/mo"},
-    {"name": "Mock Interview", "xp": 80, "category": "PLACEMENT", "stage": 2, "cap": "cap 160 bi-wk"},
-    {"name": "Peer Teaching 30min", "xp": 40, "category": "LEADERSHIP", "stage": 2, "cap": "cap 80 bi-wk"},
-    {"name": "CoE Project Idea Group", "xp": 100, "category": "INNOVATION", "stage": 2, "cap": "cap 100/mo"},
-    {"name": "Hackathon Registration Group", "xp": 60, "category": "INNOVATION", "stage": 2, "cap": "cap 60/mo"},
-    {"name": "Mini Event Organised", "xp": 80, "category": "LEADERSHIP", "stage": 2, "cap": "cap 80/mo"},
-    {"name": "NPTEL/Cert Course Enrolled", "xp": 150, "category": "SKILL", "stage": 2, "cap": "cap 150/sem"},
-
-    // Stage 3
-    {"name": "Mini Project Proposal", "xp": 100, "category": "INNOVATION", "stage": 3, "cap": "once"},
-    {"name": "Mini Project Demo Group", "xp": 300, "category": "INNOVATION", "stage": 3, "cap": "end Month 3"},
-    {"name": "Mini Project Individual", "xp": 150, "category": "INNOVATION", "stage": 3, "cap": "mid Month 3"},
-    {"name": "External Technical Event", "xp": 150, "category": "INNOVATION", "stage": 3, "cap": "cap 300/mo"},
-    {"name": "Hackathon Participation Group", "xp": 200, "category": "INNOVATION", "stage": 3, "cap": "cap 200/mo"},
-    {"name": "Hackathon Winning Group", "xp": 400, "category": "INNOVATION", "stage": 3, "cap": "no cap"},
-    {"name": "Research Paper Draft", "xp": 300, "category": "INNOVATION", "stage": 3, "cap": "end Month 3"},
-    {"name": "Industry/Consultancy", "xp": 200, "category": "PLACEMENT", "stage": 3, "cap": "cap 200/grp"},
-    {"name": "Resume Final Version", "xp": 100, "category": "PLACEMENT", "stage": 3, "cap": "once"},
-    {"name": "Internship Application", "xp": 80, "category": "PLACEMENT", "stage": 3, "cap": "cap 160/mo"},
-    {"name": "Final Oral Presentation", "xp": 100, "category": "PLACEMENT", "stage": 3, "cap": "once"},
-    {"name": "All Streaks Maintained Bonus", "xp": 100, "category": "DISCIPLINE", "stage": 3, "cap": "end Month 3"},
-  ];
 
   @override
   void initState() {
@@ -109,6 +66,9 @@ class _PointReviewTabState extends State<PointReviewTab> {
     final xpProv = Provider.of<XpProvider>(context, listen: false);
     await xpProv.fetchSummary(studentId, widget.token);
     await xpProv.fetchHistory(studentId, widget.token);
+    if (xpProv.stages.isEmpty) {
+      await xpProv.fetchStages(widget.token);
+    }
     setState(() => isLoading = false);
   }
 
@@ -398,7 +358,26 @@ class _PointReviewTabState extends State<PointReviewTab> {
         return StatefulBuilder(
           builder: (context, setModalState) {
             // Filter activities based on the selected category and student stage
-            final filteredActivities = activityMaster.where((act) {
+            final List<Map<String, dynamic>> allActs = [];
+            for (var stage in xpProvider.stages) {
+              if (stage["substages"] != null) {
+                for (var sub in stage["substages"]) {
+                  if (sub["activities"] != null) {
+                    for (var act in sub["activities"]) {
+                      allActs.add({
+                        "name": act["activityName"],
+                        "xp": act["rewardXp"],
+                        "category": act["category"] ?? "OTHER",
+                        "stage": stage["displayOrder"] ?? 1,
+                        "cap": act["frequency"] ?? "Once"
+                      });
+                    }
+                  }
+                }
+              }
+            }
+
+            final filteredActivities = allActs.where((act) {
               final catMatch = selectedCategory == null || act["category"] == selectedCategory;
               final stageMatch = act["stage"] <= currentStage;
               return catMatch && stageMatch;

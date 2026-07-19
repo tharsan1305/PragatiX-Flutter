@@ -69,7 +69,7 @@ class _ActivitiesTabState extends State<ActivitiesTab> {
   Future<void> _initializeData() async {
     try {
       final response = await http.get(
-        Uri.parse("${ApiConfig.baseUrl}/api/v1/admin/stages"),
+        Uri.parse("${ApiConfig.baseUrl}/api/v1/students/stages"),
         headers: {"Authorization": "Bearer ${widget.token}"},
       );
       if (response.statusCode == 200) {
@@ -83,36 +83,12 @@ class _ActivitiesTabState extends State<ActivitiesTab> {
             final List<Map<String, dynamic>> substages = [];
 
             for (var sub in fetchedSubgroups) {
-              final subId = sub["id"];
-              List<dynamic> activitiesList = [];
-
-              // Fetch activities for this subgroup
-              try {
-                final actResponse = await http.get(
-                  Uri.parse("${ApiConfig.baseUrl}/api/v1/admin/subgroups/$subId/activities"),
-                  headers: {"Authorization": "Bearer ${widget.token}"},
-                );
-                if (actResponse.statusCode == 200) {
-                  final actData = jsonDecode(actResponse.body);
-                  if (actData["success"] == true) {
-                    activitiesList = actData["data"] ?? [];
-                  }
-                }
-              } catch (e) {
-                debugPrint("Error fetching activities for subgroup $subId: $e");
-              }
+              final List<dynamic> activitiesList = sub["activities"] ?? [];
 
               substages.add({
                 "name": sub["name"],
                 "threshold": sub["threshold"] ?? 0,
-                "activities": activitiesList.map((act) {
-                  return {
-                    "name": act["name"] ?? act["activityName"] ?? "",
-                    "description": act["description"] ?? act["activityDescription"] ?? "",
-                    "points": int.tryParse(act["xp"]?.toString() ?? act["xpReward"]?.toString() ?? "0") ?? 0,
-                    "isDone": false,
-                  };
-                }).toList(),
+                "activities": activitiesList,
               });
             }
 
@@ -138,24 +114,14 @@ class _ActivitiesTabState extends State<ActivitiesTab> {
   }
 
   // Calculate current status of activity dynamically
-  bool _isActivityDone(Map<String, dynamic> act, List<dynamic> history) {
-    if (isSimulationActive) {
-      return act["isDone"] == true;
-    }
-    final name = act["name"].toString().trim().toLowerCase();
-    return history.any((tx) =>
-        tx["status"] == "APPROVED" &&
-        tx["activityName"].toString().trim().toLowerCase() == name);
-  }
 
-  // Calculate current accumulated score of a substage
   int _getSubstageScore(Map<String, dynamic> substage, List<dynamic> history) {
     if (isSimulationActive) {
       int score = 0;
       final List<dynamic> activities = substage["activities"] ?? [];
       for (var act in activities) {
-        if (act["isDone"] == true) {
-          score += act["points"] as int;
+        if (act["status"] == "COMPLETED" || act["completed"] == true) {
+          score += (act["rewardXp"] as num?)?.toInt() ?? 0;
         }
       }
       return score;
@@ -163,17 +129,9 @@ class _ActivitiesTabState extends State<ActivitiesTab> {
 
     int score = 0;
     final List<dynamic> activities = substage["activities"] ?? [];
-    final Set<String> activityNames = activities
-        .map((act) => act["name"].toString().trim().toLowerCase())
-        .toSet();
-
-    for (var tx in history) {
-      if (tx["status"] == "APPROVED") {
-        final txActName = tx["activityName"].toString().trim().toLowerCase();
-        if (activityNames.contains(txActName)) {
-          score += (tx["xpPoints"] as num?)?.toInt() ?? 0;
-        }
-      }
+    
+    for (var act in activities) {
+        score += (act["awardedXp"] as num?)?.toInt() ?? 0;
     }
     return score;
   }
@@ -197,11 +155,6 @@ class _ActivitiesTabState extends State<ActivitiesTab> {
   }
 
   // Toggles the activity completion status in simulation mode
-  void _toggleActivity(int stageIndex, int substageIndex, int activityIndex, bool? value) {
-    setState(() {
-      stages[stageIndex]["substages"][substageIndex]["activities"][activityIndex]["isDone"] = value ?? false;
-    });
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -379,10 +332,19 @@ class _ActivitiesTabState extends State<ActivitiesTab> {
                         // Render Substages (MUST, INDIVIDUAL, GROUP)
                         ...List.generate(stage["substages"].length, (subIndex) {
                           final substage = stage["substages"][subIndex];
-                          final List<dynamic> activities = substage["activities"];
+                          final List<dynamic> activities = substage["activities"] ?? [];
                           final int threshold = substage["threshold"] ?? 0;
                           final int score = _getSubstageScore(substage, history);
                           final bool isPassed = score >= threshold;
+                          
+                          int completedCount = 0;
+                          for(var act in activities){
+                              if(act["status"] == "COMPLETED"){
+                                  completedCount++;
+                              }
+                          }
+
+                          double progress = threshold > 0 ? (score / threshold).clamp(0.0, 1.0) : 0.0;
 
                           return Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -390,139 +352,166 @@ class _ActivitiesTabState extends State<ActivitiesTab> {
                               // Substage Header with threshold/progress and badge
                               Padding(
                                 padding: const EdgeInsets.only(top: 20.0, bottom: 8.0),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text(
-                                      substage["name"],
-                                      style: TextStyle(
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.bold,
-                                        color: darkColor,
-                                        letterSpacing: 0.5,
-                                      ),
-                                    ),
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                      decoration: BoxDecoration(
-                                        color: isPassed ? Colors.green.shade50 : Colors.red.shade50,
-                                        borderRadius: BorderRadius.circular(20),
-                                        border: Border.all(
-                                          color: isPassed ? Colors.green.shade200 : Colors.red.shade200,
-                                        ),
-                                      ),
-                                      child: Row(
-                                        children: [
-                                          Icon(
-                                            isPassed ? Icons.check_circle_outline_rounded : Icons.pending_outlined,
-                                            size: 14,
-                                            color: isPassed ? Colors.green.shade700 : Colors.red.shade700,
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Text(
+                                          substage["name"]?.toString() ?? "N/A",
+                                          style: TextStyle(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.bold,
+                                            color: darkColor,
+                                            letterSpacing: 0.5,
                                           ),
-                                          const SizedBox(width: 6),
-                                          Text(
-                                            "$score / $threshold pts",
-                                            style: TextStyle(
-                                              fontSize: 11,
-                                              fontWeight: FontWeight.bold,
-                                              color: isPassed ? Colors.green.shade800 : Colors.red.shade800,
+                                        ),
+                                        Text(
+                                          "Completed: $completedCount / ${activities.length}",
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w600,
+                                            color: Colors.grey.shade600,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 6),
+                                    Row(
+                                      children: [
+                                        Expanded(
+                                          child: ClipRRect(
+                                            borderRadius: BorderRadius.circular(4),
+                                            child: LinearProgressIndicator(
+                                              value: progress,
+                                              minHeight: 8,
+                                              backgroundColor: Colors.grey.shade200,
+                                              valueColor: AlwaysStoppedAnimation<Color>(isPassed ? Colors.green : Colors.amber.shade600),
                                             ),
                                           ),
-                                        ],
-                                      ),
+                                        ),
+                                        const SizedBox(width: 10),
+                                        Text(
+                                          "$score / $threshold XP",
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.bold,
+                                            color: isPassed ? Colors.green.shade700 : Colors.amber.shade800,
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ],
                                 ),
                               ),
                               
                               if (activities.isEmpty)
-                                const Text("No activities allocated under this section.")
+                                const Padding(
+                                  padding: EdgeInsets.symmetric(vertical: 8.0),
+                                  child: Text("No activities allocated under this section."),
+                                )
                               else
                                 ...List.generate(activities.length, (actIndex) {
                                   final activity = activities[actIndex];
-                                  final bool isDone = _isActivityDone(activity, history);
+                                  final bool isDone = activity["status"] == "COMPLETED";
+                                  final String statusStr = (activity["status"]?.toString() ?? "NOT STARTED").replaceAll('_', ' ');
+                                  
+                                  Color statusColor = Colors.grey.shade600;
+                                  if (statusStr == "COMPLETED") statusColor = Colors.green;
+                                  if (statusStr == "IN PROGRESS") statusColor = Colors.amber.shade700;
 
                                   return Container(
-                                    margin: const EdgeInsets.only(bottom: 10),
+                                    margin: const EdgeInsets.only(bottom: 12),
                                     decoration: BoxDecoration(
-                                      color: isDone ? Colors.green.withOpacity(0.02) : Colors.grey.shade50,
+                                      color: isDone ? Colors.green.withOpacity(0.03) : Colors.white,
                                       borderRadius: BorderRadius.circular(12),
                                       border: Border.all(
-                                        color: isDone ? Colors.green.withOpacity(0.2) : Colors.grey.shade200,
+                                        color: isDone ? Colors.green.withOpacity(0.3) : Colors.grey.shade300,
                                       ),
+                                      boxShadow: [
+                                          BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 4, offset: Offset(0,2))
+                                      ]
                                     ),
                                     child: Padding(
-                                      padding: const EdgeInsets.symmetric(horizontal: 14.0, vertical: 10.0),
-                                      child: Row(
+                                      padding: const EdgeInsets.all(14.0),
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
                                         children: [
-                                          // Status Icon or Interactive Checkbox (Simulation Mode)
-                                          if (isSimulationActive)
-                                            SizedBox(
-                                              width: 24,
-                                              height: 24,
-                                              child: Checkbox(
-                                                value: isDone,
-                                                onChanged: (val) => _toggleActivity(stageIndex, subIndex, actIndex, val),
-                                                activeColor: Colors.green,
-                                              ),
-                                            )
-                                          else
-                                            Container(
-                                              padding: const EdgeInsets.all(4),
-                                              decoration: BoxDecoration(
-                                                color: isDone ? Colors.green.shade50 : Colors.amber.shade50,
-                                                shape: BoxShape.circle,
-                                              ),
-                                              child: Icon(
-                                                isDone ? Icons.check_rounded : Icons.lock_clock,
-                                                color: isDone ? Colors.green : Colors.amber.shade800,
-                                                size: 16,
-                                              ),
-                                            ),
-                                          const SizedBox(width: 14),
-
-                                          // Details
-                                          Expanded(
-                                            child: Column(
-                                              crossAxisAlignment: CrossAxisAlignment.start,
-                                              children: [
-                                                Text(
-                                                  activity["name"],
+                                          // Top row: Name & Status
+                                          Row(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Expanded(
+                                                child: Text(
+                                                  activity["activityName"]?.toString() ?? "",
                                                   style: TextStyle(
                                                     fontWeight: FontWeight.bold,
-                                                    fontSize: 13,
-                                                    color: isDone ? Colors.grey.shade500 : darkColor,
+                                                    fontSize: 14,
+                                                    color: darkColor,
                                                     decoration: isDone ? TextDecoration.lineThrough : null,
                                                   ),
                                                 ),
-                                                const SizedBox(height: 4),
-                                                Text(
-                                                  activity["description"],
+                                              ),
+                                              const SizedBox(width: 8),
+                                              Container(
+                                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                                decoration: BoxDecoration(
+                                                  color: statusColor.withOpacity(0.1),
+                                                  borderRadius: BorderRadius.circular(6),
+                                                ),
+                                                child: Text(
+                                                  statusStr,
                                                   style: TextStyle(
-                                                    fontSize: 12,
-                                                    color: isDone ? Colors.grey.shade400 : Colors.grey.shade600,
-                                                    height: 1.3,
+                                                    fontSize: 10,
+                                                    fontWeight: FontWeight.bold,
+                                                    color: statusColor,
                                                   ),
                                                 ),
-                                              ],
+                                              ),
+                                            ],
+                                          ),
+                                          const SizedBox(height: 6),
+                                          Text(
+                                            activity["description"]?.toString() ?? "",
+                                            style: TextStyle(
+                                              fontSize: 13,
+                                              color: Colors.grey.shade600,
+                                              height: 1.3,
                                             ),
                                           ),
-                                          const SizedBox(width: 10),
-
-                                          // Points badge
-                                          Container(
-                                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                            decoration: BoxDecoration(
-                                              color: isDone ? Colors.grey.shade200 : primaryColor.withOpacity(0.1),
-                                              borderRadius: BorderRadius.circular(8),
-                                            ),
-                                            child: Text(
-                                              "${activity["points"]} pts",
-                                              style: TextStyle(
-                                                fontSize: 11,
-                                                fontWeight: FontWeight.bold,
-                                                color: isDone ? Colors.grey.shade600 : primaryColor,
+                                          const SizedBox(height: 12),
+                                          const Divider(height: 1, color: Color(0xFFEEEEEE)),
+                                          const SizedBox(height: 12),
+                                          
+                                          // Grid of Details
+                                          Row(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Expanded(
+                                                  child: Column(
+                                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                                      children: [
+                                                          _buildDetailRow(Icons.stars, "Reward", "+${activity["rewardXp"] ?? 0} XP", Colors.amber.shade800),
+                                                          const SizedBox(height: 6),
+                                                          _buildDetailRow(Icons.person, "Faculty", activity["facultyName"]?.toString() ?? "", Colors.blue.shade700),
+                                                          const SizedBox(height: 6),
+                                                          _buildDetailRow(Icons.upload_file, "Evidence", activity["evidence"]?.toString() ?? "", Colors.grey.shade700),
+                                                      ],
+                                                  ),
                                               ),
-                                            ),
+                                              const SizedBox(width: 8),
+                                              Expanded(
+                                                  child: Column(
+                                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                                      children: [
+                                                          _buildDetailRow(Icons.military_tech, "Awarded", "${activity["awardedXp"] ?? 0} / ${activity["requiredXp"] ?? activity["rewardXp"] ?? 0} XP", Colors.green.shade700),
+                                                          const SizedBox(height: 6),
+                                                          _buildDetailRow(Icons.calendar_month, "Frequency", activity["frequency"]?.toString() ?? "", Colors.deepPurple.shade400),
+                                                      ],
+                                                  ),
+                                              ),
+                                            ],
                                           ),
                                         ],
                                       ),
@@ -543,4 +532,27 @@ class _ActivitiesTabState extends State<ActivitiesTab> {
       ),
     );
   }
+
+  Widget _buildDetailRow(IconData icon, String label, String value, Color iconColor) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, size: 14, color: iconColor),
+        const SizedBox(width: 4),
+        Expanded(
+          child: RichText(
+            text: TextSpan(
+              style: TextStyle(fontSize: 11, color: Colors.grey.shade700),
+              children: [
+                TextSpan(text: "$label: ", style: const TextStyle(fontWeight: FontWeight.bold)),
+                TextSpan(text: value),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
 }
+
+

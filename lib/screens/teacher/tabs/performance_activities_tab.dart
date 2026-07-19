@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'students_tab.dart';
-import '../../../admin/activity/pages/group_activity_year_page.dart';
+import '../../../features/activity/pages/group_activity_year_page.dart';
 
 class PerformanceActivitiesTab extends StatefulWidget {
   final String token;
