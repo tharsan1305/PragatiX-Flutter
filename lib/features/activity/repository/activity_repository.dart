@@ -1,6 +1,7 @@
-﻿import '../../../features/activity/models/activity_model.dart';
-import '../../../features/activity/models/my_activity_model.dart';
-import '../services/activity_service.dart';
+
+import 'package:spdms_app/features/activity/models/activity_model.dart';
+import 'package:spdms_app/features/activity/models/my_activity_model.dart';
+import 'package:spdms_app/features/activity/services/activity_service.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Activity module – repository.

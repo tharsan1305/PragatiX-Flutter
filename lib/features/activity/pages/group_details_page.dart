@@ -1,17 +1,19 @@
-﻿import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
+import 'package:spdms_app/features/auth/providers/auth_provider.dart';
+import 'package:provider/provider.dart';
+import 'package:flutter/material.dart';
+import 'package:spdms_app/features/activity/services/activity_proxy_service.dart';
 import 'dart:convert';
-import '../../../../core/config/api_config.dart';
-import '../../../../models/team.dart';
+import 'package:spdms_app/core/config/api_config.dart';
+import 'package:spdms_app/features/team/models/team.dart';
+import 'package:spdms_app/core/di/service_locator.dart';
 
 class GroupDetailsPage extends StatefulWidget {
-  final String token;
   final Team team;
   final int xpPerMember;
 
   const GroupDetailsPage({
     super.key,
-    required this.token,
+    
     required this.team,
     required this.xpPerMember,
   });
@@ -38,9 +40,9 @@ class _GroupDetailsPageState extends State<GroupDetailsPage> {
   Future<void> _refreshTeam() async {
     setState(() => _isLoading = true);
     try {
-      final response = await http.get(
-        Uri.parse("${ApiConfig.baseUrl}/api/v1/teams"),
-        headers: {"Authorization": "Bearer ${widget.token}"},
+      final response = await getIt<ActivityProxyService>().get(
+        Uri.parse('${ApiConfig.baseUrl}/api/v1/teams'),
+        headers: {'Authorization': 'Bearer ${context.read<AuthProvider>().token!}'},
       );
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -64,40 +66,42 @@ class _GroupDetailsPageState extends State<GroupDetailsPage> {
     }
   }
 
-  Future<void> _addMember(String studentId) async {
+  Future<void> _addMember(String regNo) async {
     try {
-      final response = await http.post(
-        Uri.parse("${ApiConfig.baseUrl}/api/v1/teams/${_team.id}/add-member?studentId=$studentId"),
-        headers: {"Authorization": "Bearer ${widget.token}"},
+      final response = await getIt<ActivityProxyService>().post(
+        Uri.parse('${ApiConfig.baseUrl}/api/v1/teams/${_team.id}/add-member?regNo=$regNo'),
+        headers: {'Authorization': 'Bearer ${context.read<AuthProvider>().token!}'},
       );
       final data = jsonDecode(response.body);
-      if (response.statusCode == 200 && data["success"] == true) {
+      if (response.statusCode == 200 && data['success'] == true) {
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Member added successfully!'), backgroundColor: Colors.green),
         );
         await _refreshTeam();
       } else {
-        _showError(data["message"] ?? 'Failed to add member');
+        _showError(data['message'] ?? 'Failed to add member');
       }
     } catch (e) {
       _showError('Error: $e');
     }
   }
 
-  Future<void> _removeMember(String studentId) async {
+  Future<void> _removeMember(String regNo) async {
     try {
-      final response = await http.post(
-        Uri.parse("${ApiConfig.baseUrl}/api/v1/teams/${_team.id}/remove-member?studentId=$studentId"),
-        headers: {"Authorization": "Bearer ${widget.token}"},
+      final response = await getIt<ActivityProxyService>().post(
+        Uri.parse('${ApiConfig.baseUrl}/api/v1/teams/${_team.id}/remove-member?regNo=$regNo'),
+        headers: {'Authorization': 'Bearer ${context.read<AuthProvider>().token!}'},
       );
       final data = jsonDecode(response.body);
-      if (response.statusCode == 200 && data["success"] == true) {
+      if (response.statusCode == 200 && data['success'] == true) {
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Member removed successfully!'), backgroundColor: Colors.green),
         );
         await _refreshTeam();
       } else {
-        _showError(data["message"] ?? 'Failed to remove member');
+        _showError(data['message'] ?? 'Failed to remove member');
       }
     } catch (e) {
       _showError('Error: $e');
@@ -106,27 +110,29 @@ class _GroupDetailsPageState extends State<GroupDetailsPage> {
 
   Future<void> _awardXp(String remarks) async {
     try {
-      final response = await http.post(
-        Uri.parse("${ApiConfig.baseUrl}/api/v1/group-activities/teams/${_team.id}/award-xp"),
+      final response = await getIt<ActivityProxyService>().post(
+        Uri.parse('${ApiConfig.baseUrl}/api/v1/group-activities/teams/${_team.id}/award-xp'),
         headers: {
-          "Authorization": "Bearer ${widget.token}",
-          "Content-Type": "application/json",
+          'Authorization': 'Bearer ${context.read<AuthProvider>().token!}',
+          'Content-Type': 'application/json',
         },
         body: jsonEncode({
-          "equalDistribution": true,
-          "xp": widget.xpPerMember,
-          "remarks": remarks,
+          'assignmentId': _team.assignmentId,
+          'equalDistribution': true,
+          'xp': widget.xpPerMember,
+          'remarks': remarks,
         }),
       );
       final data = jsonDecode(response.body);
-      if (response.statusCode == 200 && data["success"] == true) {
+      if (response.statusCode == 200 && data['success'] == true) {
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('XP awarded to group successfully!'), backgroundColor: Colors.green),
         );
         await _refreshTeam();
         if (mounted) Navigator.pop(context, true); // Close and return to list
       } else {
-        _showError(data["message"] ?? 'Failed to award XP');
+        _showError(data['message'] ?? 'Failed to award XP');
       }
     } catch (e) {
       _showError('Error: $e');
@@ -138,16 +144,16 @@ class _GroupDetailsPageState extends State<GroupDetailsPage> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text("Add Member"),
+        title: const Text('Add Member'),
         content: TextField(
           controller: ctrl,
           decoration: const InputDecoration(
-            labelText: "Student ID (e.g. 24CS01)",
+            labelText: 'Student ID (e.g. 24CS01)',
             border: OutlineInputBorder(),
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text("Cancel")),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
           ElevatedButton(
             onPressed: () {
               final id = ctrl.text.trim();
@@ -156,7 +162,7 @@ class _GroupDetailsPageState extends State<GroupDetailsPage> {
                 _addMember(id);
               }
             },
-            child: const Text("Add"),
+            child: const Text('Add'),
           ),
         ],
       ),
@@ -168,31 +174,31 @@ class _GroupDetailsPageState extends State<GroupDetailsPage> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text("Award XP to Group"),
+        title: const Text('Award XP to Group'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text("Award ${widget.xpPerMember} XP to every member of this group?", style: const TextStyle(fontWeight: FontWeight.bold)),
+            Text('Award ${widget.xpPerMember} XP to every member of this group?', style: const TextStyle(fontWeight: FontWeight.bold)),
             const SizedBox(height: 16),
             TextField(
               controller: ctrl,
               decoration: const InputDecoration(
-                labelText: "Remarks (Optional)",
+                labelText: 'Remarks (Optional)',
                 border: OutlineInputBorder(),
               ),
             ),
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text("Cancel")),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white),
             onPressed: () {
               Navigator.pop(ctx);
               _awardXp(ctrl.text.trim());
             },
-            child: const Text("Confirm Award"),
+            child: const Text('Confirm Award'),
           ),
         ],
       ),
@@ -226,37 +232,37 @@ class _GroupDetailsPageState extends State<GroupDetailsPage> {
                 children: [
                   _buildHeaderCard(),
                   const SizedBox(height: 24),
-                  const Text("Captain", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: _dark)),
+                  const Text('Captain', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: _dark)),
                   const SizedBox(height: 8),
                   if (_team.captainId != null)
-                    _buildCaptainTile(_team.captainName ?? "Unknown", _team.captainId!)
+                    _buildCaptainTile(_team.captainName ?? 'Unknown', _team.captainId!)
                   else
                     const Padding(
                       padding: EdgeInsets.all(16.0),
-                      child: Text("No captain assigned.", style: TextStyle(color: Colors.grey)),
+                      child: Text('No captain assigned.', style: TextStyle(color: Colors.grey)),
                     ),
 
                   const SizedBox(height: 24),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text("Members (${members.length}/${_team.size})", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: _dark)),
+                      Text('Members (${members.length}/${_team.size})', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: _dark)),
                       if (members.length < _team.size)
                         TextButton.icon(
                           onPressed: _showAddMemberDialog,
                           icon: const Icon(Icons.person_add),
-                          label: const Text("Add Member"),
+                          label: const Text('Add Member'),
                         ),
                     ],
                   ),
                   const SizedBox(height: 8),
-                  if (members.where((m) => m['studentId'] != _team.captainId).isEmpty)
+                  if (members.where((m) => m['regNo'] != _team.captainId).isEmpty)
                     const Padding(
                       padding: EdgeInsets.all(16.0),
-                      child: Center(child: Text("No additional members found.", style: TextStyle(color: Colors.grey))),
+                      child: Center(child: Text('No additional members found.', style: TextStyle(color: Colors.grey))),
                     )
                   else
-                    ...members.where((m) => m['studentId'] != _team.captainId).map((m) => _buildMemberTile(m)),
+                    ...members.where((m) => m['regNo'] != _team.captainId).map((m) => _buildMemberTile(m)),
                   
                   const SizedBox(height: 32),
                   SizedBox(
@@ -270,7 +276,7 @@ class _GroupDetailsPageState extends State<GroupDetailsPage> {
                       ),
                       onPressed: _team.isAwarded == true ? null : _showAwardXpDialog,
                       child: Text(
-                        _team.isAwarded == true ? "XP Already Awarded" : "Award XP to Group",
+                        _team.isAwarded == true ? 'XP Already Awarded' : 'Award XP to Group',
                         style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                       ),
                     ),
@@ -295,8 +301,8 @@ class _GroupDetailsPageState extends State<GroupDetailsPage> {
             const SizedBox(height: 12),
             Row(
               children: [
-                Expanded(child: _buildInfoItem("Captain", _team.captainName ?? "None")),
-                Expanded(child: _buildInfoItem("Status", _team.isAwarded == true ? "Completed" : "Pending")),
+                Expanded(child: _buildInfoItem('Captain', _team.captainName ?? 'None')),
+                Expanded(child: _buildInfoItem('Status', _team.isAwarded == true ? 'Completed' : 'Pending')),
               ],
             ),
           ],
@@ -329,7 +335,7 @@ class _GroupDetailsPageState extends State<GroupDetailsPage> {
         title: Text(name),
         subtitle: Text(id),
         trailing: const Chip(
-          label: Text("Captain"),
+          label: Text('Captain'),
           backgroundColor: Colors.amber,
           labelStyle: TextStyle(color: Colors.white, fontSize: 10),
         ),
@@ -348,23 +354,23 @@ class _GroupDetailsPageState extends State<GroupDetailsPage> {
           child: Icon(Icons.person, color: Colors.blue.shade700),
         ),
         title: Text(m['fullName'] ?? ''),
-        subtitle: Text(m['studentId'] ?? ''),
+        subtitle: Text(m['regNo'] ?? ''),
         trailing: IconButton(
               icon: const Icon(Icons.remove_circle_outline, color: Colors.red),
               onPressed: () {
                 showDialog(
                   context: context,
                   builder: (ctx) => AlertDialog(
-                    title: const Text("Remove Member"),
+                    title: const Text('Remove Member'),
                     content: Text("Are you sure you want to remove ${m['fullName']} from the group?"),
                     actions: [
-                      TextButton(onPressed: () => Navigator.pop(ctx), child: const Text("Cancel")),
+                      TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
                       TextButton(
                         onPressed: () {
                           Navigator.pop(ctx);
-                          _removeMember(m['studentId']);
+                          _removeMember(m['regNo']);
                         },
-                        child: const Text("Remove", style: TextStyle(color: Colors.red)),
+                        child: const Text('Remove', style: TextStyle(color: Colors.red)),
                       ),
                     ],
                   ),

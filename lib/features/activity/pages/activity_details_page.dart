@@ -1,5 +1,5 @@
-﻿import 'package:flutter/material.dart';
-import '../../../features/activity/models/activity_model.dart';
+import 'package:flutter/material.dart';
+import 'package:spdms_app/features/activity/models/activity_model.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Activity Details Page – read-only view of a single activity.

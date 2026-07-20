@@ -1,9 +1,8 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 
-import 'group_activity_execution_page.dart';
+import 'package:spdms_app/features/activity/pages/group_activity_execution_page.dart';
 
 class GroupActivitySecPage extends StatelessWidget {
-  final String token;
   final int activityId;
   final dynamic selectedYear;
   final dynamic selectedDept;
@@ -11,7 +10,7 @@ class GroupActivitySecPage extends StatelessWidget {
 
   const GroupActivitySecPage({
     super.key,
-    required this.token,
+    
     required this.activityId,
     required this.selectedYear,
     required this.selectedDept,
@@ -28,7 +27,7 @@ class GroupActivitySecPage extends StatelessWidget {
       context,
       MaterialPageRoute(
         builder: (_) => GroupActivityExecutionPage(
-          token: token,
+          
           activityId: activityId,
           selectedYear: selectedYear,
           selectedDept: selectedDept,
@@ -49,7 +48,7 @@ class GroupActivitySecPage extends StatelessWidget {
         elevation: 0,
       ),
       body: availableSections.isEmpty
-          ? const Center(child: Text("No sections available."))
+          ? const Center(child: Text('No sections available.'))
           : ListView.builder(
               padding: const EdgeInsets.all(16),
               itemCount: availableSections.length,

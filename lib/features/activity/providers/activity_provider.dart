@@ -1,7 +1,7 @@
-﻿import 'package:flutter/foundation.dart';
-import '../../../features/activity/models/activity_model.dart';
-import '../../../features/activity/models/my_activity_model.dart';
-import '../../../features/activity/repository/activity_repository.dart';
+import 'package:flutter/foundation.dart';
+import 'package:spdms_app/features/activity/models/activity_model.dart';
+import 'package:spdms_app/features/activity/models/my_activity_model.dart';
+import 'package:spdms_app/features/activity/repository/activity_repository.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Activity module – state management (ChangeNotifier).
@@ -77,16 +77,16 @@ class ActivityProvider extends ChangeNotifier {
     }
     try {
       sections = await _repository.getSections();
-      print('DEBUG_LOG: Provider loaded sections count: ${sections.length}, data: $sections');
+      debugPrint('DEBUG_LOG: Provider loaded sections count: ${sections.length}, data: $sections');
     } catch (e) {
-      print('DEBUG_LOG: Provider failed to load sections: $e');
+      debugPrint('DEBUG_LOG: Provider failed to load sections: $e');
       sections = [];
     }
     try {
       classCoordinators = await _repository.getClassCoordinators();
-      print('DEBUG_LOG: Provider loaded class coordinators count: ${classCoordinators.length}');
+      debugPrint('DEBUG_LOG: Provider loaded class coordinators count: ${classCoordinators.length}');
     } catch (e) {
-      print('DEBUG_LOG: Provider failed to load class coordinators: $e');
+      debugPrint('DEBUG_LOG: Provider failed to load class coordinators: $e');
       classCoordinators = [];
     }
     try {

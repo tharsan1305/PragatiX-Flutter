@@ -1,14 +1,15 @@
-﻿import 'package:flutter/material.dart';
+import 'package:spdms_app/features/auth/providers/auth_provider.dart';
+import 'package:provider/provider.dart';
+import 'package:flutter/material.dart';
 
-import '../../../../models/team.dart';
-import '../../../../services/group_activity_service.dart';
-import '../../../features/activity/models/execution_student_model.dart';
-import '../../../features/activity/services/activity_service.dart';
-import 'create_group_page.dart';
-import 'group_details_page.dart';
+import 'package:spdms_app/features/team/models/team.dart';
+import 'package:spdms_app/features/activity/services/group_activity_service.dart';
+import 'package:spdms_app/features/activity/models/execution_student_model.dart';
+import 'package:spdms_app/features/activity/services/activity_service.dart';
+import 'package:spdms_app/features/activity/pages/create_group_page.dart';
+import 'package:spdms_app/features/activity/pages/group_details_page.dart';
 
 class GroupActivityExecutionPage extends StatefulWidget {
-  final String token;
   final int activityId;
   final dynamic selectedYear;
   final dynamic selectedDept;
@@ -16,7 +17,7 @@ class GroupActivityExecutionPage extends StatefulWidget {
 
   const GroupActivityExecutionPage({
     super.key,
-    required this.token,
+    
     required this.activityId,
     required this.selectedYear,
     required this.selectedDept,
@@ -46,8 +47,8 @@ class _GroupActivityExecutionPageState extends State<GroupActivityExecutionPage>
   @override
   void initState() {
     super.initState();
-    _activityService = ActivityService(widget.token);
-    _groupService = GroupActivityService(widget.token);
+    _activityService = ActivityService(context.read<AuthProvider>().token!);
+    _groupService = GroupActivityService(context.read<AuthProvider>().token!);
     _loadGroupsForScope();
   }
 
@@ -58,12 +59,12 @@ class _GroupActivityExecutionPageState extends State<GroupActivityExecutionPage>
     });
 
     try {
-      String yearParam = "I";
+      String yearParam = 'I';
       if (widget.selectedYear != null) {
         final yearNo = widget.selectedYear['yearNo'];
-        if (yearNo == 2) yearParam = "II";
-        if (yearNo == 3) yearParam = "III";
-        if (yearNo == 4) yearParam = "IV";
+        if (yearNo == 2) yearParam = 'II';
+        if (yearNo == 3) yearParam = 'III';
+        if (yearNo == 4) yearParam = 'IV';
       }
 
       final int? deptId = widget.selectedDept != null ? widget.selectedDept['id'] : null;
@@ -95,7 +96,7 @@ class _GroupActivityExecutionPageState extends State<GroupActivityExecutionPage>
   }
 
   Future<void> _deleteTeam(Team team) async {
-    bool confirm = await showDialog(
+    final bool confirm = await showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Delete Group?'),
@@ -119,12 +120,14 @@ class _GroupActivityExecutionPageState extends State<GroupActivityExecutionPage>
     setState(() => _isLoadingGroups = true);
     try {
       await _groupService.deleteTeam(team.id);
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Group deleted successfully')));
       _loadGroupsForScope();
     } catch (e) {
       setState(() => _isLoadingGroups = false);
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(e.toString().replaceAll("Exception: ", "")),
+        content: Text(e.toString().replaceAll('Exception: ', '')),
         backgroundColor: Colors.red,
         duration: const Duration(seconds: 4),
       ));
@@ -134,19 +137,19 @@ class _GroupActivityExecutionPageState extends State<GroupActivityExecutionPage>
   void _navigateToCreateGroup() async {
     if (_data == null) return;
 
-    String yearParam = "I";
+    String yearParam = 'I';
     if (widget.selectedYear != null) {
       final yearNo = widget.selectedYear['yearNo'];
-      if (yearNo == 2) yearParam = "II";
-      if (yearNo == 3) yearParam = "III";
-      if (yearNo == 4) yearParam = "IV";
+      if (yearNo == 2) yearParam = 'II';
+      if (yearNo == 3) yearParam = 'III';
+      if (yearNo == 4) yearParam = 'IV';
     }
 
     final result = await Navigator.push(
       context,
       MaterialPageRoute(
         builder: (_) => CreateGroupPage(
-          token: widget.token,
+          
           assignmentId: _data!.assignment.id,
           preselectedYear: yearParam,
           preselectedDept: widget.selectedDept != null ? (widget.selectedDept['name'] ?? widget.selectedDept['departmentName']) : null,
@@ -167,7 +170,7 @@ class _GroupActivityExecutionPageState extends State<GroupActivityExecutionPage>
       context,
       MaterialPageRoute(
         builder: (_) => GroupDetailsPage(
-          token: widget.token,
+          
           team: team,
           xpPerMember: _data!.activity.awardXp,
         ),
@@ -194,15 +197,7 @@ class _GroupActivityExecutionPageState extends State<GroupActivityExecutionPage>
           : _errorMessage != null
               ? _buildErrorView()
               : _buildGroupsListStep(),
-      floatingActionButton: !_isLoadingGroups && _errorMessage == null
-          ? FloatingActionButton.extended(
-              onPressed: _navigateToCreateGroup,
-              backgroundColor: _accent,
-              foregroundColor: Colors.white,
-              icon: const Icon(Icons.add),
-              label: const Text('Create Group'),
-            )
-          : null,
+      floatingActionButton: null,
     );
   }
 
@@ -240,7 +235,7 @@ class _GroupActivityExecutionPageState extends State<GroupActivityExecutionPage>
             child: Row(
               children: [
                 const Text(
-                  "Existing Groups",
+                  'Existing Groups',
                   style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: _dark),
                 ),
                 const Spacer(),
@@ -251,7 +246,7 @@ class _GroupActivityExecutionPageState extends State<GroupActivityExecutionPage>
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
-                    "${_teams.length} Teams",
+                    '${_teams.length} Teams',
                     style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey.shade700),
                   ),
                 ),
@@ -312,15 +307,15 @@ class _GroupActivityExecutionPageState extends State<GroupActivityExecutionPage>
                   spacing: 16,
                   runSpacing: 16,
                   children: [
-                    _buildDetailItem("Category", act.xpCategory.isNotEmpty ? act.xpCategory : "N/A", itemWidth),
-                    _buildDetailItem("Award XP", act.awardEnabled ? "+${act.awardXp} XP" : "Disabled", itemWidth),
-                    _buildDetailItem("Penalty", act.penaltyEnabled ? "-${act.penaltyXp} XP" : "Disabled", itemWidth),
-                    _buildDetailItem("Frequency", act.frequency.isNotEmpty ? act.frequency : "N/A", itemWidth),
-                    _buildDetailItem("Cap", act.cap.toString(), itemWidth),
-                    _buildDetailItem("Evidence", act.evidence.isNotEmpty ? act.evidence.join(", ") : "None", itemWidth),
-                    _buildDetailItem("Activity Type", act.type, itemWidth),
-                    _buildDetailItem("Assigned Faculty", assign.assignedFacultyName, itemWidth),
-                    _buildDetailItem("Assignment Mode", assign.assignmentMode, itemWidth),
+                    _buildDetailItem('Category', act.xpCategory.isNotEmpty ? act.xpCategory : 'N/A', itemWidth),
+                    _buildDetailItem('Award XP', act.awardEnabled ? '+${act.awardXp} XP' : 'Disabled', itemWidth),
+                    _buildDetailItem('Penalty', act.penaltyEnabled ? '-${act.penaltyXp} XP' : 'Disabled', itemWidth),
+                    _buildDetailItem('Frequency', act.frequency.isNotEmpty ? act.frequency : 'N/A', itemWidth),
+                    _buildDetailItem('Cap', act.cap.toString(), itemWidth),
+                    _buildDetailItem('Evidence', act.evidence.isNotEmpty ? act.evidence.join(', ') : 'None', itemWidth),
+                    _buildDetailItem('Activity Type', act.type, itemWidth),
+                    _buildDetailItem('Assigned Faculty', assign.assignedFacultyName, itemWidth),
+                    _buildDetailItem('Assignment Mode', assign.assignmentMode, itemWidth),
                   ],
                 );
               },
@@ -346,7 +341,7 @@ class _GroupActivityExecutionPageState extends State<GroupActivityExecutionPage>
   }
 
   Widget _buildTeamCard(Team team) {
-    int memberCount = team.members?.length ?? 0;
+    final int memberCount = team.members?.length ?? 0;
     
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
@@ -382,20 +377,20 @@ class _GroupActivityExecutionPageState extends State<GroupActivityExecutionPage>
             const Divider(height: 24),
             Row(
               children: [
-                Expanded(child: _buildInfoItem("Captain", team.captainName ?? "None")),
-                Expanded(child: _buildInfoItem("Members", "$memberCount / ${team.size}")),
+                Expanded(child: _buildInfoItem('Captain', team.captainName ?? 'None')),
+                Expanded(child: _buildInfoItem('Members', '$memberCount / ${team.size}')),
               ],
             ),
             const SizedBox(height: 12),
             Row(
               children: [
-                Expanded(child: _buildInfoItem("Faculty", _data!.assignment.assignedFacultyName)),
+                Expanded(child: _buildInfoItem('Faculty', _data!.assignment.assignedFacultyName)),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Text(
-                        "Status",
+                        'Status',
                         style: TextStyle(color: Colors.grey, fontSize: 12),
                       ),
                       const SizedBox(height: 2),
@@ -406,7 +401,7 @@ class _GroupActivityExecutionPageState extends State<GroupActivityExecutionPage>
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Text(
-                          team.isAwarded == true ? "Completed" : "Active",
+                          team.isAwarded == true ? 'Completed' : 'Active',
                           style: TextStyle(
                             color: team.isAwarded == true ? Colors.green.shade700 : Colors.orange.shade700,
                             fontSize: 12,
@@ -429,7 +424,7 @@ class _GroupActivityExecutionPageState extends State<GroupActivityExecutionPage>
                   side: const BorderSide(color: _accent),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                 ),
-                child: const Text("Open"),
+                child: const Text('Open'),
               ),
             ),
           ],
@@ -458,11 +453,11 @@ class _GroupActivityExecutionPageState extends State<GroupActivityExecutionPage>
   }
 
   Widget _buildEmptyState() {
-    String yearName = widget.selectedYear != null ? widget.selectedYear['yearName'] : "";
-    String deptName = widget.selectedDept != null ? (widget.selectedDept['name'] ?? widget.selectedDept['departmentName']) : "";
-    String secName = widget.selectedSection != null ? widget.selectedSection['sectionName'] : "";
-    String scopeString = "$yearName / $deptName";
-    if (widget.selectedSection != null) scopeString += " / $secName";
+    final String yearName = widget.selectedYear != null ? widget.selectedYear['yearName'] : '';
+    final String deptName = widget.selectedDept != null ? (widget.selectedDept['name'] ?? widget.selectedDept['departmentName']) : '';
+    final String secName = widget.selectedSection != null ? widget.selectedSection['sectionName'] : '';
+    String scopeString = '$yearName / $deptName';
+    if (widget.selectedSection != null) scopeString += ' / $secName';
 
     return Center(
       child: Column(

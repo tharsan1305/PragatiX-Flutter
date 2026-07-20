@@ -1,17 +1,19 @@
-﻿import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
+import 'package:spdms_app/features/auth/providers/auth_provider.dart';
+import 'package:provider/provider.dart';
+import 'package:flutter/material.dart';
+import 'package:spdms_app/features/activity/services/activity_proxy_service.dart';
 import 'dart:convert';
 import 'package:spdms_app/core/config/api_config.dart';
 
-import 'group_activity_dept_page.dart';
+import 'package:spdms_app/features/activity/pages/group_activity_dept_page.dart';
+import 'package:spdms_app/core/di/service_locator.dart';
 
 class GroupActivityYearPage extends StatefulWidget {
-  final String token;
   final int activityId;
 
   const GroupActivityYearPage({
     super.key,
-    required this.token,
+    
     required this.activityId,
   });
 
@@ -30,18 +32,18 @@ class _GroupActivityYearPageState extends State<GroupActivityYearPage> {
   static const Color _dark = Color(0xFF0F172A);
 
   final List<Map<String, dynamic>> _fixedYears = [
-    {"yearNo": 1, "yearName": "1st Year"},
-    {"yearNo": 2, "yearName": "2nd Year"},
-    {"yearNo": 3, "yearName": "3rd Year"},
-    {"yearNo": 4, "yearName": "4th Year"},
+    {'yearNo': 1, 'yearName': '1st Year'},
+    {'yearNo': 2, 'yearName': '2nd Year'},
+    {'yearNo': 3, 'yearName': '3rd Year'},
+    {'yearNo': 4, 'yearName': '4th Year'},
   ];
 
   List<String> _getYearAliases(Map<String, dynamic> fy) {
-    final no = fy["yearNo"];
-    if (no == 1) return ["1", "1st year", "i", "first year", "1st"];
-    if (no == 2) return ["2", "2nd year", "ii", "second year", "2nd"];
-    if (no == 3) return ["3", "3rd year", "iii", "third year", "3rd"];
-    if (no == 4) return ["4", "4th year", "iv", "fourth year", "4th"];
+    final no = fy['yearNo'];
+    if (no == 1) return ['1', '1st year', 'i', 'first year', '1st'];
+    if (no == 2) return ['2', '2nd year', 'ii', 'second year', '2nd'];
+    if (no == 3) return ['3', '3rd year', 'iii', 'third year', '3rd'];
+    if (no == 4) return ['4', '4th year', 'iv', 'fourth year', '4th'];
     return [];
   }
 
@@ -57,14 +59,14 @@ class _GroupActivityYearPageState extends State<GroupActivityYearPage> {
       _errorMessage = null;
     });
     try {
-      final response = await http.get(
-        Uri.parse("${ApiConfig.baseUrl}/api/v1/my-activities/${widget.activityId}/years"),
-        headers: {"Authorization": "Bearer ${widget.token}"},
+      final response = await getIt<ActivityProxyService>().get(
+        Uri.parse('${ApiConfig.baseUrl}/api/v1/my-activities/${widget.activityId}/years'),
+        headers: {'Authorization': 'Bearer ${context.read<AuthProvider>().token!}'},
       );
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        if (data["success"] == true) {
-          final List<dynamic> yrs = data["data"] ?? [];
+        if (data['success'] == true) {
+          final List<dynamic> yrs = data['data'] ?? [];
           setState(() {
             _availableYearsList = _fixedYears.where((fy) {
               final aliases = _getYearAliases(fy);
@@ -73,10 +75,10 @@ class _GroupActivityYearPageState extends State<GroupActivityYearPage> {
           });
         }
       } else {
-        _errorMessage = "Failed to load years";
+        _errorMessage = 'Failed to load years';
       }
     } catch (e) {
-      _errorMessage = "Failed to load years: $e";
+      _errorMessage = 'Failed to load years: $e';
     } finally {
       if (mounted) {
         setState(() {
@@ -91,7 +93,7 @@ class _GroupActivityYearPageState extends State<GroupActivityYearPage> {
       context,
       MaterialPageRoute(
         builder: (_) => GroupActivityDeptPage(
-          token: widget.token,
+          
           activityId: widget.activityId,
           selectedYear: year,
         ),

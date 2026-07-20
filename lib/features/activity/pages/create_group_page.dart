@@ -1,10 +1,10 @@
-﻿import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
+import 'package:spdms_app/features/auth/providers/auth_provider.dart';
+import 'package:provider/provider.dart';
+import 'package:flutter/material.dart';
 import 'dart:convert';
-import '../../../../core/config/api_config.dart';
+import 'package:spdms_app/features/activity/services/group_activity_service.dart';
 
 class CreateGroupPage extends StatefulWidget {
-  final String token;
   final int assignmentId;
   final String? preselectedYear;
   final String? preselectedDept;
@@ -12,7 +12,7 @@ class CreateGroupPage extends StatefulWidget {
 
   const CreateGroupPage({
     super.key,
-    required this.token,
+    
     required this.assignmentId,
     this.preselectedYear,
     this.preselectedDept,
@@ -56,10 +56,7 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
     setState(() => _isSearching = true);
     
     try {
-      final response = await http.get(
-        Uri.parse("${ApiConfig.baseUrl}/api/v1/students/search?keyword=${Uri.encodeComponent(query.trim())}&page=0&size=50"),
-        headers: {"Authorization": "Bearer ${widget.token}"},
-      );
+      final response = await GroupActivityService(context.read<AuthProvider>().token!).searchStudents(query.trim(), 0, 50);
       
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -70,8 +67,8 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
           final sDept = s['departmentName'] ?? '';
           final sSec = s['sectionName'] ?? '';
           
-          bool matchesDept = widget.preselectedDept == null || widget.preselectedDept == "N/A" || sDept == widget.preselectedDept;
-          bool matchesSec = widget.preselectedSection == null || widget.preselectedSection == "N/A" || sSec == widget.preselectedSection;
+          final bool matchesDept = widget.preselectedDept == null || widget.preselectedDept == 'N/A' || sDept == widget.preselectedDept;
+          final bool matchesSec = widget.preselectedSection == null || widget.preselectedSection == 'N/A' || sSec == widget.preselectedSection;
           
           return matchesDept && matchesSec;
         }).toList();
@@ -89,31 +86,26 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
     if (!_formKey.currentState!.validate()) return;
     
     if (_selectedCaptain == null) {
-      _showErrorDialog("Please select a captain.");
+      _showErrorDialog('Please select a captain.');
       return;
     }
 
     try {
-      final response = await http.post(
-        Uri.parse("${ApiConfig.baseUrl}/api/v1/teams"),
-        headers: {
-          "Authorization": "Bearer ${widget.token}",
-          "Content-Type": "application/json",
-        },
-        body: jsonEncode({
-          "name": _nameController.text.trim(),
-          "size": int.parse(_sizeController.text.trim()),
-          "captainStudentId": _selectedCaptain['studentId'],
-          "assignmentId": widget.assignmentId,
-        }),
-      );
+      final response = await GroupActivityService(context.read<AuthProvider>().token!).createTeam({
+        'name': _nameController.text.trim(),
+        'size': int.parse(_sizeController.text.trim()),
+        'captainStudentId': _selectedCaptain['regNo'],
+        'assignmentId': widget.assignmentId,
+      });
       
       final jsonResponse = jsonDecode(response.body);
       if (response.statusCode == 200 || response.statusCode == 201) {
         if (jsonResponse['success']) {
+          if (!mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Group created successfully!'), backgroundColor: Colors.green),
           );
+          if (!mounted) return;
           Navigator.pop(context, true); // return true to refresh
         } else {
           _showErrorDialog(jsonResponse['message']);
@@ -156,18 +148,18 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text("Academic Scope", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: _dark)),
+              const Text('Academic Scope', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: _dark)),
               const SizedBox(height: 16),
               
-              _buildReadOnlyField("Academic Year", widget.preselectedYear ?? "Global"),
+              _buildReadOnlyField('Academic Year', widget.preselectedYear ?? 'Global'),
               const SizedBox(height: 12),
-              _buildReadOnlyField("Department", widget.preselectedDept ?? "Global"),
+              _buildReadOnlyField('Department', widget.preselectedDept ?? 'Global'),
               const SizedBox(height: 12),
-              if (widget.preselectedSection != null && widget.preselectedSection != "N/A")
-                _buildReadOnlyField("Section", widget.preselectedSection!),
+              if (widget.preselectedSection != null && widget.preselectedSection != 'N/A')
+                _buildReadOnlyField('Section', widget.preselectedSection!),
               
               const SizedBox(height: 24),
-              const Text("Group Details", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: _dark)),
+              const Text('Group Details', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: _dark)),
               const SizedBox(height: 16),
               TextFormField(
                 controller: _nameController,
@@ -197,7 +189,7 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
               ),
               
               const SizedBox(height: 24),
-              const Text("Captain", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: _dark)),
+              const Text('Captain', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: _dark)),
               const SizedBox(height: 16),
               
               if (_selectedCaptain != null)
@@ -208,7 +200,7 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
                   child: ListTile(
                     leading: const CircleAvatar(backgroundColor: Colors.blue, child: Icon(Icons.person, color: Colors.white)),
                     title: Text(_selectedCaptain['fullName'] ?? ''),
-                    subtitle: Text(_selectedCaptain['studentId'] ?? ''),
+                    subtitle: Text(_selectedCaptain['regNo'] ?? ''),
                     trailing: IconButton(
                       icon: const Icon(Icons.close, color: Colors.red),
                       onPressed: () {
@@ -257,7 +249,7 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
                         final s = _searchResults[idx];
                         return ListTile(
                           title: Text(s['fullName'] ?? ''),
-                          subtitle: Text('${s['studentId']} | ${s['departmentName']} ${s['sectionName']}'),
+                          subtitle: Text('${s['regNo']} | ${s['departmentName']} ${s['sectionName']}'),
                           onTap: () {
                             setState(() {
                               _selectedCaptain = s;
@@ -282,7 +274,7 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
                   onPressed: _submit,
-                  child: const Text("Save Group", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  child: const Text('Save Group', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                 ),
               ),
             ],

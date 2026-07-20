@@ -1,4 +1,4 @@
-import 'activity_model.dart';
+import 'package:spdms_app/features/activity/models/activity_model.dart';
 
 class MyActivityModel {
   final int activityId;

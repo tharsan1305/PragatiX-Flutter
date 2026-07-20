@@ -1,19 +1,21 @@
-﻿import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
+import 'package:spdms_app/features/auth/providers/auth_provider.dart';
+import 'package:provider/provider.dart';
+import 'package:flutter/material.dart';
+import 'package:spdms_app/features/activity/services/activity_proxy_service.dart';
 import 'dart:convert';
 import 'package:spdms_app/core/config/api_config.dart';
 
-import 'group_activity_sec_page.dart';
-import 'group_activity_execution_page.dart';
+import 'package:spdms_app/features/activity/pages/group_activity_sec_page.dart';
+import 'package:spdms_app/features/activity/pages/group_activity_execution_page.dart';
+import 'package:spdms_app/core/di/service_locator.dart';
 
 class GroupActivityDeptPage extends StatefulWidget {
-  final String token;
   final int activityId;
   final dynamic selectedYear;
 
   const GroupActivityDeptPage({
     super.key,
-    required this.token,
+    
     required this.activityId,
     required this.selectedYear,
   });
@@ -45,27 +47,27 @@ class _GroupActivityDeptPageState extends State<GroupActivityDeptPage> {
     });
     try {
       final yearNo = widget.selectedYear['yearNo'];
-      String yearParam = "I";
-      if (yearNo == 2) yearParam = "II";
-      if (yearNo == 3) yearParam = "III";
-      if (yearNo == 4) yearParam = "IV";
+      String yearParam = 'I';
+      if (yearNo == 2) yearParam = 'II';
+      if (yearNo == 3) yearParam = 'III';
+      if (yearNo == 4) yearParam = 'IV';
 
-      final response = await http.get(
-        Uri.parse("${ApiConfig.baseUrl}/api/v1/my-activities/${widget.activityId}/departments?year=$yearParam"),
-        headers: {"Authorization": "Bearer ${widget.token}"},
+      final response = await getIt<ActivityProxyService>().get(
+        Uri.parse('${ApiConfig.baseUrl}/api/v1/my-activities/${widget.activityId}/departments?year=$yearParam'),
+        headers: {'Authorization': 'Bearer ${context.read<AuthProvider>().token!}'},
       );
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        if (data["success"] == true) {
+        if (data['success'] == true) {
           setState(() {
-            _availableDeptsList = data["data"] ?? [];
+            _availableDeptsList = data['data'] ?? [];
           });
         }
       } else {
-        _errorMessage = "Failed to load departments";
+        _errorMessage = 'Failed to load departments';
       }
     } catch (e) {
-      _errorMessage = "Failed to load departments: $e";
+      _errorMessage = 'Failed to load departments: $e';
     } finally {
       if (mounted) {
         setState(() {
@@ -85,15 +87,15 @@ class _GroupActivityDeptPageState extends State<GroupActivityDeptPage> {
 
     try {
       final yearNo = widget.selectedYear['yearNo'];
-      String yearParam = "I";
-      if (yearNo == 2) yearParam = "II";
-      if (yearNo == 3) yearParam = "III";
-      if (yearNo == 4) yearParam = "IV";
-      final deptId = dept["id"];
+      String yearParam = 'I';
+      if (yearNo == 2) yearParam = 'II';
+      if (yearNo == 3) yearParam = 'III';
+      if (yearNo == 4) yearParam = 'IV';
+      final deptId = dept['id'];
 
-      final response = await http.get(
-        Uri.parse("${ApiConfig.baseUrl}/api/v1/my-activities/${widget.activityId}/sections?year=$yearParam&departmentId=$deptId"),
-        headers: {"Authorization": "Bearer ${widget.token}"},
+      final response = await getIt<ActivityProxyService>().get(
+        Uri.parse('${ApiConfig.baseUrl}/api/v1/my-activities/${widget.activityId}/sections?year=$yearParam&departmentId=$deptId'),
+        headers: {'Authorization': 'Bearer ${context.read<AuthProvider>().token!}'},
       );
       
       // Close the loading dialog
@@ -101,8 +103,8 @@ class _GroupActivityDeptPageState extends State<GroupActivityDeptPage> {
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        if (data["success"] == true) {
-          final List<dynamic> list = data["data"] ?? [];
+        if (data['success'] == true) {
+          final List<dynamic> list = data['data'] ?? [];
           if (list.isNotEmpty) {
             // Sections exist, go to Section page
             if (mounted) {
@@ -110,7 +112,7 @@ class _GroupActivityDeptPageState extends State<GroupActivityDeptPage> {
                 context,
                 MaterialPageRoute(
                   builder: (_) => GroupActivitySecPage(
-                    token: widget.token,
+                    
                     activityId: widget.activityId,
                     selectedYear: widget.selectedYear,
                     selectedDept: dept,
@@ -126,7 +128,7 @@ class _GroupActivityDeptPageState extends State<GroupActivityDeptPage> {
                 context,
                 MaterialPageRoute(
                   builder: (_) => GroupActivityExecutionPage(
-                    token: widget.token,
+                    
                     activityId: widget.activityId,
                     selectedYear: widget.selectedYear,
                     selectedDept: dept,
@@ -140,7 +142,8 @@ class _GroupActivityDeptPageState extends State<GroupActivityDeptPage> {
       }
     } catch (e) {
       if (mounted) Navigator.pop(context); // Close dialog on error
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error checking sections: $e")));
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error checking sections: $e')));
     }
   }
 

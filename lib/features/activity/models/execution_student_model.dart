@@ -1,8 +1,7 @@
 class ExecutionStudentModel {
   final int id;
   final String fullName;
-  final String studentId;
-  final int regNo;
+  final String regNo;
   final String departmentName;
   final String sectionName;
   final int totalXp;
@@ -11,7 +10,6 @@ class ExecutionStudentModel {
   ExecutionStudentModel({
     required this.id,
     required this.fullName,
-    required this.studentId,
     required this.regNo,
     required this.departmentName,
     required this.sectionName,
@@ -23,8 +21,7 @@ class ExecutionStudentModel {
     return ExecutionStudentModel(
       id: json['id'] as int? ?? 0,
       fullName: json['fullName'] as String? ?? '',
-      studentId: json['studentId'] as String? ?? '',
-      regNo: json['regNo'] as int? ?? 0,
+      regNo: json['regNo'] as String? ?? '',
       departmentName: json['departmentName'] as String? ?? '',
       sectionName: json['sectionName'] as String? ?? '',
       totalXp: json['totalXp'] as int? ?? 0,
@@ -36,7 +33,6 @@ class ExecutionStudentModel {
     return {
       'id': id,
       'fullName': fullName,
-      'studentId': studentId,
       'regNo': regNo,
       'departmentName': departmentName,
       'sectionName': sectionName,

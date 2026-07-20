@@ -1,14 +1,15 @@
-﻿import 'package:flutter/material.dart';
-import '../../../features/activity/models/execution_student_model.dart';
-import '../../../features/activity/services/activity_service.dart';
+import 'package:spdms_app/features/auth/providers/auth_provider.dart';
+import 'package:provider/provider.dart';
+import 'package:flutter/material.dart';
+import 'package:spdms_app/features/activity/models/execution_student_model.dart';
+import 'package:spdms_app/features/activity/services/activity_service.dart';
 
 class ActivityExecutionPage extends StatefulWidget {
-  final String token;
   final int activityId;
 
   const ActivityExecutionPage({
     super.key,
-    required this.token,
+    
     required this.activityId,
   });
 
@@ -32,7 +33,7 @@ class _ActivityExecutionPageState extends State<ActivityExecutionPage> {
   @override
   void initState() {
     super.initState();
-    _service = ActivityService(widget.token);
+    _service = ActivityService(context.read<AuthProvider>().token!);
     _loadData();
   }
 
@@ -59,7 +60,7 @@ class _ActivityExecutionPageState extends State<ActivityExecutionPage> {
     if (_data == null) return;
     try {
       await _service.awardXp(
-        studentId: student.id,
+        regNo: student.id,
         activityId: _data!.activity.id,
         assignmentId: _data!.assignment.id,
         xp: xp,
@@ -71,6 +72,7 @@ class _ActivityExecutionPageState extends State<ActivityExecutionPage> {
         _totalSessionXpAwarded += xp;
       });
 
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Awarded $xp XP to ${student.fullName} successfully!'),
@@ -81,6 +83,7 @@ class _ActivityExecutionPageState extends State<ActivityExecutionPage> {
       // Refresh list to update scores
       _loadData();
     } catch (e) {
+      if (!mounted) return;
       showDialog(
         context: context,
         builder: (ctx) => AlertDialog(
@@ -114,9 +117,9 @@ class _ActivityExecutionPageState extends State<ActivityExecutionPage> {
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text(
+        title: const Text(
           'Award XP',
-          style: const TextStyle(fontWeight: FontWeight.bold, color: _dark),
+          style: TextStyle(fontWeight: FontWeight.bold, color: _dark),
         ),
         content: Form(
           key: formKey,
@@ -211,7 +214,7 @@ class _ActivityExecutionPageState extends State<ActivityExecutionPage> {
       final q = _searchQuery.toLowerCase();
       final nameMatches = student.fullName.toLowerCase().contains(q);
       final regMatches = student.regNo.toString().contains(q);
-      final idMatches = student.studentId.toLowerCase().contains(q);
+      final idMatches = student.regNo.toLowerCase().contains(q);
       return nameMatches || regMatches || idMatches;
     }).toList();
 
@@ -403,7 +406,7 @@ class _ActivityExecutionPageState extends State<ActivityExecutionPage> {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    'Reg: ${student.regNo} | Roll: ${student.studentId}',
+                    'Reg: ${student.regNo} | Roll: ${student.regNo}',
                     style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
                   ),
                   Text(

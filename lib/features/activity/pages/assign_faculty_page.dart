@@ -1,7 +1,8 @@
-﻿import 'package:flutter/material.dart';
-import '../../../features/activity/models/activity_model.dart';
-import '../../../features/activity/providers/activity_provider.dart';
-import '../../../features/activity/widgets/sticky_bottom_buttons.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+import 'package:spdms_app/features/activity/models/activity_model.dart';
+import 'package:spdms_app/features/activity/providers/activity_provider.dart';
+import 'package:spdms_app/features/activity/widgets/sticky_bottom_buttons.dart';
 
 class AssignFacultyPage extends StatefulWidget {
   final ActivityProvider provider;
@@ -271,7 +272,7 @@ class _AssignFacultyPageState extends State<AssignFacultyPage> {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: _primary.withOpacity(0.1),
+                color: _primary.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: const Icon(Icons.local_activity_rounded, color: _primary, size: 28),
@@ -302,16 +303,16 @@ class _AssignFacultyPageState extends State<AssignFacultyPage> {
   Widget _buildGlobalToggleCard() {
     return Card(
       elevation: 0,
-      color: _globalEnabled ? _primary.withOpacity(0.05) : Colors.white,
+      color: _globalEnabled ? _primary.withValues(alpha: 0.05) : Colors.white,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
         side: BorderSide(
-          color: _globalEnabled ? _primary.withOpacity(0.5) : Colors.grey.shade200,
+          color: _globalEnabled ? _primary.withValues(alpha: 0.5) : Colors.grey.shade200,
           width: _globalEnabled ? 1.5 : 1,
         ),
       ),
       child: SwitchListTile(
-        activeColor: _primary,
+        activeThumbColor: _primary,
         title: const Text(
           'GLOBAL ASSIGNMENT',
           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: _dark),
@@ -334,16 +335,16 @@ class _AssignFacultyPageState extends State<AssignFacultyPage> {
     const ccColor = Color(0xFF4F46E5); // indigo
     return Card(
       elevation: 0,
-      color: _ccEnabled ? ccColor.withOpacity(0.05) : Colors.white,
+      color: _ccEnabled ? ccColor.withValues(alpha: 0.05) : Colors.white,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
         side: BorderSide(
-          color: _ccEnabled ? ccColor.withOpacity(0.5) : Colors.grey.shade200,
+          color: _ccEnabled ? ccColor.withValues(alpha: 0.5) : Colors.grey.shade200,
           width: _ccEnabled ? 1.5 : 1,
         ),
       ),
       child: SwitchListTile(
-        activeColor: ccColor,
+        activeThumbColor: ccColor,
         title: const Text(
           'CLASS COORDINATOR ASSIGNMENT',
           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: _dark),
@@ -366,10 +367,10 @@ class _AssignFacultyPageState extends State<AssignFacultyPage> {
     const ccColor = Color(0xFF4F46E5); // indigo
     return Card(
       elevation: 0,
-      color: ccColor.withOpacity(0.04),
+      color: ccColor.withValues(alpha: 0.04),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: ccColor.withOpacity(0.3)),
+        side: BorderSide(color: ccColor.withValues(alpha: 0.3)),
       ),
       child: Padding(
         padding: const EdgeInsets.all(20),
@@ -381,7 +382,7 @@ class _AssignFacultyPageState extends State<AssignFacultyPage> {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: ccColor.withOpacity(0.12),
+                    color: ccColor.withValues(alpha: 0.12),
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(Icons.auto_awesome_rounded, color: ccColor, size: 22),
@@ -449,7 +450,7 @@ class _AssignFacultyPageState extends State<AssignFacultyPage> {
     final deptId = dept['id'] as int;
     final deptName = dept['name'] as String;
     final sections = dept['sections'] as List<dynamic>? ?? [];
-    print('DEBUG_LOG: Widget _buildDeptCard deptName: $deptName (id: $deptId), sections found: ${sections.length}, data: $sections');
+    debugPrint('DEBUG_LOG: Widget _buildDeptCard deptName: $deptName (id: $deptId), sections found: ${sections.length}, data: $sections');
     final teachers = _getTeachersForDepartment(deptId, deptName);
 
     // Initialize config if not present
@@ -776,7 +777,7 @@ class _FacultySearchSheetState extends State<_FacultySearchSheet> {
                     title: const Text('Any Faculty', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
                     selected: isSelected,
                     selectedColor: const Color(0xFFEA4335),
-                    selectedTileColor: const Color(0xFFEA4335).withOpacity(0.05),
+                    selectedTileColor: const Color(0xFFEA4335).withValues(alpha: 0.05),
                     onTap: () => widget.onSelected(0),
                   );
                 }
@@ -791,7 +792,7 @@ class _FacultySearchSheetState extends State<_FacultySearchSheet> {
                   subtitle: dept != null ? Text(dept, style: TextStyle(fontSize: 12, color: Colors.grey.shade600)) : null,
                   selected: isSelected,
                   selectedColor: const Color(0xFFEA4335),
-                  selectedTileColor: const Color(0xFFEA4335).withOpacity(0.05),
+                  selectedTileColor: const Color(0xFFEA4335).withValues(alpha: 0.05),
                   onTap: () => widget.onSelected(id),
                 );
               },

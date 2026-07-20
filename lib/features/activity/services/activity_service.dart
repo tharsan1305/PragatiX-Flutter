@@ -1,6 +1,8 @@
-﻿import 'dart:convert';
+
+import 'package:flutter/foundation.dart';
+import 'dart:convert';
 import 'package:http/http.dart' as http;
-import '../../../features/activity/utils/constants.dart';
+import 'package:spdms_app/features/activity/utils/constants.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Activity module – HTTP layer.
@@ -155,8 +157,8 @@ class ActivityService {
       Uri.parse('${ActivityConstants.baseUrl}/sections'),
       headers: _authHeaders,
     );
-    print('DEBUG_LOG: fetchSections API Response status: ${response.statusCode}');
-    print('DEBUG_LOG: fetchSections API Response body: ${response.body}');
+    debugPrint('DEBUG_LOG: fetchSections API Response status: ${response.statusCode}');
+    debugPrint('DEBUG_LOG: fetchSections API Response body: ${response.body}');
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body) as Map<String, dynamic>;
       if (data['success'] == true) {
@@ -237,7 +239,7 @@ class ActivityService {
   }
 
   Future<void> awardXp({
-    required int studentId,
+    required int regNo,
     required int activityId,
     required int assignmentId,
     required int xp,
@@ -249,7 +251,7 @@ class ActivityService {
       Uri.parse('$rootUrl/student-xp/award'),
       headers: _jsonHeaders,
       body: jsonEncode({
-        'studentId': studentId,
+        'regNo': regNo,
         'activityId': activityId,
         'assignmentId': assignmentId,
         'xp': xp,

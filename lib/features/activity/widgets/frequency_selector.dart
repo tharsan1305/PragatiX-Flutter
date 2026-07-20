@@ -1,5 +1,5 @@
-﻿import 'package:flutter/material.dart';
-import '../../../features/activity/utils/constants.dart';
+import 'package:flutter/material.dart';
+import 'package:spdms_app/features/activity/utils/constants.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Animated frequency selector tiles.

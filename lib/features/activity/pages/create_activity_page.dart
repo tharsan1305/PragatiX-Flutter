@@ -1,7 +1,7 @@
-﻿import 'package:flutter/material.dart';
-import '../../../features/activity/providers/activity_provider.dart';
-import '../../../features/activity/widgets/activity_form.dart';
-import '../../../features/activity/widgets/sticky_bottom_buttons.dart';
+import 'package:flutter/material.dart';
+import 'package:spdms_app/features/activity/providers/activity_provider.dart';
+import 'package:spdms_app/features/activity/widgets/activity_form.dart';
+import 'package:spdms_app/features/activity/widgets/sticky_bottom_buttons.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Create Activity Page – full-screen form for new activities.
@@ -136,7 +136,7 @@ class _CreateActivityPageState extends State<CreateActivityPage>
                 key: _formKey,
                 allTeachers: widget.provider.allTeachers,
                 sections: widget.provider.sections,
-                token: widget.provider.token,
+                
                 provider: widget.provider,
                 isCc: widget.isCc,
               );

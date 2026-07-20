@@ -1,8 +1,8 @@
-﻿import 'package:flutter/material.dart';
-import '../../../features/activity/models/activity_model.dart';
-import '../../../features/activity/providers/activity_provider.dart';
-import '../../../features/activity/widgets/activity_form.dart';
-import '../../../features/activity/widgets/sticky_bottom_buttons.dart';
+import 'package:flutter/material.dart';
+import 'package:spdms_app/features/activity/models/activity_model.dart';
+import 'package:spdms_app/features/activity/providers/activity_provider.dart';
+import 'package:spdms_app/features/activity/widgets/activity_form.dart';
+import 'package:spdms_app/features/activity/widgets/sticky_bottom_buttons.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Edit Activity Page – reuses ActivityForm with pre-filled data.
@@ -192,7 +192,7 @@ class _EditActivityPageState extends State<EditActivityPage>
                 key: _formKey,
                 allTeachers: widget.provider.allTeachers,
                 sections: widget.provider.sections,
-                token: widget.provider.token,
+                
                 provider: widget.provider,
                 initialData: widget.activity,
                 isCc: widget.isCc,

@@ -1,16 +1,14 @@
-﻿import 'package:flutter/material.dart';
-import '../../../features/activity/models/activity_model.dart';
-import '../../../features/activity/models/my_activity_model.dart';
-import '../../../features/activity/providers/activity_provider.dart';
-import '../../../features/activity/repository/activity_repository.dart';
-import '../../../features/activity/services/activity_service.dart';
-import '../../../features/activity/widgets/activity_card.dart';
-import 'create_activity_page.dart';
-import 'edit_activity_page.dart';
-import 'activity_execution_page.dart';
-import 'group_activity_year_page.dart';
-import 'admin_activity_detail_page.dart';
-import 'assign_faculty_page.dart';
+import 'package:flutter/material.dart';
+import 'package:spdms_app/features/activity/models/activity_model.dart';
+import 'package:spdms_app/features/activity/providers/activity_provider.dart';
+import 'package:spdms_app/shared/widgets/activity_card.dart';
+import 'package:spdms_app/features/activity/pages/create_activity_page.dart';
+import 'package:spdms_app/features/activity/pages/edit_activity_page.dart';
+import 'package:spdms_app/features/activity/pages/activity_execution_page.dart';
+import 'package:spdms_app/features/activity/pages/group_activity_year_page.dart';
+import 'package:spdms_app/features/activity/pages/admin_activity_detail_page.dart';
+import 'package:spdms_app/features/activity/pages/assign_faculty_page.dart';
+import 'package:spdms_app/core/di/service_locator.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Activity List Page – entry point from SubgroupDetailsPage.
@@ -18,7 +16,6 @@ import 'assign_faculty_page.dart';
 // ─────────────────────────────────────────────────────────────────────────────
 
 class ActivityListPage extends StatefulWidget {
-  final String token;
   final int subgroupId;
   final String subgroupName;
   final String subgroupCategory;
@@ -30,7 +27,7 @@ class ActivityListPage extends StatefulWidget {
 
   const ActivityListPage({
     super.key,
-    required this.token,
+    
     required this.subgroupId,
     required this.subgroupName,
     required this.subgroupCategory,
@@ -79,9 +76,7 @@ class _ActivityListPageState extends State<ActivityListPage> {
   @override
   void initState() {
     super.initState();
-    _provider = ActivityProvider(
-      ActivityRepository(ActivityService(widget.token)),
-    );
+    _provider = getIt<ActivityProvider>();
     if (widget.isMyActivitiesOnly) {
       _provider.loadMyActivities();
     } else {
@@ -273,7 +268,7 @@ class _ActivityListPageState extends State<ActivityListPage> {
                                     context,
                                     MaterialPageRoute(
                                       builder: (_) => AdminActivityDetailPage(
-                                        token: widget.token,
+                                        
                                         activity: act,
                                         subgroupId: widget.subgroupId,
                                       ),
@@ -286,15 +281,15 @@ class _ActivityListPageState extends State<ActivityListPage> {
                                         context,
                                         MaterialPageRoute(
                                           builder: (_) {
-                                            bool isGroupActivity = act.type.toLowerCase().contains('group');
+                                            final bool isGroupActivity = act.type.toLowerCase().contains('group');
                                             if (isGroupActivity) {
                                               return GroupActivityYearPage(
-                                                token: widget.token,
+                                                
                                                 activityId: act.id,
                                               );
                                             } else {
                                               return ActivityExecutionPage(
-                                                token: widget.token,
+                                                
                                                 activityId: act.id,
                                               );
                                             }

@@ -1,8 +1,11 @@
-﻿import 'dart:convert';
+import 'package:spdms_app/features/auth/providers/auth_provider.dart';
+import 'package:provider/provider.dart';
+import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
+import 'package:spdms_app/features/activity/services/activity_proxy_service.dart';
 import 'package:spdms_app/core/config/api_config.dart';
-import '../../../features/activity/models/activity_model.dart';
+import 'package:spdms_app/features/activity/models/activity_model.dart';
+import 'package:spdms_app/core/di/service_locator.dart';
 
 // Color Palette Constants
 const Color _primary = Color(0xFFEA4335);
@@ -11,7 +14,7 @@ const Color _bg = Color(0xFFF8FAFC);
 
 // Helper function to build year matching aliases
 List<String> _getYearAliases(dynamic selectedYear) {
-  final yearName = selectedYear['yearName']?.toString()?.trim()?.toLowerCase() ?? '';
+  final yearName = selectedYear['yearName']?.toString().trim().toLowerCase() ?? '';
   final yearNo = (selectedYear['yearNo'] as num?)?.toInt() ?? -1;
 
   final List<String> aliases = [];
@@ -21,13 +24,13 @@ List<String> _getYearAliases(dynamic selectedYear) {
   if (yearNo != -1) {
     aliases.add(yearNo.toString());
     if (yearNo == 1) {
-      aliases.addAll(["i", "first", "1st", "1"]);
+      aliases.addAll(['i', 'first', '1st', '1']);
     } else if (yearNo == 2) {
-      aliases.addAll(["ii", "second", "2nd", "2"]);
+      aliases.addAll(['ii', 'second', '2nd', '2']);
     } else if (yearNo == 3) {
-      aliases.addAll(["iii", "third", "3rd", "3"]);
+      aliases.addAll(['iii', 'third', '3rd', '3']);
     } else if (yearNo == 4) {
-      aliases.addAll(["iv", "fourth", "4th", "4"]);
+      aliases.addAll(['iv', 'fourth', '4th', '4']);
     }
   }
   return aliases.map((e) => e.trim().toLowerCase()).toList();
@@ -37,13 +40,12 @@ List<String> _getYearAliases(dynamic selectedYear) {
 // Page 1: Year Selection Page (Entry Point)
 // ─────────────────────────────────────────────────────────────────────────────
 class AdminActivityDetailPage extends StatefulWidget {
-  final String token;
   final ActivityModel activity;
   final int subgroupId;
 
   const AdminActivityDetailPage({
     super.key,
-    required this.token,
+    
     required this.activity,
     required this.subgroupId,
   });
@@ -73,35 +75,35 @@ class _AdminActivityDetailPageState extends State<AdminActivityDetailPage> {
     });
 
     try {
-      final headers = {"Authorization": "Bearer ${widget.token}"};
+      final headers = {'Authorization': 'Bearer ${context.read<AuthProvider>().token!}'};
       
       final results = await Future.wait([
-        http.get(Uri.parse("${ApiConfig.baseUrl}/api/v1/admin/years"), headers: headers),
-        http.get(Uri.parse("${ApiConfig.baseUrl}/api/v1/admin/departments"), headers: headers),
-        http.get(Uri.parse("${ApiConfig.baseUrl}/api/v1/students?page=0&size=2000&sortBy=fullName"), headers: headers),
+        getIt<ActivityProxyService>().get(Uri.parse('${ApiConfig.baseUrl}/api/v1/admin/years'), headers: headers),
+        getIt<ActivityProxyService>().get(Uri.parse('${ApiConfig.baseUrl}/api/v1/admin/departments'), headers: headers),
+        getIt<ActivityProxyService>().get(Uri.parse('${ApiConfig.baseUrl}/api/v1/students?page=0&size=2000&sortBy=fullName'), headers: headers),
       ]);
 
       if (results[0].statusCode != 200 || results[1].statusCode != 200 || results[2].statusCode != 200) {
-        throw Exception("Failed to load metadata from backend.");
+        throw Exception('Failed to load metadata from backend.');
       }
 
       final yearsData = jsonDecode(results[0].body);
       final deptsData = jsonDecode(results[1].body);
       final studentsData = jsonDecode(results[2].body);
 
-      if (yearsData["success"] == true && deptsData["success"] == true && studentsData["success"] == true) {
+      if (yearsData['success'] == true && deptsData['success'] == true && studentsData['success'] == true) {
         setState(() {
-          allYears = yearsData["data"] ?? [];
-          allDepts = deptsData["data"] ?? [];
-          allStudents = studentsData["data"]["content"] ?? [];
+          allYears = yearsData['data'] ?? [];
+          allDepts = deptsData['data'] ?? [];
+          allStudents = studentsData['data']['content'] ?? [];
           _isLoading = false;
         });
       } else {
-        throw Exception("Backend returned success=false for lookup queries.");
+        throw Exception('Backend returned success=false for lookup queries.');
       }
     } catch (e) {
       setState(() {
-        _errorMessage = e.toString().replaceAll("Exception: ", "");
+        _errorMessage = e.toString().replaceAll('Exception: ', '');
         _isLoading = false;
       });
     }
@@ -136,7 +138,7 @@ class _AdminActivityDetailPageState extends State<AdminActivityDetailPage> {
                       const Padding(
                         padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                         child: Text(
-                          "Select Year",
+                          'Select Year',
                           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: _dark),
                         ),
                       ),
@@ -159,7 +161,7 @@ class _AdminActivityDetailPageState extends State<AdminActivityDetailPage> {
                                   context,
                                   MaterialPageRoute(
                                     builder: (_) => AdminActivityDeptSelectionPage(
-                                      token: widget.token,
+                                      
                                       activity: widget.activity,
                                       subgroupId: widget.subgroupId,
                                       selectedYear: year,
@@ -229,7 +231,6 @@ class _AdminActivityDetailPageState extends State<AdminActivityDetailPage> {
 // Page 2: Department Selection Page
 // ─────────────────────────────────────────────────────────────────────────────
 class AdminActivityDeptSelectionPage extends StatelessWidget {
-  final String token;
   final ActivityModel activity;
   final int subgroupId;
   final dynamic selectedYear;
@@ -239,7 +240,7 @@ class AdminActivityDeptSelectionPage extends StatelessWidget {
 
   const AdminActivityDeptSelectionPage({
     super.key,
-    required this.token,
+    
     required this.activity,
     required this.subgroupId,
     required this.selectedYear,
@@ -272,7 +273,7 @@ class AdminActivityDeptSelectionPage extends StatelessWidget {
             const Padding(
               padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
               child: Text(
-                "Select Department",
+                'Select Department',
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: _dark),
               ),
             ),
@@ -334,18 +335,18 @@ class AdminActivityDeptSelectionPage extends StatelessWidget {
   }
 
   void _handleDeptSelection(BuildContext context, dynamic dept) {
-    final deptName = dept['name']?.toString()?.trim()?.toLowerCase() ?? '';
+    final deptName = dept['name']?.toString().trim().toLowerCase() ?? '';
     final yearAliases = _getYearAliases(selectedYear);
 
     // Filter students by Year & Department to check for sections
     final filtered = allStudents.where((s) {
-      final sYear = s['year']?.toString()?.trim()?.toLowerCase() ?? '';
-      final sDept = s['departmentName']?.toString()?.trim()?.toLowerCase() ?? '';
+      final sYear = s['year']?.toString().trim().toLowerCase() ?? '';
+      final sDept = s['departmentName']?.toString().trim().toLowerCase() ?? '';
       return yearAliases.contains(sYear) && sDept == deptName;
     }).toList();
 
     final uniqueSections = filtered
-        .map((s) => s['section']?.toString()?.trim() ?? '')
+        .map((s) => s['section']?.toString().trim() ?? '')
         .where((sec) => sec.isNotEmpty)
         .toSet()
         .toList();
@@ -356,7 +357,7 @@ class AdminActivityDeptSelectionPage extends StatelessWidget {
         context,
         MaterialPageRoute(
           builder: (_) => AdminActivitySectionSelectionPage(
-            token: token,
+            
             activity: activity,
             subgroupId: subgroupId,
             selectedYear: selectedYear,
@@ -372,7 +373,7 @@ class AdminActivityDeptSelectionPage extends StatelessWidget {
         context,
         MaterialPageRoute(
           builder: (_) => AdminActivityStudentPointsPage(
-            token: token,
+            
             activity: activity,
             subgroupId: subgroupId,
             selectedYear: selectedYear,
@@ -390,7 +391,6 @@ class AdminActivityDeptSelectionPage extends StatelessWidget {
 // Page 3: Section Selection Page
 // ─────────────────────────────────────────────────────────────────────────────
 class AdminActivitySectionSelectionPage extends StatelessWidget {
-  final String token;
   final ActivityModel activity;
   final int subgroupId;
   final dynamic selectedYear;
@@ -400,7 +400,7 @@ class AdminActivitySectionSelectionPage extends StatelessWidget {
 
   const AdminActivitySectionSelectionPage({
     super.key,
-    required this.token,
+    
     required this.activity,
     required this.subgroupId,
     required this.selectedYear,
@@ -429,12 +429,12 @@ class AdminActivitySectionSelectionPage extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildBreadcrumbHeader("$yearName  >  $deptName"),
+            _buildBreadcrumbHeader('$yearName  >  $deptName'),
             _buildActivityHeaderCard(activity),
             const Padding(
               padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
               child: Text(
-                "Select Section",
+                'Select Section',
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: _dark),
               ),
             ),
@@ -456,7 +456,7 @@ class AdminActivitySectionSelectionPage extends StatelessWidget {
                         context,
                         MaterialPageRoute(
                           builder: (_) => AdminActivityStudentPointsPage(
-                            token: token,
+                            
                             activity: activity,
                             subgroupId: subgroupId,
                             selectedYear: selectedYear,
@@ -478,7 +478,7 @@ class AdminActivitySectionSelectionPage extends StatelessWidget {
                           const SizedBox(width: 16),
                           Expanded(
                             child: Text(
-                              "Section $section",
+                              'Section $section',
                               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: _dark),
                             ),
                           ),
@@ -501,7 +501,6 @@ class AdminActivitySectionSelectionPage extends StatelessWidget {
 // Page 4: Student Points Allocation Page
 // ─────────────────────────────────────────────────────────────────────────────
 class AdminActivityStudentPointsPage extends StatefulWidget {
-  final String token;
   final ActivityModel activity;
   final int subgroupId;
   final dynamic selectedYear;
@@ -511,7 +510,7 @@ class AdminActivityStudentPointsPage extends StatefulWidget {
 
   const AdminActivityStudentPointsPage({
     super.key,
-    required this.token,
+    
     required this.activity,
     required this.subgroupId,
     required this.selectedYear,
@@ -536,12 +535,12 @@ class _AdminActivityStudentPointsPageState extends State<AdminActivityStudentPoi
   }
 
   List<dynamic> getFilteredStudents() {
-    final deptName = widget.selectedDept['name']?.toString()?.trim()?.toLowerCase() ?? '';
+    final deptName = widget.selectedDept['name']?.toString().trim().toLowerCase() ?? '';
     final yearAliases = _getYearAliases(widget.selectedYear);
 
     final filtered = localStudentsList.where((s) {
-      final sYear = s['year']?.toString()?.trim()?.toLowerCase() ?? '';
-      final sDept = s['departmentName']?.toString()?.trim()?.toLowerCase() ?? '';
+      final sYear = s['year']?.toString().trim().toLowerCase() ?? '';
+      final sDept = s['departmentName']?.toString().trim().toLowerCase() ?? '';
 
       final matchesYear = yearAliases.contains(sYear);
       final matchesDept = sDept == deptName;
@@ -549,7 +548,7 @@ class _AdminActivityStudentPointsPageState extends State<AdminActivityStudentPoi
       if (!matchesYear || !matchesDept) return false;
 
       if (widget.selectedSection != null) {
-        final sSection = s['section']?.toString()?.trim() ?? '';
+        final sSection = s['section']?.toString().trim() ?? '';
         return sSection.toLowerCase() == widget.selectedSection!.toLowerCase();
       }
 
@@ -561,7 +560,7 @@ class _AdminActivityStudentPointsPageState extends State<AdminActivityStudentPoi
     return filtered.where((s) {
       final name = (s['fullName'] ?? '').toString().toLowerCase();
       final regNo = (s['regNo'] ?? '').toString().toLowerCase();
-      final rollNo = (s['studentId'] ?? '').toString().toLowerCase();
+      final rollNo = (s['regNo'] ?? '').toString().toLowerCase();
       return name.contains(q) || regNo.contains(q) || rollNo.contains(q);
     }).toList();
   }
@@ -569,21 +568,21 @@ class _AdminActivityStudentPointsPageState extends State<AdminActivityStudentPoi
   Future<void> _submitAward(dynamic student, int xp, String remarks) async {
     final studentDbId = student['id'];
     try {
-      final response = await http.post(
-        Uri.parse("${ApiConfig.baseUrl}/api/v1/students/$studentDbId/adjust-points"),
+      final response = await getIt<ActivityProxyService>().post(
+        Uri.parse('${ApiConfig.baseUrl}/api/v1/students/$studentDbId/adjust-points'),
         headers: {
-          "Content-Type": "application/json",
-          "Authorization": "Bearer ${widget.token}",
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ${context.read<AuthProvider>().token!}',
         },
         body: jsonEncode({
-          "points": xp,
-          "reason": widget.activity.name,
-          "subgroupId": widget.subgroupId
+          'points': xp,
+          'reason': widget.activity.name,
+          'subgroupId': widget.subgroupId
         }),
       );
 
       final data = jsonDecode(response.body);
-      if (response.statusCode == 200 && data["success"] == true) {
+      if (response.statusCode == 200 && data['success'] == true) {
         setState(() {
           _awardedStudentIds.add(studentDbId);
           // Update local list points
@@ -594,6 +593,7 @@ class _AdminActivityStudentPointsPageState extends State<AdminActivityStudentPoi
           }
         });
 
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Awarded $xp XP to ${student['fullName']} successfully!'),
@@ -601,9 +601,10 @@ class _AdminActivityStudentPointsPageState extends State<AdminActivityStudentPoi
           ),
         );
       } else {
-        throw Exception(data["message"] ?? "Failed to adjust points.");
+        throw Exception(data['message'] ?? 'Failed to adjust points.');
       }
     } catch (e) {
+      if (!mounted) return;
       showDialog(
         context: context,
         builder: (ctx) => AlertDialog(
@@ -724,9 +725,9 @@ class _AdminActivityStudentPointsPageState extends State<AdminActivityStudentPoi
     final deptName = widget.selectedDept['name'] ?? '';
     final secName = widget.selectedSection;
 
-    String breadcrumb = "$yearName  >  $deptName";
+    String breadcrumb = '$yearName  >  $deptName';
     if (secName != null) {
-      breadcrumb += "  >  Section $secName";
+      breadcrumb += '  >  Section $secName';
     }
 
     final filteredStudents = getFilteredStudents();
@@ -757,7 +758,7 @@ class _AdminActivityStudentPointsPageState extends State<AdminActivityStudentPoi
                       Padding(
                         padding: const EdgeInsets.fromLTRB(20, 10, 20, 10),
                         child: Text(
-                          "Students (${filteredStudents.length})",
+                          'Students (${filteredStudents.length})',
                           style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: _dark),
                         ),
                       ),
@@ -779,7 +780,7 @@ class _AdminActivityStudentPointsPageState extends State<AdminActivityStudentPoi
                           final studentDbId = student['id'] as int;
                           final isAwarded = _awardedStudentIds.contains(studentDbId);
 
-                          final rollNo = student['studentId'] ?? '';
+                          final rollNo = student['regNo'] ?? '';
                           final regNo = student['regNo']?.toString() ?? '';
                           final deptCode = student['departmentName'] ?? '';
                           final sSec = student['section']?.toString() ?? '';
