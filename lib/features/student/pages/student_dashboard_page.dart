@@ -5,6 +5,9 @@ import 'package:spdms_app/features/student/pages/leaderboard_tab.dart';
 import 'package:spdms_app/features/student/pages/activities_tab.dart';
 import 'package:spdms_app/features/student/pages/levels_badges_tab.dart';
 import 'package:spdms_app/features/student/pages/profile_tab.dart';
+import 'package:provider/provider.dart';
+import 'package:spdms_app/features/attendance/providers/attendance_provider.dart';
+import 'package:spdms_app/features/attendance/pages/student_attendance_tab.dart';
 
 class StudentDashboardPage extends StatefulWidget {
   const StudentDashboardPage({super.key, });
@@ -25,9 +28,15 @@ class _StudentDashboardPageState extends State<StudentDashboardPage> {
       const PointReviewTab(),
       const LeaderboardTab(),
       const ActivitiesTab(),
+      const StudentAttendanceTab(),
       const LevelsBadgesTab(),
       const ProfileTab(),
     ];
+    
+    // Fetch attendance summary on init
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Provider.of<AttendanceProvider>(context, listen: false).fetchSummary();
+    });
   }
 
   @override
@@ -50,6 +59,10 @@ class _StudentDashboardPageState extends State<StudentDashboardPage> {
       const BottomNavigationBarItem(
         icon: Icon(Icons.local_activity_rounded),
         label: 'Activities',
+      ),
+      const BottomNavigationBarItem(
+        icon: Icon(Icons.co_present_rounded),
+        label: 'Attendance',
       ),
       const BottomNavigationBarItem(
         icon: Icon(Icons.military_tech_rounded),

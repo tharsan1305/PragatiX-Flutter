@@ -11,6 +11,7 @@ import 'package:spdms_app/features/auth/pages/login_page.dart';
 import 'package:spdms_app/features/auth/providers/auth_provider.dart';
 import 'package:spdms_app/core/di/service_locator.dart';
 import 'package:spdms_app/shared/providers/student_search_provider.dart';
+import 'package:spdms_app/features/attendance/providers/attendance_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -26,6 +27,7 @@ void main() async {
         ChangeNotifierProvider(create: (_) => getIt<XpProvider>()),
         ChangeNotifierProvider(create: (_) => getIt<BadgeProvider>()),
         ChangeNotifierProvider(create: (_) => StudentSearchProvider()),
+        ChangeNotifierProvider(create: (_) => AttendanceProvider()),
       ],
       child: const MyApp(),
     ),

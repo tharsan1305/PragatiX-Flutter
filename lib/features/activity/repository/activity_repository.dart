@@ -22,8 +22,8 @@ class ActivityRepository {
         .toList();
   }
 
-  Future<List<ActivityModel>> getActivities(int subgroupId) async {
-    final raw = await _service.fetchActivities(subgroupId);
+  Future<List<ActivityModel>> getActivities({int? stageId, String? subgroupName}) async {
+    final raw = await _service.fetchActivities(stageId: stageId, subgroupName: subgroupName);
     return raw
         .map((e) => ActivityModel.fromJson(e as Map<String, dynamic>))
         .toList();
@@ -57,11 +57,9 @@ class ActivityRepository {
     return _service.createCustomFrequency(body);
   }
 
-  Future<ActivityModel> create(
-      int subgroupId, Map<String, dynamic> body) async {
-    final result = await _service.createActivity(subgroupId, body);
-    final actData =
-        result['data'] as Map<String, dynamic>? ?? result;
+  Future<ActivityModel> create(Map<String, dynamic> body, {int? stageId, String? subgroupName}) async {
+    final result = await _service.createActivity(body);
+    final actData = result['data'] as Map<String, dynamic>? ?? result;
     return ActivityModel.fromJson(actData);
   }
 
@@ -73,21 +71,40 @@ class ActivityRepository {
     return ActivityModel.fromJson(actData);
   }
 
-  Future<void> delete(int activityId) async {
-    await _service.deleteActivity(activityId);
+  Future<void> mapActivityToStage(int stageId, int activityId, String subgroup) async {
+    await _service.mapActivityToStage(stageId, activityId, subgroup);
+  }
+
+  Future<void> unmapActivityFromStage(int stageId, int activityId) async {
+    await _service.unmapActivityFromStage(stageId, activityId);
+  }
+
+  Future<void> delete(int activityId, {bool force = false}) async {
+    await _service.deleteActivity(activityId, force: force);
   }
 
   Future<List<dynamic>> getSections() async {
     return _service.fetchSections();
   }
 
-  Future<Map<String, dynamic>> assign(
-      int activityId, int? sectionId, int teacherId) async {
-    return _service.assignActivity(activityId, sectionId, teacherId);
+  Future<List<dynamic>> getAssignments(int activityId) async {
+    return _service.fetchAssignments(activityId);
   }
 
-  Future<void> saveAssignments(
-      int activityId, bool globalEnabled, List<Map<String, dynamic>> assignments, {bool ccEnabled = false}) async {
-    await _service.saveAssignments(activityId, globalEnabled, assignments, ccEnabled: ccEnabled);
+  Future<Map<String, dynamic>> addAssignment(
+      int activityId, int departmentId, String year, int? sectionId, int? teacherId, String scope) async {
+    return _service.addAssignment(activityId, departmentId, year, sectionId, teacherId, scope);
+  }
+
+  Future<void> removeAssignment(int assignmentId) async {
+    await _service.removeAssignment(assignmentId);
+  }
+
+  Future<void> clearAllAssignments(int activityId) async {
+    await _service.clearAllAssignments(activityId);
+  }
+
+  Future<void> assignActivity(int activityId, bool ccEnabled, bool globalEnabled) async {
+    await _service.assignActivity(activityId, ccEnabled, globalEnabled);
   }
 }

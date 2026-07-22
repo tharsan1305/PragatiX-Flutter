@@ -22,14 +22,11 @@ class _EditStagePageState extends State<EditStagePage> {
   late final TextEditingController _descCtrl;
   late final TextEditingController _orderCtrl;
   late final TextEditingController _expectedXpCtrl;
+  late final TextEditingController _mustThresholdCtrl;
+  late final TextEditingController _indThresholdCtrl;
+  late final TextEditingController _grpThresholdCtrl;
   
-  DateTime? _startDate;
-  DateTime? _endDate;
   bool _isSaving = false;
-
-  bool _useDateValidation = true;
-  bool _useThresholdValidation = false;
-  bool _useCombinedValidation = false;
 
   static const Color _primary = Color(0xFFEA4335);
   static const Color _dark = Color(0xFF1E293B);
@@ -43,25 +40,9 @@ class _EditStagePageState extends State<EditStagePage> {
     _descCtrl = TextEditingController(text: widget.stage['description'] as String? ?? '');
     _orderCtrl = TextEditingController(text: (widget.stage['displayOrder'] ?? 0).toString());
     _expectedXpCtrl = TextEditingController(text: (widget.stage['expectedXp'] ?? 0).toString());
-    
-    _useDateValidation = widget.stage['useDateValidation'] ?? true;
-    _useThresholdValidation = widget.stage['useThresholdValidation'] ?? false;
-    _useCombinedValidation = widget.stage['useCombinedValidation'] ?? false;
-    
-
-    final startStr = widget.stage['startDateTime'] as String? ?? widget.stage['startDate'] as String?;
-    if (startStr != null && startStr.isNotEmpty) {
-      try {
-        _startDate = DateTime.parse(startStr);
-      } catch (_) {}
-    }
-    
-    final endStr = widget.stage['endDateTime'] as String? ?? widget.stage['endDate'] as String?;
-    if (endStr != null && endStr.isNotEmpty) {
-      try {
-        _endDate = DateTime.parse(endStr);
-      } catch (_) {}
-    }
+    _mustThresholdCtrl = TextEditingController(text: (widget.stage['mustThreshold'] ?? 0).toString());
+    _indThresholdCtrl = TextEditingController(text: (widget.stage['individualThreshold'] ?? 0).toString());
+    _grpThresholdCtrl = TextEditingController(text: (widget.stage['groupThreshold'] ?? 0).toString());
   }
 
   @override
@@ -70,106 +51,14 @@ class _EditStagePageState extends State<EditStagePage> {
     _descCtrl.dispose();
     _orderCtrl.dispose();
     _expectedXpCtrl.dispose();
+    _mustThresholdCtrl.dispose();
+    _indThresholdCtrl.dispose();
+    _grpThresholdCtrl.dispose();
     super.dispose();
-  }
-
-  Future<void> _selectStartDate(BuildContext context) async {
-    final DateTime? pickedDate = await showDatePicker(
-      context: context,
-      initialDate: _startDate ?? DateTime.now(),
-      firstDate: DateTime(2020),
-      lastDate: DateTime(2035),
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(
-              primary: _primary,
-              onPrimary: Colors.white,
-              onSurface: _dark,
-            ),
-          ),
-          child: child!,
-        );
-      },
-    );
-    if (pickedDate != null) {
-      if (!mounted) return;
-      final TimeOfDay? pickedTime = await showTimePicker(
-        context: context,
-        initialTime: _startDate != null ? TimeOfDay.fromDateTime(_startDate!) : TimeOfDay.now(),
-      );
-      if (pickedTime != null) {
-        final newDateTime = DateTime(
-          pickedDate.year, pickedDate.month, pickedDate.day,
-          pickedTime.hour, pickedTime.minute,
-        );
-        setState(() {
-          _startDate = newDateTime;
-          if (_endDate != null && _endDate!.isBefore(_startDate!)) {
-            _endDate = null;
-          }
-        });
-      }
-    }
-  }
-
-  Future<void> _selectEndDate(BuildContext context) async {
-    final DateTime? pickedDate = await showDatePicker(
-      context: context,
-      initialDate: _endDate ?? (_startDate ?? DateTime.now()),
-      firstDate: _startDate ?? DateTime(2020),
-      lastDate: DateTime(2035),
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(
-              primary: _primary,
-              onPrimary: Colors.white,
-              onSurface: _dark,
-            ),
-          ),
-          child: child!,
-        );
-      },
-    );
-    if (pickedDate != null) {
-      if (!mounted) return;
-      final TimeOfDay? pickedTime = await showTimePicker(
-        context: context,
-        initialTime: _endDate != null ? TimeOfDay.fromDateTime(_endDate!) : TimeOfDay.now(),
-      );
-      if (pickedTime != null) {
-        final newDateTime = DateTime(
-          pickedDate.year, pickedDate.month, pickedDate.day,
-          pickedTime.hour, pickedTime.minute,
-        );
-        setState(() {
-          _endDate = newDateTime;
-        });
-      }
-    }
   }
 
   Future<void> _updateStage() async {
     if (!_formKey.currentState!.validate()) return;
-    if (_startDate == null || _endDate == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please select both Start and End dates'),
-          backgroundColor: Colors.redAccent,
-        ),
-      );
-      return;
-    }
-    if (_endDate!.isBefore(_startDate!)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('End Date cannot be before Start Date'),
-          backgroundColor: Colors.redAccent,
-        ),
-      );
-      return;
-    }
 
     setState(() => _isSaving = true);
     final stageId = widget.stage['id'];
@@ -185,12 +74,10 @@ class _EditStagePageState extends State<EditStagePage> {
           'name': _nameCtrl.text.trim(),
           'description': _descCtrl.text.trim(),
           'expectedXp': int.tryParse(_expectedXpCtrl.text.trim()) ?? 0,
-          'startDateTime': _startDate!.toIso8601String(),
-          'endDateTime': _endDate!.toIso8601String(),
           'displayOrder': int.tryParse(_orderCtrl.text.trim()) ?? 0,
-          'useDateValidation': _useDateValidation,
-          'useThresholdValidation': _useThresholdValidation,
-          'useCombinedValidation': _useCombinedValidation,
+          'mustThreshold': int.tryParse(_mustThresholdCtrl.text.trim()) ?? 0,
+          'individualThreshold': int.tryParse(_indThresholdCtrl.text.trim()) ?? 0,
+          'groupThreshold': int.tryParse(_grpThresholdCtrl.text.trim()) ?? 0,
         }),
       );
 
@@ -305,57 +192,7 @@ class _EditStagePageState extends State<EditStagePage> {
                       },
                     ),
                     const SizedBox(height: 20),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text('Start Date *', style: TextStyle(fontWeight: FontWeight.bold, color: _dark)),
-                              const SizedBox(height: 8),
-                              OutlinedButton.icon(
-                                onPressed: () => _selectStartDate(context),
-                                icon: const Icon(Icons.calendar_today, size: 16),
-                                label: Text(
-                                  _startDate == null ? 'Select Date & Time' : DateFormat('dd MMM yyyy, HH:mm').format(_startDate!),
-                                  style: const TextStyle(fontSize: 14),
-                                ),
-                                style: OutlinedButton.styleFrom(
-                                  padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                  foregroundColor: _startDate == null ? Colors.grey.shade700 : _primary,
-                                  side: BorderSide(color: _startDate == null ? Colors.grey.shade400 : _primary),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text('End Date *', style: TextStyle(fontWeight: FontWeight.bold, color: _dark)),
-                              const SizedBox(height: 8),
-                              OutlinedButton.icon(
-                                onPressed: () => _selectEndDate(context),
-                                icon: const Icon(Icons.calendar_today, size: 16),
-                                label: Text(
-                                  _endDate == null ? 'Select Date & Time' : DateFormat('dd MMM yyyy, HH:mm').format(_endDate!),
-                                  style: const TextStyle(fontSize: 14),
-                                ),
-                                style: OutlinedButton.styleFrom(
-                                  padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                  foregroundColor: _endDate == null ? Colors.grey.shade700 : _primary,
-                                  side: BorderSide(color: _endDate == null ? Colors.grey.shade400 : _primary),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
+                    const SizedBox(height: 24),
                     const SizedBox(height: 24),
                     TextFormField(
                       controller: _orderCtrl,
@@ -375,9 +212,7 @@ class _EditStagePageState extends State<EditStagePage> {
                         return null;
                       },
                     ),
-                    const SizedBox(height: 20),
-
-                    // Stage Unlock Rules Section
+                    // Subgroup Thresholds Section
                     Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
@@ -392,35 +227,43 @@ class _EditStagePageState extends State<EditStagePage> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           const Text(
-                            'Stage Unlock Rules',
+                            'Subgroup Thresholds',
                             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: _dark),
                           ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Students must complete all required subgroup thresholds before promoting to the next stage.',
+                            style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                          ),
                           const SizedBox(height: 16),
-                          SwitchListTile(
-                            contentPadding: EdgeInsets.zero,
-                            title: const Text('Use Start & End Date/Time', style: TextStyle(fontWeight: FontWeight.bold)),
-                            subtitle: const Text('Students can access this stage only during the configured Start DateTime and End DateTime.', style: TextStyle(fontSize: 12)),
-                            value: _useDateValidation,
-                            activeThumbColor: _primary,
-                            onChanged: (val) => setState(() => _useDateValidation = val),
+                          TextFormField(
+                            controller: _mustThresholdCtrl,
+                            keyboardType: TextInputType.number,
+                            decoration: InputDecoration(
+                              labelText: 'Must Threshold',
+                              hintText: 'e.g. 50',
+                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                            ),
                           ),
-                          const Divider(),
-                          SwitchListTile(
-                            contentPadding: EdgeInsets.zero,
-                            title: const Text('Require Threshold Completion', style: TextStyle(fontWeight: FontWeight.bold)),
-                            subtitle: const Text('Students must complete all required subgroup thresholds before this stage unlocks.', style: TextStyle(fontSize: 12)),
-                            value: _useThresholdValidation,
-                            activeThumbColor: _primary,
-                            onChanged: (val) => setState(() => _useThresholdValidation = val),
+                          const SizedBox(height: 12),
+                          TextFormField(
+                            controller: _indThresholdCtrl,
+                            keyboardType: TextInputType.number,
+                            decoration: InputDecoration(
+                              labelText: 'Individual Threshold',
+                              hintText: 'e.g. 100',
+                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                            ),
                           ),
-                          const Divider(),
-                          SwitchListTile(
-                            contentPadding: EdgeInsets.zero,
-                            title: const Text('Require BOTH Date & Threshold', style: TextStyle(fontWeight: FontWeight.bold)),
-                            subtitle: const Text('Students must satisfy BOTH Date & Time AND Thresholds before the stage unlocks.', style: TextStyle(fontSize: 12)),
-                            value: _useCombinedValidation,
-                            activeThumbColor: _primary,
-                            onChanged: (val) => setState(() => _useCombinedValidation = val),
+                          const SizedBox(height: 12),
+                          TextFormField(
+                            controller: _grpThresholdCtrl,
+                            keyboardType: TextInputType.number,
+                            decoration: InputDecoration(
+                              labelText: 'Group Threshold',
+                              hintText: 'e.g. 150',
+                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                            ),
                           ),
                         ],
                       ),

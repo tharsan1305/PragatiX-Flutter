@@ -333,7 +333,7 @@ class ActivityFormState extends State<ActivityForm> {
     if (widget.isCc) {
       return widget.sections.where((s) {
         final sName = s['sectionName']?.toString().trim().toLowerCase() ?? '';
-        final sDeptId = s['department'] != null ? s['department']['id'] : null;
+        final sDeptId = s['departmentId'];
 
         final targetSection = _ccSection?.trim().toLowerCase() ?? '';
         final targetDeptId = _ccDeptId;

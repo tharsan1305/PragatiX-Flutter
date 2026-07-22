@@ -8,6 +8,9 @@ import 'package:spdms_app/shared/widgets/profile_header.dart';
 import 'package:spdms_app/shared/widgets/shared_profile_card.dart';
 import 'package:spdms_app/shared/widgets/shared_logout_button.dart';
 import 'package:spdms_app/core/di/service_locator.dart';
+import 'package:provider/provider.dart';
+import 'package:spdms_app/features/attendance/providers/attendance_provider.dart';
+import 'package:spdms_app/features/attendance/widgets/fire_streak_icon.dart';
 
 class ProfileTab extends StatefulWidget {
   const ProfileTab({super.key, });
@@ -101,6 +104,18 @@ class _ProfileTabState extends State<ProfileTab> {
         ),
         backgroundColor: const Color(0xFF1E293B),
         elevation: 0,
+        actions: [
+          Consumer<AttendanceProvider>(
+            builder: (context, provider, child) {
+              return Center(
+                child: Padding(
+                  padding: const EdgeInsets.only(right: 16.0),
+                  child: FireStreakIcon(streakCount: provider.currentStreak),
+                ),
+              );
+            },
+          ),
+        ],
       ),
       body: SingleChildScrollView(
         physics: const BouncingScrollPhysics(),

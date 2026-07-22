@@ -4,6 +4,7 @@ import 'package:spdms_app/core/config/api_config.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:spdms_app/core/utils/error_handler.dart';
 import 'package:spdms_app/features/teacher/services/teacher_proxy_service.dart';
 import 'package:spdms_app/shared/widgets/shared_student_card.dart';
 import 'package:file_picker/file_picker.dart';
@@ -426,7 +427,24 @@ class _StudentsTabState extends State<StudentsTab> {
       setState(() => isLoading = false);
 
       if (response.statusCode == 200 && data['success'] == true) {
-        List<dynamic> parsedStudents = data['data'] ?? [];
+        List<dynamic> allRows = data['data'] ?? [];
+        List<dynamic> rejectedRows = allRows.where((s) => s['errorReason'] != null && s['errorReason'].toString().isNotEmpty).toList();
+        List<dynamic> parsedStudents = allRows.where((s) => s['errorReason'] == null || s['errorReason'].toString().isEmpty).toList();
+
+        if (rejectedRows.isNotEmpty && mounted) {
+          String reasons = rejectedRows.map((r) => '${r['fullName']} (${r['regNo']}): ${r['errorReason']}').join('\n\n');
+          showDialog(
+            context: context,
+            builder: (ctx) => AlertDialog(
+              title: const Text('Some Rows Rejected'),
+              content: SingleChildScrollView(child: Text(reasons)),
+              actions: [
+                TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('OK'))
+              ],
+            ),
+          );
+        }
+
         if (parsedStudents.isEmpty) {
           messenger.showSnackBar(
             const SnackBar(content: Text('No valid student records found in the Excel sheet.'), backgroundColor: Colors.orange),

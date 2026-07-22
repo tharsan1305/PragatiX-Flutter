@@ -12,7 +12,7 @@ class AddStudentDialog extends StatefulWidget {
   final List<dynamic> semesters;
   final List<dynamic> genders;
   final List<dynamic> groups;
-  final Future<void> Function(int?, void Function(void Function())) fetchSectionsForDept;
+  final Future<List<dynamic>> Function(int?) fetchSectionsForDept;
   final Future<void> Function({
     required int? departmentId,
     required int? academicYearId,
@@ -81,10 +81,17 @@ class _AddStudentDialogState extends State<AddStudentDialog> {
   @override
   Widget build(BuildContext context) {
     if (lastFetchedDeptId != selectedDeptId) {
-      Future.microtask(() => widget.fetchSectionsForDept(selectedDeptId, setState));
+      Future.microtask(() async {
+        final list = await widget.fetchSectionsForDept(selectedDeptId);
+        if (mounted) {
+          setState(() {
+            dialogSections = list;
+          });
+        }
+      });
       lastFetchedDeptId = selectedDeptId;
     }
-    
+
     final filteredSections = dialogSections;
     if (selectedSectionId != null && !filteredSections.any((sec) => sec['id'] == selectedSectionId)) {
       selectedSectionId = null;

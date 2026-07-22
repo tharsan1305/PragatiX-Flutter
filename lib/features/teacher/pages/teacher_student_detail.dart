@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:spdms_app/core/config/api_config.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:spdms_app/core/utils/error_handler.dart';
 import 'package:spdms_app/features/teacher/services/teacher_proxy_service.dart';
 import 'package:spdms_app/core/di/service_locator.dart';
 
@@ -107,12 +108,7 @@ class _TeacherStudentDetailState extends State<TeacherStudentDetail> {
       }
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Network error: Could not connect to backend.'),
-          backgroundColor: Colors.orange,
-        ),
-      );
+      ErrorHandler.showSnackBar(context, e);
     }
   }
 
@@ -147,12 +143,7 @@ class _TeacherStudentDetailState extends State<TeacherStudentDetail> {
       }
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Network error: Could not connect to backend.'),
-          backgroundColor: Colors.orange,
-        ),
-      );
+      ErrorHandler.showSnackBar(context, e);
     }
   }
 
@@ -195,12 +186,7 @@ class _TeacherStudentDetailState extends State<TeacherStudentDetail> {
       }
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Network error adjusting points'),
-          backgroundColor: Colors.orange,
-        ),
-      );
+      ErrorHandler.showSnackBar(context, e);
     }
   }
 

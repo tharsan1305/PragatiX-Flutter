@@ -10,13 +10,17 @@ import 'package:spdms_app/features/activity/widgets/sticky_bottom_buttons.dart';
 
 class CreateActivityPage extends StatefulWidget {
   final ActivityProvider provider;
-  final int subgroupId;
+  final int? stageId;
+  final int? subgroupId;
+  final String? subgroupName;
   final bool isCc;
 
   const CreateActivityPage({
     super.key,
     required this.provider,
-    required this.subgroupId,
+    this.stageId,
+    this.subgroupId,
+    this.subgroupName,
     this.isCc = false,
   });
 
@@ -62,8 +66,11 @@ class _CreateActivityPageState extends State<CreateActivityPage>
       return;
     }
 
-    final ok =
-        await widget.provider.createActivity(widget.subgroupId, body);
+    body['stageId'] = widget.stageId;
+    body['subgroupId'] = widget.subgroupId;
+    body['subgroup'] = widget.subgroupName;
+
+    final ok = await widget.provider.createActivity(body);
 
     if (!mounted) return;
 

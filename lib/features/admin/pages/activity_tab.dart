@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:spdms_app/core/utils/error_handler.dart';
 import 'package:spdms_app/features/admin/repository/admin_repository.dart';
 import 'package:intl/intl.dart';
 import 'package:spdms_app/features/activity/pages/stage_details_page.dart';
 import 'package:spdms_app/features/activity/pages/create_stage_page.dart';
 import 'package:spdms_app/features/activity/pages/edit_stage_page.dart';
 import 'package:spdms_app/core/di/service_locator.dart';
+import 'package:spdms_app/features/activity/pages/global_activity_page.dart' as spdms_app;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Activity Tab – Stage list with create / edit / delete.
@@ -59,9 +61,7 @@ class _ActivityTabState extends State<ActivityTab> {
       return;
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Network Error: '), backgroundColor: Colors.redAccent),
-      );
+      ErrorHandler.showSnackBar(context, e);
       setState(() {
         _stagesList = [];
         _isLoading = false;
@@ -82,24 +82,11 @@ class _ActivityTabState extends State<ActivityTab> {
       _fetchStages();
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Network Error: '), backgroundColor: Colors.redAccent),
-      );
+      ErrorHandler.showSnackBar(context, e);
     }
   }
 
-  String _formatDuration(String? start, String? end) {
-    if (start == null || end == null || start.isEmpty || end.isEmpty) {
-      return 'No duration set';
-    }
-    try {
-      final s = DateTime.parse(start);
-      final e = DateTime.parse(end);
-      return '${DateFormat('dd MMM yyyy').format(s)} → ${DateFormat('dd MMM yyyy').format(e)}';
-    } catch (_) {
-      return '$start → $end';
-    }
-  }
+
 
   // ── Build ─────────────────────────────────────────────────────────────────
 
@@ -129,8 +116,11 @@ class _ActivityTabState extends State<ActivityTab> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  Wrap(
+                    alignment: WrapAlignment.spaceBetween,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    spacing: 8,
+                    runSpacing: 8,
                     children: [
                       const Text(
                         'Configure Stages & Thresholds',
@@ -140,26 +130,45 @@ class _ActivityTabState extends State<ActivityTab> {
                           color: _dark,
                         ),
                       ),
-                      ElevatedButton.icon(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const CreateStagePage(),
-                            ),
-                          ).then((value) {
-                            if (value == true) {
-                              setState(() => _isLoading = true);
-                              _fetchStages();
-                            }
-                          });
-                        },
-                        icon: const Icon(Icons.add,
-                            color: Colors.white, size: 18),
-                        label: const Text('Add Stage',
-                            style: TextStyle(color: Colors.white)),
-                        style: ElevatedButton.styleFrom(
-                            backgroundColor: _primary),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          ElevatedButton.icon(
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => const spdms_app.GlobalActivityPage(),
+                                ),
+                              ).then((value) {
+                                setState(() => _isLoading = true);
+                                _fetchStages();
+                              });
+                            },
+                            icon: const Icon(Icons.list_alt, color: Colors.white, size: 18),
+                            label: const Text('All Activities', style: TextStyle(color: Colors.white)),
+                            style: ElevatedButton.styleFrom(backgroundColor: Colors.blue),
+                          ),
+                          ElevatedButton.icon(
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => const CreateStagePage(),
+                                ),
+                              ).then((value) {
+                                if (value == true) {
+                                  setState(() => _isLoading = true);
+                                  _fetchStages();
+                                }
+                              });
+                            },
+                            icon: const Icon(Icons.add, color: Colors.white, size: 18),
+                            label: const Text('Add Stage', style: TextStyle(color: Colors.white)),
+                            style: ElevatedButton.styleFrom(backgroundColor: _primary),
+                          ),
+                        ],
                       ),
                     ],
                   ),
@@ -173,10 +182,12 @@ class _ActivityTabState extends State<ActivityTab> {
                         final name = stage['name'] as String? ?? '';
                         final desc = stage['description'] as String? ??
                             'No description';
-                        final subgroups =
-                            stage['subgroups'] as List<dynamic>? ?? [];
                         final String statusStr = stage['status'] as String? ?? 'UPCOMING';
                         final displayOrder = stage['displayOrder'] ?? 0;
+                        final expectedXp = stage['expectedXp'] ?? 0;
+                        final mThresh = stage['mustThreshold'] ?? 0;
+                        final iThresh = stage['individualThreshold'] ?? 0;
+                        final gThresh = stage['groupThreshold'] ?? 0;
 
                         return Card(
                           elevation: 3,
@@ -224,10 +235,11 @@ class _ActivityTabState extends State<ActivityTab> {
                                             Container(
                                               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                               decoration: BoxDecoration(
-                                                color: statusStr == 'ACTIVE' ? Colors.green.shade50 : (statusStr == 'UPCOMING' ? Colors.blue.shade50 : Colors.grey.shade100),
-                                                borderRadius: BorderRadius.circular(8),
+                                                color: statusStr == 'ACTIVE' ? Colors.green.shade50 : Colors.grey.shade100,
+                                                borderRadius: BorderRadius.circular(4),
                                                 border: Border.all(
-                                                  color: statusStr == 'ACTIVE' ? Colors.green.shade300 : (statusStr == 'UPCOMING' ? Colors.blue.shade300 : Colors.grey.shade400),
+                                                  color: statusStr == 'ACTIVE' ? Colors.green.shade300 : Colors.grey.shade400,
+                                                  width: 1,
                                                 ),
                                               ),
                                               child: Text(
@@ -266,28 +278,63 @@ class _ActivityTabState extends State<ActivityTab> {
                                                     fontWeight: FontWeight.bold),
                                               ),
                                             ),
-                                            Row(
-                                              mainAxisSize: MainAxisSize.min,
-                                              children: [
-                                                const Icon(Icons.access_time_rounded, size: 14, color: Colors.blue),
-                                                const SizedBox(width: 4),
-                                                Text(
-                                                  _formatDuration(stage['startDate'] as String?, stage['endDate'] as String?),
-                                                  style: TextStyle(
-                                                      fontSize: 12,
-                                                      color: Colors.grey.shade700,
-                                                      fontWeight: FontWeight.w500),
-                                                ),
-                                              ],
+                                            Container(
+                                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                              decoration: BoxDecoration(
+                                                color: Colors.blue.shade50,
+                                                borderRadius: BorderRadius.circular(4),
+                                              ),
+                                              child: Text(
+                                                'XP: $expectedXp',
+                                                style: TextStyle(
+                                                    fontSize: 11,
+                                                    color: Colors.blue.shade800,
+                                                    fontWeight: FontWeight.bold),
+                                              ),
+                                            ),
+                                            Container(
+                                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                              decoration: BoxDecoration(
+                                                color: Colors.red.shade50,
+                                                borderRadius: BorderRadius.circular(4),
+                                              ),
+                                              child: Text(
+                                                'M: $mThresh',
+                                                style: TextStyle(
+                                                    fontSize: 11,
+                                                    color: Colors.red.shade800,
+                                                    fontWeight: FontWeight.bold),
+                                              ),
+                                            ),
+                                            Container(
+                                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                              decoration: BoxDecoration(
+                                                color: Colors.blue.shade50,
+                                                borderRadius: BorderRadius.circular(4),
+                                              ),
+                                              child: Text(
+                                                'I: $iThresh',
+                                                style: TextStyle(
+                                                    fontSize: 11,
+                                                    color: Colors.blue.shade800,
+                                                    fontWeight: FontWeight.bold),
+                                              ),
+                                            ),
+                                            Container(
+                                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                              decoration: BoxDecoration(
+                                                color: Colors.green.shade50,
+                                                borderRadius: BorderRadius.circular(4),
+                                              ),
+                                              child: Text(
+                                                'G: $gThresh',
+                                                style: TextStyle(
+                                                    fontSize: 11,
+                                                    color: Colors.green.shade800,
+                                                    fontWeight: FontWeight.bold),
+                                              ),
                                             ),
                                           ],
-                                        ),
-                                        Text(
-                                          '${subgroups.length} sub-branches configured',
-                                          style: const TextStyle(
-                                              fontSize: 13,
-                                              color: Colors.blue,
-                                              fontWeight: FontWeight.bold),
                                         ),
                                       ],
                                     ),

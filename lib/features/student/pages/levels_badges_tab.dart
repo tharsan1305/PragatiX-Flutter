@@ -3,8 +3,11 @@ import 'package:spdms_app/features/auth/providers/auth_provider.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:spdms_app/features/student/services/student_proxy_service.dart';
+import 'package:fl_chart/fl_chart.dart';
 import 'package:provider/provider.dart';
 import 'package:spdms_app/features/badge/providers/badge_provider.dart';
+import 'package:spdms_app/features/attendance/providers/attendance_provider.dart';
+import 'package:spdms_app/features/attendance/widgets/fire_streak_icon.dart';
 import 'package:spdms_app/core/di/service_locator.dart';
 
 class LevelsBadgesTab extends StatefulWidget {
@@ -257,6 +260,18 @@ class _LevelsBadgesTabState extends State<LevelsBadgesTab> with SingleTickerProv
         ),
         backgroundColor: appBarColor, // Dark slate AppBar matching dashboard
         elevation: 0,
+        actions: [
+          Consumer<AttendanceProvider>(
+            builder: (context, provider, child) {
+              return Center(
+                child: Padding(
+                  padding: const EdgeInsets.only(right: 16.0),
+                  child: FireStreakIcon(streakCount: provider.currentStreak),
+                ),
+              );
+            },
+          ),
+        ],
         bottom: TabBar(
           controller: _tabController,
           indicatorColor: const Color(0xFF6366F1),

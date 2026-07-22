@@ -37,7 +37,7 @@ class ActivityProvider extends ChangeNotifier {
     try {
       myActivities = await _repository.getMyActivities();
     } catch (e) {
-      error = e.toString();
+      error = e.toString().replaceAll('Exception: ', '');
       myActivities = [];
     } finally {
       isLoadingActivities = false;
@@ -46,14 +46,14 @@ class ActivityProvider extends ChangeNotifier {
   }
 
   // ── Load activities ───────────────────────────────────────────────────────
-  Future<void> loadActivities(int subgroupId) async {
+  Future<void> loadActivities({int? stageId, String? subgroupName}) async {
     isLoadingActivities = true;
     error = null;
     notifyListeners();
     try {
-      activities = await _repository.getActivities(subgroupId);
+      activities = await _repository.getActivities(stageId: stageId, subgroupName: subgroupName);
     } catch (e) {
-      error = e.toString();
+      error = e.toString().replaceAll('Exception: ', '');
       activities = [];
     } finally {
       isLoadingActivities = false;
@@ -99,13 +99,12 @@ class ActivityProvider extends ChangeNotifier {
   }
 
   // ── CRUD ──────────────────────────────────────────────────────────────────
-  Future<bool> createActivity(
-      int subgroupId, Map<String, dynamic> body) async {
+  Future<bool> createActivity(Map<String, dynamic> body, {int? stageId, String? subgroupName}) async {
     isSaving = true;
     error = null;
     notifyListeners();
     try {
-      final created = await _repository.create(subgroupId, body);
+      final created = await _repository.create(body, stageId: stageId, subgroupName: subgroupName);
       activities = [...activities, created];
       return true;
     } catch (e) {
@@ -151,28 +150,18 @@ class ActivityProvider extends ChangeNotifier {
       notifyListeners();
     }
   }
-
-  Future<void> deleteActivity(int activityId) async {
-    try {
-      await _repository.delete(activityId);
-    } catch (_) {
-      // Optimistic removal even if API fails
-    } finally {
-      activities = activities.where((a) => a.id != activityId).toList();
-      notifyListeners();
-    }
-  }
-
-  Future<bool> assignActivity(
-      int activityId, int? sectionId, int teacherId) async {
+  Future<bool> mapExistingActivityToStage(int stageId, ActivityModel activity, String subgroupName) async {
     isSaving = true;
     error = null;
     notifyListeners();
     try {
-      await _repository.assign(activityId, sectionId, teacherId);
+      await _repository.mapActivityToStage(stageId, activity.id, subgroupName);
+      
+      // Refresh list directly from backend to ensure all properties (like subgroup ids) are updated
+      await loadActivities(stageId: stageId, subgroupName: subgroupName);
       return true;
     } catch (e) {
-      error = e.toString();
+      error = e.toString().replaceAll('Exception: ', '');
       return false;
     } finally {
       isSaving = false;
@@ -180,13 +169,82 @@ class ActivityProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> saveAssignments(
-      int activityId, bool globalEnabled, List<Map<String, dynamic>> assignments, {bool ccEnabled = false}) async {
+  Future<void> deleteActivity(int activityId, {bool force = false}) async {
+    try {
+      await _repository.delete(activityId, force: force);
+      await loadActivities(); // Full refresh
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<void> unmapActivityFromStage(int stageId, int activityId) async {
+    try {
+      await _repository.unmapActivityFromStage(stageId, activityId);
+    } catch (e) {
+      error = e.toString().replaceAll('Exception: ', '');
+      rethrow;
+    } finally {
+      await loadActivities(stageId: stageId); // Full refresh
+    }
+  }
+
+  Future<List<dynamic>> getAssignments(int activityId) async {
+    return await _repository.getAssignments(activityId);
+  }
+
+  Future<void> addAssignment(
+      int activityId, int departmentId, String year, int? sectionId, int? teacherId, String scope) async {
     isSaving = true;
     error = null;
     notifyListeners();
     try {
-      await _repository.saveAssignments(activityId, globalEnabled, assignments, ccEnabled: ccEnabled);
+      await _repository.addAssignment(activityId, departmentId, year, sectionId, teacherId, scope);
+    } catch (e) {
+      error = e.toString();
+      rethrow;
+    } finally {
+      isSaving = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> removeAssignment(int assignmentId) async {
+    isSaving = true;
+    error = null;
+    notifyListeners();
+    try {
+      await _repository.removeAssignment(assignmentId);
+    } catch (e) {
+      error = e.toString();
+      rethrow;
+    } finally {
+      isSaving = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> clearAllAssignments(int activityId) async {
+    isSaving = true;
+    error = null;
+    notifyListeners();
+    try {
+      await _repository.clearAllAssignments(activityId);
+    } catch (e) {
+      error = e.toString();
+      rethrow;
+    } finally {
+      isSaving = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> assignActivity(int activityId, bool ccEnabled, bool globalEnabled) async {
+    isSaving = true;
+    error = null;
+    notifyListeners();
+    try {
+      await _repository.assignActivity(activityId, ccEnabled, globalEnabled);
     } catch (e) {
       error = e.toString();
       rethrow;

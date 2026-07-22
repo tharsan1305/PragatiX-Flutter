@@ -6,8 +6,8 @@ import 'package:spdms_app/features/activity/pages/create_activity_page.dart';
 import 'package:spdms_app/features/activity/pages/edit_activity_page.dart';
 import 'package:spdms_app/features/activity/pages/activity_execution_page.dart';
 import 'package:spdms_app/features/activity/pages/group_activity_year_page.dart';
-import 'package:spdms_app/features/activity/pages/admin_activity_detail_page.dart';
-import 'package:spdms_app/features/activity/pages/assign_faculty_page.dart';
+import 'package:spdms_app/features/activity/pages/assign_staff_page.dart';
+import 'package:spdms_app/features/activity/repository/activity_repository.dart';
 import 'package:spdms_app/core/di/service_locator.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -17,6 +17,7 @@ import 'package:spdms_app/core/di/service_locator.dart';
 
 class ActivityListPage extends StatefulWidget {
   final int subgroupId;
+  final int? stageId;
   final String subgroupName;
   final String subgroupCategory;
   final List<dynamic> teachersList;
@@ -27,8 +28,8 @@ class ActivityListPage extends StatefulWidget {
 
   const ActivityListPage({
     super.key,
-    
     required this.subgroupId,
+    this.stageId,
     required this.subgroupName,
     required this.subgroupCategory,
     required this.teachersList,
@@ -80,7 +81,7 @@ class _ActivityListPageState extends State<ActivityListPage> {
     if (widget.isMyActivitiesOnly) {
       _provider.loadMyActivities();
     } else {
-      _provider.loadActivities(widget.subgroupId);
+      _provider.loadActivities(stageId: widget.stageId);
     }
     _provider.loadDependencies();
   }
@@ -93,21 +94,23 @@ class _ActivityListPageState extends State<ActivityListPage> {
 
   // ── Navigation ────────────────────────────────────────────────────────────
   Future<void> _openCreate() async {
-    final saved = await Navigator.push<bool>(
+    await Navigator.push<bool>(
       context,
       MaterialPageRoute(
         builder: (_) => CreateActivityPage(
           provider: _provider,
+          stageId: widget.stageId,
           subgroupId: widget.subgroupId,
+          subgroupName: widget.subgroupName,
           isCc: widget.isCc,
         ),
       ),
     );
-    if (saved == true && mounted) {
+    if (mounted) {
       if (widget.isMyActivitiesOnly) {
         await _provider.loadMyActivities();
       } else {
-        await _provider.loadActivities(widget.subgroupId);
+        await _provider.loadActivities(stageId: widget.stageId);
       }
       if (widget.isAdmin && _provider.activities.isNotEmpty) {
         final newAct = _provider.activities.last;
@@ -117,26 +120,20 @@ class _ActivityListPageState extends State<ActivityListPage> {
   }
 
   Future<void> _openAssign(ActivityModel activity) async {
-    final saved = await Navigator.push<bool>(
+    await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => AssignFacultyPage(
+        builder: (_) => AssignStaffPage(
           provider: _provider,
           activity: activity,
         ),
       ),
     );
-    if (saved == true && mounted) {
-      if (widget.isMyActivitiesOnly) {
-        await _provider.loadMyActivities();
-      } else {
-        await _provider.loadActivities(widget.subgroupId);
-      }
-    }
+    _provider.loadActivities(stageId: widget.stageId, subgroupName: widget.subgroupName);
   }
 
   Future<void> _openEdit(ActivityModel activity) async {
-    final saved = await Navigator.push<bool>(
+    await Navigator.push<bool>(
       context,
       MaterialPageRoute(
         builder: (_) => EditActivityPage(
@@ -146,25 +143,144 @@ class _ActivityListPageState extends State<ActivityListPage> {
         ),
       ),
     );
-    if (saved == true && mounted) {
+    if (mounted) {
       if (widget.isMyActivitiesOnly) {
         await _provider.loadMyActivities();
       } else {
-        await _provider.loadActivities(widget.subgroupId);
+        await _provider.loadActivities(stageId: widget.stageId);
       }
     }
   }
 
-  void _confirmDelete(ActivityModel activity) {
+  void _showAddActivityOptions() {
+    if (widget.stageId == null) {
+      _openCreate();
+      return;
+    }
+    
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Padding(
+              padding: EdgeInsets.all(16),
+              child: Text(
+                'Add Activity',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+            ),
+            ListTile(
+              leading: const Icon(Icons.add_circle_outline, color: _primary),
+              title: const Text('Create New Activity'),
+              subtitle: const Text('Create a brand new activity for this stage'),
+              onTap: () {
+                Navigator.pop(ctx);
+                _openCreate();
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.list_alt, color: _primary),
+              title: const Text('Add Existing Activity'),
+              subtitle: const Text('Select from activities already in the system'),
+              onTap: () {
+                Navigator.pop(ctx);
+                _openAddExisting();
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _openAddExisting() async {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => const Center(child: CircularProgressIndicator()),
+    );
+
+    try {
+      final allRaw = await getIt<ActivityRepository>().getActivities();
+      if (!mounted) return;
+      Navigator.pop(context); // close loading
+
+      final existingIds = _provider.activities.map((a) => a.id).toSet();
+      final available = allRaw.where((a) => !existingIds.contains(a.id)).toList();
+
+      if (available.isEmpty) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No available activities found.')),
+        );
+        return;
+      }
+
+      showDialog(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('Select Activity'),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: ListView.builder(
+              shrinkWrap: true,
+              itemCount: available.length,
+              itemBuilder: (context, index) {
+                final act = available[index];
+                return ListTile(
+                  title: Text(act.name),
+                  subtitle: Text(act.description ?? ''),
+                  onTap: () async {
+                    Navigator.pop(ctx);
+                    final success = await _provider.mapExistingActivityToStage(
+                      widget.stageId!,
+                      act,
+                      widget.subgroupName ?? 'MUST',
+                    );
+                    if (success && mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Activity mapped successfully'), backgroundColor: Colors.green),
+                      );
+                    }
+                  },
+                );
+              },
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancel'),
+            ),
+          ],
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      Navigator.pop(context); // close loading
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error loading activities: $e')),
+      );
+    }
+  }
+
+  void _confirmDelete(ActivityModel activity, {bool isGlobalDelete = false}) {
     showDialog<void>(
       context: context,
       builder: (ctx) => AlertDialog(
         shape:
             RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('Delete Activity',
-            style: TextStyle(fontWeight: FontWeight.bold)),
+        title: Text(isGlobalDelete ? 'Delete from System' : 'Remove Activity',
+            style: const TextStyle(fontWeight: FontWeight.bold)),
         content:
-            Text("Are you sure you want to delete '${activity.name}'?"),
+            Text(isGlobalDelete 
+              ? "Are you sure you want to completely delete '${activity.name}' from the entire system? This is permanent."
+              : "Are you sure you want to remove '${activity.name}' from this stage?"),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
@@ -173,17 +289,83 @@ class _ActivityListPageState extends State<ActivityListPage> {
           TextButton(
             onPressed: () async {
               Navigator.pop(ctx);
-              await _provider.deleteActivity(activity.id);
-              if (!mounted) return;
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Activity deleted'),
-                  backgroundColor: Colors.green,
-                ),
-              );
+              if (!isGlobalDelete && widget.stageId != null) {
+                try {
+                  await _provider.unmapActivityFromStage(widget.stageId!, activity.id);
+                  if (!mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Activity removed from stage'),
+                      backgroundColor: Colors.green,
+                    ),
+                  );
+                } catch (e) {
+                  if (!mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(e.toString().replaceAll('Exception: ', '')),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              } else {
+                _executeGlobalDelete(activity, force: false);
+              }
             },
             child:
-                const Text('Delete', style: TextStyle(color: Colors.red)),
+                Text(isGlobalDelete ? 'Delete Everywhere' : 'Remove from Stage', style: const TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _executeGlobalDelete(ActivityModel activity, {bool force = false}) async {
+    try {
+      await _provider.deleteActivity(activity.id, force: force);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Activity deleted everywhere'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      final errorStr = e.toString();
+      if (errorStr.contains('409:')) {
+        final msg = errorStr.split('409:').last;
+        if (mounted) {
+          _showDependencyDialog(activity, msg);
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Error: $errorStr')),
+          );
+        }
+      }
+    }
+  }
+
+  void _showDependencyDialog(ActivityModel activity, String message) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Cannot Delete Activity'),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              _executeGlobalDelete(activity, force: true);
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            child: const Text('Force Delete'),
           ),
         ],
       ),
@@ -216,7 +398,7 @@ class _ActivityListPageState extends State<ActivityListPage> {
           : null,
       floatingActionButton: widget.isAdmin
           ? FloatingActionButton.extended(
-              onPressed: _openCreate,
+              onPressed: _showAddActivityOptions,
               backgroundColor: _primary,
               foregroundColor: Colors.white,
               icon: const Icon(Icons.add_rounded),
@@ -231,9 +413,18 @@ class _ActivityListPageState extends State<ActivityListPage> {
             return const Center(child: CircularProgressIndicator());
           }
 
-          final list = widget.isMyActivitiesOnly
-              ? _provider.myActivities.map((e) => e.toActivityModel()).toList()
-              : _provider.activities;
+          final baseList = widget.isMyActivitiesOnly 
+              ? _provider.myActivities.map((e) => e.toActivityModel()).toList() 
+              : _provider.activities.where((a) {
+                  if (a.subgroup == null) return false;
+                  final sub = a.subgroup!.toUpperCase();
+                  if (_categoryLabel == 'MUST') return sub.contains('MUST') || sub == 'M';
+                  if (_categoryLabel == 'GROUP') return sub.contains('GROUP') || sub == 'G';
+                  if (_categoryLabel == 'INDIVIDUAL') return sub.contains('INDIVIDUAL') || sub == 'I';
+                  return false;
+                }).toList();
+                
+          final list = baseList;
 
           return CustomScrollView(
             slivers: [
@@ -258,23 +449,14 @@ class _ActivityListPageState extends State<ActivityListPage> {
                         return ActivityCard(
                           activity: act,
                           onEdit: () => _openEdit(act),
-                          onDelete: () => _confirmDelete(act),
+                          onRemoveFromStage: () => _confirmDelete(act, isGlobalDelete: false),
+                          onDelete: () => _confirmDelete(act, isGlobalDelete: true),
                           onAssign: widget.isAdmin ? () => _openAssign(act) : null,
                           isCc: widget.isCc,
                           isReadOnly: widget.isMyActivitiesOnly,
+                          showGlobalActions: true,
                           onTap: widget.isAdmin
-                              ? () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (_) => AdminActivityDetailPage(
-                                        
-                                        activity: act,
-                                        subgroupId: widget.subgroupId,
-                                      ),
-                                    ),
-                                  );
-                                }
+                              ? null
                               : (widget.isMyActivitiesOnly
                                   ? () {
                                       Navigator.push(
@@ -384,7 +566,7 @@ class _ActivityListPageState extends State<ActivityListPage> {
               size: 64, color: Colors.grey.shade300),
           const SizedBox(height: 16),
           Text(
-            widget.isMyActivitiesOnly ? 'No activities assigned.' : 'No activities yet',
+            widget.isMyActivitiesOnly ? 'No activities assigned.' : 'No activities mapped to this stage',
             style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
@@ -426,7 +608,7 @@ class _ActivityListPageState extends State<ActivityListPage> {
                   if (widget.isMyActivitiesOnly) {
                     _provider.loadMyActivities();
                   } else {
-                    _provider.loadActivities(widget.subgroupId);
+                    _provider.loadActivities(stageId: widget.stageId);
                   }
                 },
                 child: const Text('Retry'),

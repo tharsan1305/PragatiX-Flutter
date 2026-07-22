@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:spdms_app/core/utils/error_handler.dart';
 import 'package:spdms_app/features/admin/repository/admin_repository.dart';
 import 'package:spdms_app/core/di/service_locator.dart';
 
@@ -181,9 +182,7 @@ class _TeachersTabState extends State<TeachersTab> {
       _fetchTeachers();
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Network Error: ' + e.toString()), backgroundColor: Colors.redAccent),
-      );
+      ErrorHandler.showSnackBar(context, e);
     }
   }
 
@@ -221,9 +220,7 @@ class _TeachersTabState extends State<TeachersTab> {
       _fetchTeachers();
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Network Error: $e'), backgroundColor: Colors.redAccent),
-      );
+      ErrorHandler.showSnackBar(context, e);
     }
   }
 
@@ -238,9 +235,7 @@ class _TeachersTabState extends State<TeachersTab> {
       _fetchTeachers();
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Network Error: $e'), backgroundColor: Colors.redAccent),
-      );
+      ErrorHandler.showSnackBar(context, e);
     }
   }
 
@@ -255,9 +250,7 @@ class _TeachersTabState extends State<TeachersTab> {
       _loadMetadata();
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Network Error: $e'), backgroundColor: Colors.redAccent),
-      );
+      ErrorHandler.showSnackBar(context, e);
     }
   }
 
@@ -271,9 +264,7 @@ class _TeachersTabState extends State<TeachersTab> {
       _loadMetadata();
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Network Error: ' + e.toString()), backgroundColor: Colors.redAccent),
-      );
+      ErrorHandler.showSnackBar(context, e);
     }
   }
 

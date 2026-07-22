@@ -1,7 +1,7 @@
 import 'package:spdms_app/core/config/api_config.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
+import 'package:spdms_app/core/utils/api_client.dart' as http;
 
 class XpProvider extends ChangeNotifier {
   Map<String, int> _xpByCategory = {};

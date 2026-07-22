@@ -8,7 +8,8 @@ import 'package:spdms_app/features/teacher/pages/performance_activities_tab.dart
 import 'package:spdms_app/features/teacher/pages/leaderboard_tab.dart';
 import 'package:spdms_app/features/teacher/pages/profile_tab.dart';
 import 'package:spdms_app/features/teacher/pages/hod_performance_tab.dart';
-import 'package:spdms_app/features/team/pages/team_removal_requests_tab.dart';
+import 'package:spdms_app/features/attendance/pages/teacher_attendance_tab.dart';
+
 import 'package:spdms_app/features/team/pages/team_group_management_tab.dart';
 import 'package:spdms_app/core/di/service_locator.dart';
 
@@ -50,7 +51,7 @@ class _TeacherDashboardState extends State<TeacherDashboard> {
         if (data['success'] == true) {
           final List<dynamic> subs = data['data']['subRoles'] ?? [];
           final List<dynamic> mainRoles = data['data']['roles'] ?? [];
-          
+          if (!mounted) return;
           setState(() {
             subRoles = [
               ...subs.map((e) => e.toString()),
@@ -65,6 +66,7 @@ class _TeacherDashboardState extends State<TeacherDashboard> {
     } catch (e) {
       // Catch
     }
+    if (!mounted) return;
     setState(() {
       isProfileLoading = false;
       _initializeScreens();
@@ -77,8 +79,8 @@ class _TeacherDashboardState extends State<TeacherDashboard> {
     setState(() {
       _screens = [
         PerformanceActivitiesTab( subRoles: subRoles),
+        const TeacherAttendanceTab(),
         const LeaderboardTab(),
-        const TeamRemovalRequestsTab(),
         const TeamGroupManagementTab(),
         if (subRoles.contains('HOD'))
           const HodPerformanceTab(),
@@ -101,13 +103,14 @@ class _TeacherDashboardState extends State<TeacherDashboard> {
         label: 'Events',
       ),
       const BottomNavigationBarItem(
+        icon: Icon(Icons.co_present_rounded),
+        label: 'Attendance',
+      ),
+      const BottomNavigationBarItem(
         icon: Icon(Icons.leaderboard_rounded),
         label: 'Leaderboard',
       ),
-      const BottomNavigationBarItem(
-        icon: Icon(Icons.pending_actions_rounded),
-        label: 'Requests',
-      ),
+
       const BottomNavigationBarItem(
         icon: Icon(Icons.groups_rounded),
         label: 'Groups',

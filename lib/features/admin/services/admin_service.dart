@@ -1,7 +1,8 @@
 import 'dart:convert';
-import 'package:http/http.dart' as http;
+import 'package:spdms_app/core/utils/api_client.dart' as http;
 import 'package:spdms_app/features/auth/providers/auth_provider.dart';
 import 'package:spdms_app/core/config/api_config.dart';
+import 'package:spdms_app/core/exceptions/api_exception.dart';
 
 class AdminService {
   final AuthProvider authProvider;

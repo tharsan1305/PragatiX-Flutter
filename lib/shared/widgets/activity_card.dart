@@ -10,10 +10,12 @@ class ActivityCard extends StatelessWidget {
   final ActivityModel activity;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
+  final VoidCallback? onRemoveFromStage;
   final VoidCallback? onAssign;
   final VoidCallback? onTap;
   final bool isCc;
   final bool isReadOnly;
+  final bool showGlobalActions;
 
   static const Color _dark = AppColors.darkSlate;
 
@@ -22,10 +24,12 @@ class ActivityCard extends StatelessWidget {
     required this.activity,
     required this.onEdit,
     required this.onDelete,
+    this.onRemoveFromStage,
     this.onAssign,
     this.onTap,
     this.isCc = false,
     this.isReadOnly = false,
+    this.showGlobalActions = false,
   });
 
   @override
@@ -63,25 +67,31 @@ class ActivityCard extends StatelessWidget {
                       icon: const Icon(Icons.assignment_ind_outlined,
                           color: Colors.green, size: 20),
                       onPressed: onAssign,
-                      tooltip: 'Assign Faculty',
+                      tooltip: 'Assign Staff',
                       visualDensity: VisualDensity.compact,
                       padding: EdgeInsets.zero,
                     ),
-                  IconButton(
-                    icon: Icon(
-                        isCc ? Icons.assignment_ind_outlined : Icons.edit_outlined,
-                        color: Colors.blue, size: 20),
-                    onPressed: onEdit,
-                    tooltip: isCc ? 'Assign Faculty/Owner' : 'Edit',
-                    visualDensity: VisualDensity.compact,
-                    padding: EdgeInsets.zero,
-                  ),
                   if (!isCc)
                     IconButton(
-                      icon: const Icon(Icons.delete_outline,
-                          color: Colors.red, size: 20),
+                      icon: const Icon(Icons.edit_outlined, color: Colors.blue, size: 20),
+                      onPressed: onEdit,
+                      tooltip: 'Edit Activity',
+                      visualDensity: VisualDensity.compact,
+                      padding: EdgeInsets.zero,
+                    ),
+                  if (onRemoveFromStage != null && !isCc)
+                    IconButton(
+                      icon: const Icon(Icons.remove_circle_outline, color: Colors.orange, size: 20),
+                      onPressed: onRemoveFromStage,
+                      tooltip: 'Remove from Stage',
+                      visualDensity: VisualDensity.compact,
+                      padding: EdgeInsets.zero,
+                    ),
+                  if (showGlobalActions || (onRemoveFromStage == null && !isCc))
+                    IconButton(
+                      icon: const Icon(Icons.delete_outline, color: Colors.red, size: 20),
                       onPressed: onDelete,
-                      tooltip: 'Delete',
+                      tooltip: 'Delete Activity',
                       visualDensity: VisualDensity.compact,
                       padding: EdgeInsets.zero,
                     ),

@@ -3,7 +3,7 @@ import 'package:spdms_app/features/student/pages/dashboard_tab.dart';
 import 'package:spdms_app/features/student/pages/point_review_tab.dart';
 import 'package:spdms_app/features/student/pages/leaderboard_tab.dart';
 import 'package:spdms_app/features/student/pages/profile_tab.dart';
-import 'package:spdms_app/features/captain/pages/captain_group_tab.dart';
+import 'package:spdms_app/features/captain/pages/student_group_tab.dart';
 import 'package:spdms_app/features/student/pages/levels_badges_tab.dart';
 
 class CaptainDashboardPage extends StatefulWidget {
@@ -24,7 +24,7 @@ class _CaptainDashboardPageState extends State<CaptainDashboardPage> {
       const DashboardTab(),
       const PointReviewTab(),
       const LeaderboardTab(),
-      const CaptainGroupTab(),
+      const StudentGroupTab(),
       const LevelsBadgesTab(),
       const ProfileTab(),
     ];

@@ -3,10 +3,13 @@ import 'package:spdms_app/core/config/api_config.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:spdms_app/features/student/services/student_proxy_service.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-import 'package:file_picker/file_picker.dart';
 import 'package:spdms_app/features/xp/providers/xp_provider.dart';
 import 'package:spdms_app/core/di/service_locator.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:spdms_app/features/attendance/providers/attendance_provider.dart';
+import 'package:spdms_app/features/attendance/widgets/fire_streak_icon.dart';
 
 class PointReviewTab extends StatefulWidget {
   const PointReviewTab({super.key, });
@@ -108,6 +111,18 @@ class _PointReviewTabState extends State<PointReviewTab> {
         ),
         backgroundColor: const Color(0xFF1E293B),
         elevation: 0,
+        actions: [
+          Consumer<AttendanceProvider>(
+            builder: (context, provider, child) {
+              return Center(
+                child: Padding(
+                  padding: const EdgeInsets.only(right: 16.0),
+                  child: FireStreakIcon(streakCount: provider.currentStreak),
+                ),
+              );
+            },
+          ),
+        ],
       ),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

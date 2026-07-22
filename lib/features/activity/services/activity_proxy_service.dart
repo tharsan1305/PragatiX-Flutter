@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'package:http/http.dart' as http;
+import 'package:spdms_app/core/utils/api_client.dart' as http;
 
 class ActivityProxyService {
   Future<http.Response> get(Uri url, {Map<String, String>? headers}) async {

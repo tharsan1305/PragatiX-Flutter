@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'package:http/http.dart' as http;
+import 'package:spdms_app/core/utils/api_client.dart' as http;
 import 'package:spdms_app/core/config/api_config.dart';
 
 class AuthService {

@@ -6,7 +6,10 @@ import 'package:spdms_app/features/student/services/student_proxy_service.dart';
 import 'package:provider/provider.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:spdms_app/features/xp/providers/xp_provider.dart';
-import 'package:spdms_app/features/captain/pages/captain_group_tab.dart';
+import 'package:spdms_app/features/badge/providers/badge_provider.dart';
+import 'package:spdms_app/features/attendance/providers/attendance_provider.dart';
+import 'package:spdms_app/features/attendance/widgets/fire_streak_icon.dart';
+import 'package:spdms_app/features/captain/pages/student_group_tab.dart';
 import 'package:spdms_app/core/di/service_locator.dart';
 
 class DashboardTab extends StatefulWidget {
@@ -176,6 +179,24 @@ class _DashboardTabState extends State<DashboardTab> {
         backgroundColor: const Color(0xFF1E293B),
         elevation: 0,
         actions: [
+          Consumer<XpProvider>(
+            builder: (context, provider, child) {
+              int maxStreak = 0;
+              for (var streak in provider.streaks) {
+                final int current = streak['currentStreak'] ?? 0;
+                final bool isBroken = streak['isBroken'] ?? false;
+                if (!isBroken && current > maxStreak) {
+                  maxStreak = current;
+                }
+              }
+              return Center(
+                child: Padding(
+                  padding: const EdgeInsets.only(right: 8.0),
+                  child: FireStreakIcon(streakCount: maxStreak),
+                ),
+              );
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.groups_rounded, color: Colors.white),
             tooltip: 'My Group',
@@ -183,7 +204,7 @@ class _DashboardTabState extends State<DashboardTab> {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => const CaptainGroupTab(),
+                  builder: (context) => const StudentGroupTab(),
                 ),
               );
             },
@@ -313,7 +334,7 @@ class _DashboardTabState extends State<DashboardTab> {
                     ),
                     const SizedBox(height: 12),
                     Text(
-                      '$score Points',
+                      '$totalXp Points',
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 36,

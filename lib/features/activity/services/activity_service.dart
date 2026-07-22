@@ -1,7 +1,7 @@
 
 import 'package:flutter/foundation.dart';
 import 'dart:convert';
-import 'package:http/http.dart' as http;
+import 'package:spdms_app/core/utils/api_client.dart' as http;
 import 'package:spdms_app/features/activity/utils/constants.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -23,20 +23,35 @@ class ActivityService {
         'Authorization': 'Bearer $token',
       };
 
-  Future<List<dynamic>> fetchActivities(int subgroupId) async {
-    final response = await http.get(
-      Uri.parse(
-          '${ActivityConstants.baseUrl}/subgroups/$subgroupId/activities'),
-      headers: _authHeaders,
-    );
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body) as Map<String, dynamic>;
-      if (data['success'] == true) {
-        return (data['data'] as List?) ?? [];
-      }
+  Future<List<dynamic>> fetchActivities({int? stageId, String? subgroupName}) async {
+    String url = stageId != null
+        ? '${ActivityConstants.baseUrl}/stages/$stageId/activities'
+        : '${ActivityConstants.baseUrl}/activities';
+    if (subgroupName != null) {
+      url += '?subgroup=$subgroupName';
     }
-    throw Exception(
-        'Failed to fetch activities (status ${response.statusCode})');
+    try {
+      final response = await http.get(
+        Uri.parse(url),
+        headers: _authHeaders,
+      );
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body) as Map<String, dynamic>;
+        if (data['success'] == true) {
+          return (data['data'] as List?) ?? [];
+        }
+      } else if (response.statusCode == 404) {
+        throw Exception('Stage not found.');
+      } else if (response.statusCode == 500) {
+        throw Exception('Unable to load activities.');
+      }
+      throw Exception('Failed to fetch activities (status ${response.statusCode})');
+    } catch (e) {
+      if (e is Exception && !e.toString().contains('SocketException')) {
+        rethrow;
+      }
+      throw Exception('Internet Connection Error');
+    }
   }
 
   Future<List<dynamic>> fetchDepartments() async {
@@ -112,11 +127,9 @@ class ActivityService {
     throw Exception(data['message'] ?? 'Failed to create custom frequency (status ${response.statusCode})');
   }
 
-  Future<Map<String, dynamic>> createActivity(
-      int subgroupId, Map<String, dynamic> body) async {
+  Future<Map<String, dynamic>> createActivity(Map<String, dynamic> body) async {
     final response = await http.post(
-      Uri.parse(
-          '${ActivityConstants.baseUrl}/subgroups/$subgroupId/activities'),
+      Uri.parse('${ActivityConstants.baseUrl}/activities'),
       headers: _jsonHeaders,
       body: jsonEncode(body),
     );
@@ -141,14 +154,40 @@ class ActivityService {
     throw Exception(data['message'] ?? 'Failed to update activity');
   }
 
-  Future<void> deleteActivity(int activityId) async {
+  Future<void> mapActivityToStage(int stageId, int activityId, String subgroup) async {
+    final response = await http.post(
+      Uri.parse('${ActivityConstants.baseUrl}/stages/$stageId/activities/$activityId?subgroup=$subgroup'),
+      headers: _authHeaders,
+    );
+    if (response.statusCode != 200 && response.statusCode != 201) {
+      final data = jsonDecode(response.body) as Map<String, dynamic>;
+      throw Exception(data['message'] ?? 'Failed to map activity to stage');
+    }
+  }
+
+  Future<void> unmapActivityFromStage(int stageId, int activityId) async {
     final response = await http.delete(
-      Uri.parse('${ActivityConstants.baseUrl}/activities/$activityId'),
+      Uri.parse('${ActivityConstants.baseUrl}/stages/$stageId/activities/$activityId'),
+      headers: _authHeaders,
+    );
+    if (response.statusCode != 200 && response.statusCode != 204) {
+      final data = jsonDecode(response.body) as Map<String, dynamic>;
+      throw Exception(data['message'] ?? 'Failed to unmap activity from stage');
+    }
+  }
+
+  Future<void> deleteActivity(int activityId, {bool force = false}) async {
+    final response = await http.delete(
+      Uri.parse('${ActivityConstants.baseUrl}/activities/$activityId?force=$force'),
       headers: _authHeaders,
     );
     if (response.statusCode != 200) {
-      throw Exception(
-          'Failed to delete activity (status ${response.statusCode})');
+      String message = 'Failed to delete activity';
+      try {
+        final data = jsonDecode(response.body);
+        message = data['message'] ?? message;
+      } catch (_) {}
+      throw Exception('${response.statusCode}:$message'); // We pack status code to avoid importing ApiException if it causes cyclic imports or just throw a custom formatted exception
     }
   }
 
@@ -168,37 +207,74 @@ class ActivityService {
     throw Exception('Failed to fetch sections (status ${response.statusCode})');
   }
 
-  Future<Map<String, dynamic>> assignActivity(
-      int activityId, int? sectionId, int teacherId) async {
+  Future<List<dynamic>> fetchAssignments(int activityId) async {
+    final response = await http.get(
+      Uri.parse('${ActivityConstants.baseUrl}/activities/$activityId/assignments'),
+      headers: _authHeaders,
+    );
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body) as Map<String, dynamic>;
+      if (data['success'] == true) {
+        return (data['data'] as List?) ?? [];
+      }
+    }
+    throw Exception('Failed to fetch assignments');
+  }
+
+  Future<Map<String, dynamic>> addAssignment(
+      int activityId, int departmentId, String year, int? sectionId, int? teacherId, String scope) async {
     final response = await http.post(
-      Uri.parse('${ActivityConstants.baseUrl}/activities/$activityId/assign'),
+      Uri.parse('${ActivityConstants.baseUrl}/activities/$activityId/assignments'),
       headers: _jsonHeaders,
       body: jsonEncode({
+        'departmentId': departmentId,
+        'year': year,
         'sectionId': sectionId,
         'teacherId': teacherId,
+        'scope': scope,
       }),
     );
     if (response.statusCode == 200 || response.statusCode == 201) {
       return jsonDecode(response.body) as Map<String, dynamic>;
     }
     final data = jsonDecode(response.body) as Map<String, dynamic>;
-    throw Exception(data['message'] ?? 'Failed to assign activity');
+    throw Exception(data['message'] ?? 'Failed to add assignment');
   }
 
-  Future<void> saveAssignments(
-      int activityId, bool globalEnabled, List<Map<String, dynamic>> assignments, {bool ccEnabled = false}) async {
+  Future<void> removeAssignment(int assignmentId) async {
+    final response = await http.delete(
+      Uri.parse('${ActivityConstants.baseUrl}/activities/assignments/$assignmentId'),
+      headers: _authHeaders,
+    );
+    if (response.statusCode != 200) {
+      final data = jsonDecode(response.body) as Map<String, dynamic>;
+      throw Exception(data['message'] ?? 'Failed to remove assignment');
+    }
+  }
+
+  Future<void> clearAllAssignments(int activityId) async {
+    final response = await http.delete(
+      Uri.parse('${ActivityConstants.baseUrl}/activities/$activityId/assignments/clear'),
+      headers: _authHeaders,
+    );
+    if (response.statusCode != 200) {
+      final data = jsonDecode(response.body) as Map<String, dynamic>;
+      throw Exception(data['message'] ?? 'Failed to clear all assignments');
+    }
+  }
+
+  Future<void> assignActivity(int activityId, bool ccEnabled, bool globalEnabled) async {
     final response = await http.post(
       Uri.parse('${ActivityConstants.baseUrl}/activities/$activityId/assign'),
       headers: _jsonHeaders,
       body: jsonEncode({
-        'globalEnabled': globalEnabled,
         'ccEnabled': ccEnabled,
-        'assignments': assignments,
+        'globalEnabled': globalEnabled,
       }),
     );
-    if (response.statusCode != 200 && response.statusCode != 201) {
+    if (response.statusCode != 200) {
       final data = jsonDecode(response.body) as Map<String, dynamic>;
-      throw Exception(data['message'] ?? 'Failed to save assignments');
+      throw Exception(data['message'] ?? 'Failed to update global assignment config');
     }
   }
 

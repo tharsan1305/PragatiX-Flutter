@@ -2,6 +2,7 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:spdms_app/core/utils/error_handler.dart';
 
 import 'package:spdms_app/features/admin/repository/admin_repository.dart';
 import 'package:spdms_app/core/di/service_locator.dart';
@@ -60,47 +61,16 @@ class _StudentsTabState extends State<StudentsTab> {
 
 
 
-  Future<void> _fetchSectionsForDept(int? deptId, void Function(void Function()) setDialogState) async {
-
+  Future<List<dynamic>> _fetchSectionsForDept(int? deptId) async {
     if (deptId == null) {
-
-      setDialogState(() {
-
-        dialogSections = [];
-
-        lastFetchedDeptId = null;
-
-      });
-
-      return;
-
+      return [];
     }
-
-    setDialogState(() {
-
-      isLoadingSections = true;
-
-      lastFetchedDeptId = deptId;
-
-    });
-
     try {
-      final list = await getIt<AdminRepository>().getDepartmentSections(deptId);
-      setDialogState(() {
-        dialogSections = list;
-      });
+      return await getIt<AdminRepository>().getDepartmentSections(deptId);
     } catch (e) {
       debugPrint('Error fetching dialog sections: $e');
-    } finally {
-
-      setDialogState(() {
-
-        isLoadingSections = false;
-
-      });
-
+      return [];
     }
-
   }
 
 
@@ -318,11 +288,7 @@ class _StudentsTabState extends State<StudentsTab> {
 
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-
-        SnackBar(content: Text('Network Error: $e'), backgroundColor: Colors.redAccent),
-
-      );
+      ErrorHandler.showSnackBar(context, e);
 
     }
 
@@ -413,11 +379,7 @@ class _StudentsTabState extends State<StudentsTab> {
 
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-
-        SnackBar(content: Text('Network Error: $e'), backgroundColor: Colors.redAccent),
-
-      );
+      ErrorHandler.showSnackBar(context, e);
 
     }
 
@@ -441,11 +403,7 @@ class _StudentsTabState extends State<StudentsTab> {
 
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-
-        SnackBar(content: Text('Network Error: $e'), backgroundColor: Colors.redAccent),
-
-      );
+      ErrorHandler.showSnackBar(context, e);
 
     }
 
@@ -487,7 +445,7 @@ class _StudentsTabState extends State<StudentsTab> {
         semesters: semesters,
         genders: genders,
         groups: groups,
-        fetchSectionsForDept: (deptId, setStateCb) => _fetchSectionsForDept(deptId, setStateCb),
+        fetchSectionsForDept: (deptId) => _fetchSectionsForDept(deptId),
         clearControllers: _clearControllers,
         onAddStudent: ({
           required departmentId,
@@ -532,7 +490,7 @@ class _StudentsTabState extends State<StudentsTab> {
         semesters: semesters,
         genders: genders,
         groups: groups,
-        fetchSectionsForDept: (deptId, setStateCb) => _fetchSectionsForDept(deptId, setStateCb),
+        fetchSectionsForDept: (deptId) => _fetchSectionsForDept(deptId),
         clearControllers: _clearControllers,
         onEditStudent: ({
           required id,

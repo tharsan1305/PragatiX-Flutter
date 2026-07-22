@@ -29,6 +29,8 @@ class ActivityModel {
   final List<String> awardDays; // working days (Weekly only)
   final String xpType;
   final String assignmentMode; // MANUAL | GLOBAL | CLASS_COORDINATOR
+  final String? subgroup;
+  final List<Map<String, dynamic>> mappedStages;
 
   // Backward-compat aliases
   String get frequency => awardFrequency;
@@ -62,6 +64,8 @@ class ActivityModel {
     required this.awardDays,
     required this.xpType,
     this.assignmentMode = 'MANUAL',
+    this.subgroup,
+    this.mappedStages = const [],
   });
 
   factory ActivityModel.fromJson(Map<String, dynamic> json) {
@@ -141,32 +145,42 @@ class ActivityModel {
       parsedDays = [];
     }
 
+    final rawMappedStages = json['mappedStages'];
+    final List<Map<String, dynamic>> mappedStagesList;
+    if (rawMappedStages is List) {
+      mappedStagesList = rawMappedStages.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+    } else {
+      mappedStagesList = [];
+    }
+
     return ActivityModel(
-      id: (json['id'] as num?)?.toInt() ?? 0,
-      name: json['name'] as String? ?? '',
-      description: json['description'] as String? ?? '',
-      ownerDepartment: json['ownerDepartment'] as String? ?? '',
-      departmentId: (json['departmentId'] ?? '').toString(),
-      teacherId: (json['teacherId'] ?? '').toString(),
-      ownerSubrole: json['ownerSubrole'] as String? ?? '',
+      id: (json['id'] as num).toInt(),
+      name: json['name']?.toString() ?? json['activityName']?.toString() ?? 'Unnamed',
+      description: json['description']?.toString() ?? json['activityDescription']?.toString() ?? '',
+      ownerDepartment: json['ownerDepartment']?.toString() ?? 'General',
+      departmentId: json['departmentId']?.toString() ?? '',
+      teacherId: json['teacherId']?.toString() ?? '',
+      ownerSubrole: json['ownerSubrole']?.toString() ?? 'Any',
       evidence: evidenceList,
       xp: parsedAwardXp.toString(),
-      type: json['type'] as String? ?? 'Individual',
-      justification: json['justification'] as String? ?? '',
+      type: json['type']?.toString() ?? json['modeType']?.toString() ?? 'General',
+      justification: json['justification']?.toString() ?? '',
       assignmentSummary: summaryList,
-      xpCategory: json['xpCategory'] as String? ?? 'Academic',
+      xpCategory: json['xpCategory']?.toString() ?? 'General',
       displayOrder: (json['displayOrder'] as num?)?.toInt() ?? 0,
-      status: json['status'] as String? ?? 'ACTIVE',
+      status: json['status']?.toString() ?? 'ACTIVE',
       awardXp: parsedAwardXp,
       awardEnabled: parsedAwardEnabled,
       penaltyEnabled: parsedPenaltyEnabled,
       penaltyXp: parsedPenaltyXp,
-      awardType: json['awardType'] as String? ?? 'Fixed XP',
-      cap: parsedCap,
-      awardFrequency: parsedFrequency,
-      awardDays: parsedDays,
-      xpType: json['xpType'] as String? ?? 'Reward',
-      assignmentMode: json['assignmentMode'] as String? ?? 'MANUAL',
+      awardType: json['awardType']?.toString() ?? 'Fixed XP',
+      cap: (json['maximumAwards'] as num?)?.toInt() ?? (json['maxPoints'] as num?)?.toInt() ?? 1,
+      awardFrequency: json['awardFrequency']?.toString() ?? json['resetPeriod']?.toString() ?? 'One Time',
+      awardDays: (json['awardDays']?.toString().split(',') ?? []).where((e) => e.isNotEmpty).toList(),
+      xpType: json['xpType']?.toString() ?? 'Reward',
+      assignmentMode: json['assignmentMode']?.toString() ?? 'MANUAL',
+      subgroup: json['subgroup']?.toString(),
+      mappedStages: mappedStagesList,
     );
   }
 
@@ -195,6 +209,7 @@ class ActivityModel {
         'awardDays': awardDays,
         'xpType': xpType,
         'assignmentMode': assignmentMode,
+        'subgroup': subgroup,
       };
 
   ActivityModel copyWith({
@@ -223,6 +238,7 @@ class ActivityModel {
     List<String>? awardDays,
     String? xpType,
     String? assignmentMode,
+    String? subgroup,
   }) {
     return ActivityModel(
       id: id ?? this.id,
@@ -250,6 +266,7 @@ class ActivityModel {
       awardDays: awardDays ?? this.awardDays,
       xpType: xpType ?? this.xpType,
       assignmentMode: assignmentMode ?? this.assignmentMode,
+      subgroup: subgroup ?? this.subgroup,
     );
   }
 }

@@ -7,6 +7,9 @@ import 'package:spdms_app/core/config/api_config.dart';
 import 'package:spdms_app/features/team/models/team.dart';
 import 'package:spdms_app/core/di/service_locator.dart';
 
+import 'package:spdms_app/features/team/widgets/team_member_card.dart';
+
+
 class GroupDetailsPage extends StatefulWidget {
   final Team team;
   final int xpPerMember;
@@ -235,7 +238,13 @@ class _GroupDetailsPageState extends State<GroupDetailsPage> {
                   const Text('Captain', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: _dark)),
                   const SizedBox(height: 8),
                   if (_team.captainId != null)
-                    _buildCaptainTile(_team.captainName ?? 'Unknown', _team.captainId!)
+                    ...members.where((m) => m['regNo'] == _team.captainId).map((m) => TeamMemberCard(
+                          member: m,
+                          captainId: _team.captainId,
+                          canManage: true,
+                          isCaptainRoleSection: true,
+                          onRemove: () {},
+                        ))
                   else
                     const Padding(
                       padding: EdgeInsets.all(16.0),
@@ -262,7 +271,31 @@ class _GroupDetailsPageState extends State<GroupDetailsPage> {
                       child: Center(child: Text('No additional members found.', style: TextStyle(color: Colors.grey))),
                     )
                   else
-                    ...members.where((m) => m['regNo'] != _team.captainId).map((m) => _buildMemberTile(m)),
+                    ...members.where((m) => m['regNo'] != _team.captainId).map((m) => TeamMemberCard(
+                          member: m,
+                          captainId: _team.captainId,
+                          canManage: true,
+                          isCaptainRoleSection: false,
+                          onRemove: () {
+                            showDialog(
+                              context: context,
+                              builder: (ctx) => AlertDialog(
+                                title: const Text('Remove Member'),
+                                content: Text("Are you sure you want to remove ${m['fullName']} from the group?"),
+                                actions: [
+                                  TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+                                  TextButton(
+                                    onPressed: () {
+                                      Navigator.pop(ctx);
+                                      _removeMember(m['regNo']);
+                                    },
+                                    child: const Text('Remove', style: TextStyle(color: Colors.red)),
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
+                        )),
                   
                   const SizedBox(height: 32),
                   SizedBox(
@@ -322,62 +355,5 @@ class _GroupDetailsPageState extends State<GroupDetailsPage> {
     );
   }
 
-  Widget _buildCaptainTile(String name, String id) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 8),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      elevation: 0,
-      child: ListTile(
-        leading: CircleAvatar(
-          backgroundColor: Colors.amber.shade100,
-          child: Icon(Icons.star, color: Colors.amber.shade700),
-        ),
-        title: Text(name),
-        subtitle: Text(id),
-        trailing: const Chip(
-          label: Text('Captain'),
-          backgroundColor: Colors.amber,
-          labelStyle: TextStyle(color: Colors.white, fontSize: 10),
-        ),
-      ),
-    );
-  }
 
-  Widget _buildMemberTile(dynamic m) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 8),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      elevation: 0,
-      child: ListTile(
-        leading: CircleAvatar(
-          backgroundColor: Colors.blue.shade50,
-          child: Icon(Icons.person, color: Colors.blue.shade700),
-        ),
-        title: Text(m['fullName'] ?? ''),
-        subtitle: Text(m['regNo'] ?? ''),
-        trailing: IconButton(
-              icon: const Icon(Icons.remove_circle_outline, color: Colors.red),
-              onPressed: () {
-                showDialog(
-                  context: context,
-                  builder: (ctx) => AlertDialog(
-                    title: const Text('Remove Member'),
-                    content: Text("Are you sure you want to remove ${m['fullName']} from the group?"),
-                    actions: [
-                      TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
-                      TextButton(
-                        onPressed: () {
-                          Navigator.pop(ctx);
-                          _removeMember(m['regNo']);
-                        },
-                        child: const Text('Remove', style: TextStyle(color: Colors.red)),
-                      ),
-                    ],
-                  ),
-                );
-              },
-            ),
-      ),
-    );
-  }
 }

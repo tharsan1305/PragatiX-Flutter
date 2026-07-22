@@ -6,6 +6,8 @@ import 'package:spdms_app/features/student/services/student_proxy_service.dart';
 import 'package:provider/provider.dart';
 import 'package:spdms_app/features/xp/providers/xp_provider.dart';
 import 'package:spdms_app/core/di/service_locator.dart';
+import 'package:spdms_app/features/attendance/providers/attendance_provider.dart';
+import 'package:spdms_app/features/attendance/widgets/fire_streak_icon.dart';
 
 class ActivitiesTab extends StatefulWidget {
   const ActivitiesTab({super.key, });
@@ -100,6 +102,23 @@ class _ActivitiesTabState extends State<ActivitiesTab> {
               'name': st['name'],
               'description': st['description'] ?? '',
               'substages': substages,
+              
+              // Dynamic progress fields from backend
+              'mustThreshold': st['mustThreshold'] ?? 0,
+              'individualThreshold': st['individualThreshold'] ?? 0,
+              'groupThreshold': st['groupThreshold'] ?? 0,
+              'studentMustXp': st['studentMustXp'] ?? 0,
+              'studentIndividualXp': st['studentIndividualXp'] ?? 0,
+              'studentGroupXp': st['studentGroupXp'] ?? 0,
+              'mustCompleted': st['mustCompleted'] ?? false,
+              'individualCompleted': st['individualCompleted'] ?? false,
+              'groupCompleted': st['groupCompleted'] ?? false,
+              'mustRemaining': st['mustRemaining'] ?? 0,
+              'individualRemaining': st['individualRemaining'] ?? 0,
+              'groupRemaining': st['groupRemaining'] ?? 0,
+              'overallCompletedSubgroups': st['overallCompletedSubgroups'] ?? 0,
+              'overallTotalSubgroups': st['overallTotalSubgroups'] ?? 0,
+              'overallPercentage': st['overallPercentage'] ?? 0.0,
             });
           }
 
@@ -184,6 +203,16 @@ class _ActivitiesTabState extends State<ActivitiesTab> {
         backgroundColor: darkColor,
         elevation: 0,
         actions: [
+          Consumer<AttendanceProvider>(
+            builder: (context, provider, child) {
+              return Center(
+                child: Padding(
+                  padding: const EdgeInsets.only(right: 8.0),
+                  child: FireStreakIcon(streakCount: provider.currentStreak),
+                ),
+              );
+            },
+          ),
           IconButton(
             tooltip: 'Toggle Simulator Mode',
             icon: Icon(
@@ -331,6 +360,97 @@ class _ActivitiesTabState extends State<ActivitiesTab> {
                         ),
                         const SizedBox(height: 16),
                         const Divider(height: 1),
+
+                        // Stage Progress Summary (MUST, INDIVIDUAL, GROUP)
+                        const SizedBox(height: 16),
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.grey.shade200),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.02),
+                                blurRadius: 4,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    'Stage Progress',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 15,
+                                      color: darkColor,
+                                    ),
+                                  ),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                    decoration: BoxDecoration(
+                                      color: stage['overallCompletedSubgroups'] == stage['overallTotalSubgroups'] && stage['overallTotalSubgroups'] > 0
+                                          ? Colors.green.withValues(alpha: 0.1)
+                                          : Colors.orange.withValues(alpha: 0.1),
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: Text(
+                                      stage['overallTotalSubgroups'] > 0 
+                                          ? 'Stage Completion: ${stage['overallCompletedSubgroups']} / ${stage['overallTotalSubgroups']} Completed'
+                                          : 'No Thresholds',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.bold,
+                                        color: stage['overallCompletedSubgroups'] == stage['overallTotalSubgroups'] && stage['overallTotalSubgroups'] > 0
+                                            ? Colors.green.shade700
+                                            : Colors.orange.shade700,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 16),
+                              
+                              if (stage['mustThreshold'] > 0) ...[
+                                _buildProgressRow(
+                                  'MUST', 
+                                  stage['studentMustXp'] ?? 0, 
+                                  stage['mustThreshold'] ?? 0, 
+                                  stage['mustRemaining'] ?? 0,
+                                  stage['mustCompleted'] == true,
+                                ),
+                                const SizedBox(height: 12),
+                              ],
+                              
+                              if (stage['individualThreshold'] > 0) ...[
+                                _buildProgressRow(
+                                  'INDIVIDUAL', 
+                                  stage['studentIndividualXp'] ?? 0, 
+                                  stage['individualThreshold'] ?? 0, 
+                                  stage['individualRemaining'] ?? 0,
+                                  stage['individualCompleted'] == true,
+                                ),
+                                const SizedBox(height: 12),
+                              ],
+                              
+                              if (stage['groupThreshold'] > 0) ...[
+                                _buildProgressRow(
+                                  'GROUP', 
+                                  stage['studentGroupXp'] ?? 0, 
+                                  stage['groupThreshold'] ?? 0, 
+                                  stage['groupRemaining'] ?? 0,
+                                  stage['groupCompleted'] == true,
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 8),
 
                         // Render Substages (MUST, INDIVIDUAL, GROUP)
                         ...List.generate(stage['substages'].length, (subIndex) {
@@ -533,6 +653,78 @@ class _ActivitiesTabState extends State<ActivitiesTab> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildProgressRow(String label, int current, int threshold, int remaining, bool isCompleted) {
+    final double progress = threshold > 0 ? (current / threshold).clamp(0.0, 1.0) : 0.0;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.bold,
+                color: darkColor,
+              ),
+            ),
+            Text(
+              isCompleted ? 'Completed' : 'Remaining: $remaining XP',
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.bold,
+                color: isCompleted ? Colors.green.shade700 : Colors.orange.shade700,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 6),
+        Row(
+          children: [
+            Expanded(
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(4),
+                child: LinearProgressIndicator(
+                  value: progress,
+                  minHeight: 8,
+                  backgroundColor: Colors.grey.shade200,
+                  valueColor: AlwaysStoppedAnimation<Color>(isCompleted ? Colors.green : Colors.amber.shade600),
+                ),
+              ),
+            ),
+            const SizedBox(width: 10),
+            SizedBox(
+              width: 70,
+              child: Text(
+                '$current / $threshold XP',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  color: isCompleted ? Colors.green.shade700 : Colors.amber.shade800,
+                ),
+                textAlign: TextAlign.right,
+              ),
+            ),
+            const SizedBox(width: 8),
+            SizedBox(
+              width: 36,
+              child: Text(
+                '${(progress * 100).toInt()}%',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  color: darkColor,
+                ),
+                textAlign: TextAlign.right,
+              ),
+            ),
+          ],
+        ),
+      ],
     );
   }
 

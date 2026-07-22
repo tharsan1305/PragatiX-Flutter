@@ -13,7 +13,7 @@ class EditStudentDialog extends StatefulWidget {
   final List<dynamic> semesters;
   final List<dynamic> genders;
   final List<dynamic> groups;
-  final Future<void> Function(int?, void Function(void Function())) fetchSectionsForDept;
+  final Future<List<dynamic>> Function(int?) fetchSectionsForDept;
   final Future<void> Function({
     required int id,
     required String fullName,
@@ -80,6 +80,17 @@ class _EditStudentDialogState extends State<EditStudentDialog> {
     return cleaned;
   }
 
+  List<dynamic> _deduplicate(List<dynamic> list) {
+    final seenIds = <int>{};
+    return list.where((item) {
+      if (item == null || item['id'] == null) return false;
+      final id = item['id'] as int;
+      if (seenIds.contains(id)) return false;
+      seenIds.add(id);
+      return true;
+    }).toList();
+  }
+
   @override
   void initState() {
     super.initState();
@@ -103,51 +114,48 @@ class _EditStudentDialogState extends State<EditStudentDialog> {
       }
     }
 
-    final deptData = s['department'];
-    selectedDeptId = deptData != null ? deptData['id'] : null;
-    if (selectedDeptId != null && !widget.departments.any((d) => d['id'] == selectedDeptId)) {
+    final uniqueDepartments = _deduplicate(widget.departments);
+    selectedDeptId = s['departmentId'];
+    if (selectedDeptId != null && !uniqueDepartments.any((d) => d['id'] == selectedDeptId)) {
       selectedDeptId = null;
     }
 
-    final ayData = s['academicYear'];
-    selectedAcademicYearId = ayData != null ? ayData['id'] : null;
-    if (selectedAcademicYearId != null && !widget.academicYears.any((ay) => ay['id'] == selectedAcademicYearId)) {
+    final uniqueAcademicYears = _deduplicate(widget.academicYears);
+    selectedAcademicYearId = s['academicYearId'];
+    if (selectedAcademicYearId != null && !uniqueAcademicYears.any((ay) => ay['id'] == selectedAcademicYearId)) {
       selectedAcademicYearId = null;
     }
 
-    final yData = s['year'];
-    selectedYearId = yData != null ? yData['id'] : null;
-    if (selectedYearId != null && !widget.years.any((y) => y['id'] == selectedYearId)) {
+    final uniqueYears = _deduplicate(widget.years);
+    selectedYearId = s['yearId'];
+    if (selectedYearId != null && !uniqueYears.any((y) => y['id'] == selectedYearId)) {
       selectedYearId = null;
     }
 
-    final semData = s['semester'];
-    selectedSemesterId = semData != null ? semData['id'] : null;
-    if (selectedSemesterId != null && !widget.semesters.any((sem) => sem['id'] == selectedSemesterId)) {
+    final uniqueSemesters = _deduplicate(widget.semesters);
+    selectedSemesterId = s['semesterId'];
+    if (selectedSemesterId != null && !uniqueSemesters.any((sem) => sem['id'] == selectedSemesterId)) {
       selectedSemesterId = null;
     }
 
-    final gData = s['gender'];
-    if (gData != null) {
-      selectedGenderId = gData['id'];
-    } else if (s['genderName'] != null) {
-      final match = widget.genders.firstWhere((g) => g['genderName'] == s['genderName'], orElse: () => null);
+    final uniqueGenders = _deduplicate(widget.genders);
+    selectedGenderId = s['genderId'];
+    if (selectedGenderId == null && s['gender'] != null) {
+      final match = uniqueGenders.firstWhere((g) => g['genderName'] == s['gender'], orElse: () => null);
       if (match != null) selectedGenderId = match['id'];
     }
-
-    final grpData = s['group'];
-    selectedGroupId = grpData != null ? grpData['id'] : null;
-
-    final secData = s['section'];
-    if (secData != null) {
-      selectedSectionId = secData['id'];
-    } else if (s['sectionName'] != null) {
-      final normalizedTarget = _normalizeSectionName(s['sectionName']);
-      final match = dialogSections.firstWhere((sec) => _normalizeSectionName(sec['sectionName'] ?? '') == normalizedTarget, orElse: () => null);
-      if (match != null) selectedSectionId = match['id'];
+    if (selectedGenderId != null && !uniqueGenders.any((g) => g['id'] == selectedGenderId)) {
+      selectedGenderId = null;
     }
-    
-    // We will trigger section fetch in build if needed
+
+    final uniqueGroups = _deduplicate(widget.groups);
+    selectedGroupId = s['teamId'];
+    if (selectedGroupId != null && !uniqueGroups.any((g) => g['id'] == selectedGroupId)) {
+      selectedGroupId = null;
+    }
+
+    selectedSectionId = s['sectionId'];
+    // We will trigger section fetch in build if needed, and validate it in build
   }
 
   @override
@@ -157,226 +165,276 @@ class _EditStudentDialogState extends State<EditStudentDialog> {
     super.dispose();
   }
 
+  Widget _buildSectionTitle(String title) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12.0),
+      child: Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.blueGrey)),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     if (lastFetchedDeptId != selectedDeptId) {
-      Future.microtask(() => widget.fetchSectionsForDept(selectedDeptId, setState)).then((_) {
-        if (mounted && widget.student['sectionName'] != null && selectedSectionId == null) {
-          final normalizedTarget = _normalizeSectionName(widget.student['sectionName']);
-          final match = dialogSections.firstWhere((sec) => _normalizeSectionName(sec['sectionName'] ?? '') == normalizedTarget, orElse: () => null);
-          if (match != null) {
-            setState(() {
-              selectedSectionId = match['id'];
-            });
-          }
+      Future.microtask(() async {
+        final list = await widget.fetchSectionsForDept(selectedDeptId);
+        if (mounted) {
+          setState(() {
+            dialogSections = list;
+            // Also validate selected section immediately
+            if (selectedSectionId != null && !list.any((sec) => sec['id'] == selectedSectionId)) {
+              selectedSectionId = null;
+            }
+          });
         }
       });
       lastFetchedDeptId = selectedDeptId;
     }
 
-    final filteredSections = dialogSections;
-    if (selectedSectionId != null && !filteredSections.any((sec) => sec['id'] == selectedSectionId)) {
-      selectedSectionId = null;
-    }
+    final uniqueDepartments = _deduplicate(widget.departments);
+    final uniqueAcademicYears = _deduplicate(widget.academicYears);
+    final uniqueYears = _deduplicate(widget.years);
+    final uniqueSemesters = _deduplicate(widget.semesters);
+    final uniqueGenders = _deduplicate(widget.genders);
+    final uniqueGroups = _deduplicate(widget.groups);
+    final uniqueSections = _deduplicate(dialogSections);
 
-    return AlertDialog(
-      title: const Text('Edit Student', style: TextStyle(fontWeight: FontWeight.bold)),
-      content: SingleChildScrollView(
+    if (selectedDeptId != null && !uniqueDepartments.any((d) => d['id'] == selectedDeptId)) selectedDeptId = null;
+    if (selectedAcademicYearId != null && !uniqueAcademicYears.any((ay) => ay['id'] == selectedAcademicYearId)) selectedAcademicYearId = null;
+    if (selectedYearId != null && !uniqueYears.any((y) => y['id'] == selectedYearId)) selectedYearId = null;
+    if (selectedSemesterId != null && !uniqueSemesters.any((sem) => sem['id'] == selectedSemesterId)) selectedSemesterId = null;
+    if (selectedGenderId != null && !uniqueGenders.any((g) => g['id'] == selectedGenderId)) selectedGenderId = null;
+    if (selectedGroupId != null && !uniqueGroups.any((g) => g['id'] == selectedGroupId)) selectedGroupId = null;
+    if (selectedSectionId != null && !uniqueSections.any((sec) => sec['id'] == selectedSectionId)) selectedSectionId = null;
+
+    final inputDecoration = (String label) => InputDecoration(
+          labelText: label,
+          border: const OutlineInputBorder(),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+        );
+
+    return Dialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Container(
+        constraints: const BoxConstraints(maxWidth: 600),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            TextField(controller: widget.regNoController, decoration: const InputDecoration(labelText: 'Student ID *'), readOnly: true),
-            TextField(controller: widget.nameController, decoration: const InputDecoration(labelText: 'Full Name *')),
-            TextField(controller: widget.emailController, decoration: const InputDecoration(labelText: 'Email *')),
-            TextField(
-              controller: widget.phoneController,
-              keyboardType: TextInputType.phone,
-              maxLength: 10,
-              decoration: const InputDecoration(
-                labelText: 'Phone',
-                counterText: '',
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: const Color(0xFF1E293B),
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+              ),
+              child: const Row(
+                children: [
+                  Icon(Icons.edit, color: Colors.white),
+                  SizedBox(width: 8),
+                  Text('Edit Student', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 18)),
+                ],
               ),
             ),
-            TextField(controller: widget.sprNoController, decoration: const InputDecoration(labelText: 'SPR No')),
-            TextField(controller: addressController, decoration: const InputDecoration(labelText: 'Address')),
-            const SizedBox(height: 12),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  selectedDob == null
-                      ? 'Select Date of Birth'
-                      : "DOB: ${selectedDob!.year}-${selectedDob!.month.toString().padLeft(2, '0')}-${selectedDob!.day.toString().padLeft(2, '0')}",
-                  style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black87),
+            Flexible(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Card(
+                      elevation: 2,
+                      margin: const EdgeInsets.only(bottom: 16),
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _buildSectionTitle('Personal Information'),
+                            TextField(controller: widget.regNoController, decoration: inputDecoration('Student ID *'), readOnly: true),
+                            const SizedBox(height: 16),
+                            TextField(controller: widget.nameController, decoration: inputDecoration('Full Name *')),
+                            const SizedBox(height: 16),
+                            TextField(controller: widget.emailController, decoration: inputDecoration('Email *')),
+                            const SizedBox(height: 16),
+                            TextField(
+                              controller: widget.phoneController,
+                              keyboardType: TextInputType.phone,
+                              maxLength: 10,
+                              decoration: inputDecoration('Phone').copyWith(counterText: ''),
+                            ),
+                            const SizedBox(height: 16),
+                            TextField(controller: widget.sprNoController, decoration: inputDecoration('SPR No')),
+                            const SizedBox(height: 16),
+                            TextField(controller: addressController, decoration: inputDecoration('Address'), maxLines: 2),
+                            const SizedBox(height: 16),
+                            DropdownButtonFormField<int>(
+                              initialValue: selectedGenderId,
+                              decoration: inputDecoration('Gender'),
+                              items: uniqueGenders.map((g) => DropdownMenuItem<int>(value: g['id'], child: Text(g['genderName'] ?? ''))).toList(),
+                              onChanged: (val) => setState(() => selectedGenderId = val),
+                            ),
+                            const SizedBox(height: 16),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  selectedDob == null
+                                      ? 'Select Date of Birth'
+                                      : "DOB: ${selectedDob!.year}-${selectedDob!.month.toString().padLeft(2, '0')}-${selectedDob!.day.toString().padLeft(2, '0')}",
+                                  style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black87),
+                                ),
+                                TextButton.icon(
+                                  onPressed: () async {
+                                    final picked = await showDatePicker(
+                                      context: context,
+                                      initialDate: selectedDob ?? DateTime(2004),
+                                      firstDate: DateTime(1995),
+                                      lastDate: DateTime.now(),
+                                    );
+                                    if (picked != null) {
+                                      setState(() {
+                                        selectedDob = picked;
+                                      });
+                                    }
+                                  },
+                                  icon: const Icon(Icons.calendar_month),
+                                  label: const Text('Pick'),
+                                )
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    Card(
+                      elevation: 2,
+                      margin: const EdgeInsets.only(bottom: 16),
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _buildSectionTitle('Academic Information'),
+                            DropdownButtonFormField<int>(
+                              initialValue: selectedDeptId,
+                              decoration: inputDecoration('Department'),
+                              items: uniqueDepartments.map((d) => DropdownMenuItem<int>(value: d['id'], child: Text(d['code'] ?? d['name']))).toList(),
+                              onChanged: (val) => setState(() {
+                                selectedDeptId = val;
+                                selectedSectionId = null;
+                              }),
+                            ),
+                            const SizedBox(height: 16),
+                            DropdownButtonFormField<int>(
+                              initialValue: selectedAcademicYearId,
+                              decoration: inputDecoration('Academic Year'),
+                              items: uniqueAcademicYears.map((ay) => DropdownMenuItem<int>(value: ay['id'], child: Text(ay['academicYear'] ?? ''))).toList(),
+                              onChanged: (val) => setState(() => selectedAcademicYearId = val),
+                            ),
+                            const SizedBox(height: 16),
+                            DropdownButtonFormField<int>(
+                              initialValue: selectedYearId,
+                              decoration: inputDecoration('Year'),
+                              items: uniqueYears.map((y) => DropdownMenuItem<int>(value: y['id'], child: Text(y['yearNo'] != null ? "Year ${y['yearNo']}" : ''))).toList(),
+                              onChanged: (val) => setState(() => selectedYearId = val),
+                            ),
+                            const SizedBox(height: 16),
+                            DropdownButtonFormField<int>(
+                              initialValue: selectedSemesterId,
+                              decoration: inputDecoration('Semester'),
+                              items: uniqueSemesters.map((sem) => DropdownMenuItem<int>(value: sem['id'], child: Text(sem['semesterNo'] != null ? "Semester ${sem['semesterNo']}" : ''))).toList(),
+                              onChanged: (val) => setState(() => selectedSemesterId = val),
+                            ),
+                            const SizedBox(height: 16),
+                            DropdownButtonFormField<int>(
+                              initialValue: selectedSectionId,
+                              decoration: inputDecoration('Section'),
+                              items: uniqueSections.map((sec) => DropdownMenuItem<int>(value: sec['id'], child: Text(sec['sectionName'] ?? ''))).toList(),
+                              onChanged: (val) => setState(() => selectedSectionId = val),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    Card(
+                      elevation: 2,
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _buildSectionTitle('Account & Security'),
+                            DropdownButtonFormField<int>(
+                              initialValue: selectedGroupId,
+                              decoration: inputDecoration('Group'),
+                              items: uniqueGroups.map((grp) => DropdownMenuItem<int>(value: grp['id'], child: Text(grp['groupName'] ?? ''))).toList(),
+                              onChanged: (val) => setState(() => selectedGroupId = val),
+                            ),
+                            const SizedBox(height: 16),
+                            TextField(
+                              controller: passwordController,
+                              obscureText: true,
+                              decoration: inputDecoration('New Password (Optional)').copyWith(
+                                helperText: 'Leave blank to keep current password',
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            SwitchListTile(
+                              title: const Text('Active Account', style: TextStyle(fontWeight: FontWeight.w600)),
+                              contentPadding: EdgeInsets.zero,
+                              value: isActive,
+                              onChanged: (val) => setState(() => isActive = val),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-                TextButton.icon(
-                  onPressed: () async {
-                    final picked = await showDatePicker(
-                      context: context,
-                      initialDate: selectedDob ?? DateTime(2004),
-                      firstDate: DateTime(1995),
-                      lastDate: DateTime.now(),
-                    );
-                    if (picked != null) {
-                      setState(() {
-                        selectedDob = picked;
-                      });
-                    }
-                  },
-                  icon: const Icon(Icons.calendar_month),
-                  label: const Text('Pick'),
-                )
-              ],
+              ),
             ),
-            const SizedBox(height: 10),
-            DropdownButtonFormField<int>(
-              initialValue: selectedDeptId,
-              decoration: const InputDecoration(labelText: 'Department'),
-              items: widget.departments.map((d) {
-                return DropdownMenuItem<int>(
-                  value: d['id'],
-                  child: Text(d['code'] ?? d['name']),
-                );
-              }).toList(),
-              onChanged: (value) {
-                setState(() {
-                  selectedDeptId = value;
-                  selectedSectionId = null;
-                });
-              },
-            ),
-            DropdownButtonFormField<int>(
-              initialValue: selectedAcademicYearId,
-              decoration: const InputDecoration(labelText: 'Academic Year'),
-              items: widget.academicYears.map((ay) {
-                return DropdownMenuItem<int>(
-                  value: ay['id'],
-                  child: Text(ay['academicYear'] ?? ''),
-                );
-              }).toList(),
-              onChanged: (value) {
-                setState(() {
-                  selectedAcademicYearId = value;
-                });
-              },
-            ),
-            DropdownButtonFormField<int>(
-              initialValue: selectedYearId,
-              decoration: const InputDecoration(labelText: 'Year'),
-              items: widget.years.map((y) {
-                return DropdownMenuItem<int>(
-                  value: y['id'],
-                  child: Text(y['yearNo'] != null ? "Year ${y['yearNo']}" : ''),
-                );
-              }).toList(),
-              onChanged: (value) {
-                setState(() {
-                  selectedYearId = value;
-                });
-              },
-            ),
-            DropdownButtonFormField<int>(
-              initialValue: selectedSemesterId,
-              decoration: const InputDecoration(labelText: 'Semester'),
-              items: widget.semesters.map((sem) {
-                return DropdownMenuItem<int>(
-                  value: sem['id'],
-                  child: Text(sem['semesterNo'] != null ? "Semester ${sem['semesterNo']}" : ''),
-                );
-              }).toList(),
-              onChanged: (value) {
-                setState(() {
-                  selectedSemesterId = value;
-                });
-              },
-            ),
-            DropdownButtonFormField<int>(
-              initialValue: selectedGenderId,
-              decoration: const InputDecoration(labelText: 'Gender'),
-              items: widget.genders.map((g) {
-                return DropdownMenuItem<int>(
-                  value: g['id'],
-                  child: Text(g['genderName'] ?? ''),
-                );
-              }).toList(),
-              onChanged: (value) {
-                setState(() {
-                  selectedGenderId = value;
-                });
-              },
-            ),
-            DropdownButtonFormField<int>(
-              initialValue: selectedSectionId,
-              decoration: const InputDecoration(labelText: 'Section'),
-              items: filteredSections.map((sec) {
-                return DropdownMenuItem<int>(
-                  value: sec['id'],
-                  child: Text(sec['sectionName'] ?? ''),
-                );
-              }).toList(),
-              onChanged: (value) {
-                setState(() {
-                  selectedSectionId = value;
-                });
-              },
-            ),
-            DropdownButtonFormField<int>(
-              initialValue: selectedGroupId,
-              decoration: const InputDecoration(labelText: 'Group'),
-              items: widget.groups.map((grp) {
-                return DropdownMenuItem<int>(
-                  value: grp['id'],
-                  child: Text(grp['groupName'] ?? ''),
-                );
-              }).toList(),
-              onChanged: (value) {
-                setState(() {
-                  selectedGroupId = value;
-                });
-              },
-            ),
-            SwitchListTile(
-              title: const Text('Active Account'),
-              value: isActive,
-              onChanged: (val) => setState(() => isActive = val),
-            ),
-            TextField(
-              controller: passwordController,
-              obscureText: true,
-              decoration: const InputDecoration(
-                labelText: 'New Password (Optional)',
-                helperText: 'Leave blank to keep current password',
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('Cancel'),
+                  ),
+                  const SizedBox(width: 16),
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                      backgroundColor: const Color(0xFF1E293B),
+                      foregroundColor: Colors.white,
+                    ),
+                    onPressed: () {
+                      widget.onEditStudent(
+                        id: widget.student['id'],
+                        fullName: widget.nameController.text.trim(),
+                        email: widget.emailController.text.trim(),
+                        phone: widget.phoneController.text.trim(),
+                        genderId: selectedGenderId,
+                        departmentId: selectedDeptId,
+                        academicYearId: selectedAcademicYearId,
+                        yearId: selectedYearId,
+                        semesterId: selectedSemesterId,
+                        sectionId: selectedSectionId,
+                        groupId: selectedGroupId,
+                        sprNo: widget.sprNoController.text.trim(),
+                        dob: selectedDob,
+                        address: addressController.text.trim(),
+                        active: isActive,
+                        password: passwordController.text.trim(),
+                      );
+                    },
+                    child: const Text('Update Student'),
+                  ),
+                ],
               ),
             ),
           ],
         ),
       ),
-      actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
-        ElevatedButton(
-          onPressed: () {
-            widget.onEditStudent(
-              id: widget.student['id'],
-              fullName: widget.nameController.text.trim(),
-              email: widget.emailController.text.trim(),
-              phone: widget.phoneController.text.trim(),
-              genderId: selectedGenderId,
-              departmentId: selectedDeptId,
-              academicYearId: selectedAcademicYearId,
-              yearId: selectedYearId,
-              semesterId: selectedSemesterId,
-              sectionId: selectedSectionId,
-              groupId: selectedGroupId,
-              sprNo: widget.sprNoController.text.trim(),
-              dob: selectedDob,
-              address: addressController.text.trim(),
-              active: isActive,
-              password: passwordController.text.trim(),
-            );
-          },
-          child: const Text('Update'),
-        ),
-      ],
     );
   }
 }

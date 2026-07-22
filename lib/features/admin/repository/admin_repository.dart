@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:spdms_app/features/admin/services/admin_service.dart';
+import 'package:spdms_app/core/exceptions/api_exception.dart';
 
 class AdminRepository {
   final AdminService _adminService;
@@ -259,6 +260,6 @@ class AdminRepository {
     if (response.statusCode >= 200 && response.statusCode < 300) {
       return data;
     }
-    throw Exception(data['message'] ?? 'An error occurred');
+    throw ApiException(response.statusCode, data['message'] ?? 'An error occurred');
   }
 }

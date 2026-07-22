@@ -7,8 +7,9 @@ import 'package:spdms_app/features/team/services/team_proxy_service.dart';
 import 'package:spdms_app/core/di/service_locator.dart';
 import 'package:spdms_app/shared/widgets/student_search/student_search_field.dart';
 
-part 'team_group_management_dialogs.dart';
+import 'package:spdms_app/features/team/pages/team_details_page.dart';
 
+// Dialogs removed from here
 
 class TeamGroupManagementTab extends StatefulWidget {
   const TeamGroupManagementTab({super.key, });
@@ -182,126 +183,80 @@ class _TeamGroupManagementTabState extends State<TeamGroupManagementTab> {
                             final groupName = g['teamName'] ?? 'Group';
                             final size = g['teamCapacity'] ?? 0;
 
+                            final currentStage = (g['teamMembers'] as List?)?.isNotEmpty == true
+                                ? (g['teamMembers'][0]['currentStage'] ?? 1)
+                                : 1;
+                            
                             return Card(
                               margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                               elevation: 3,
-                              child: ExpansionTile(
-                                leading: CircleAvatar(
-                                  backgroundColor: Colors.indigo.withValues(alpha: 0.1),
-                                  child: const Icon(Icons.groups_rounded, color: Colors.indigo),
-                                ),
-                                title: Text(
-                                  groupName,
-                                  style: const TextStyle(fontWeight: FontWeight.bold),
-                                ),
-                                subtitle: Text(
-                                  'Captain: $captainName  •  $memberCount/$size members',
-                                  style: const TextStyle(fontSize: 12, color: Colors.grey),
-                                ),
-                                children: [
-                                  if (canManage) Padding(
-                                    padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-                                    child: Column(
-                                      children: [
-                                        Wrap(
-                                          spacing: 8,
-                                          runSpacing: 8,
-                                          alignment: WrapAlignment.center,
-                                          children: [
-                                            ElevatedButton.icon(
-                                              onPressed: () => _showAddMemberDialog(g['teamId']),
-                                              icon: const Icon(Icons.person_add, size: 16),
-                                              label: const Text('Add Member'),
-                                              style: ElevatedButton.styleFrom(
-                                                backgroundColor: Colors.green.shade50,
-                                                foregroundColor: Colors.green.shade700,
-                                              ),
-                                            ),
-                                            ElevatedButton.icon(
-                                              onPressed: () => _showEditTeamDialog(g, size),
-                                              icon: const Icon(Icons.edit, size: 16),
-                                              label: const Text('Edit Team'),
-                                              style: ElevatedButton.styleFrom(
-                                                backgroundColor: Colors.indigo.shade50,
-                                                foregroundColor: Colors.indigo,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                        const SizedBox(height: 8),
-                                        Wrap(
-                                          spacing: 8,
-                                          runSpacing: 8,
-                                          alignment: WrapAlignment.center,
-                                          children: [
-                                            ElevatedButton.icon(
-                                              onPressed: () => _showChangeCaptainDialog(g),
-                                              icon: const Icon(Icons.star, size: 16),
-                                              label: const Text('Change Captain'),
-                                              style: ElevatedButton.styleFrom(
-                                                backgroundColor: Colors.orange.shade50,
-                                                foregroundColor: Colors.orange,
-                                              ),
-                                            ),
-                                            ElevatedButton.icon(
-                                              onPressed: () => _showDeleteTeamDialog(g['teamId'], groupName),
-                                              icon: const Icon(Icons.delete, size: 16),
-                                              label: const Text('Delete Team'),
-                                              style: ElevatedButton.styleFrom(
-                                                backgroundColor: Colors.red.shade50,
-                                                foregroundColor: Colors.red,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  ...(g['teamMembers'] as List? ?? []).map<Widget>((m) {
-                                    final isCaptain = m['regNo'] == g['captainId'];
-                                    return ListTile(
-                                    dense: true,
-                                    leading: CircleAvatar(
-                                      radius: 16,
-                                      backgroundColor: isCaptain ? Colors.amber : Colors.indigo.shade100,
-                                      child: Icon(
-                                        isCaptain ? Icons.star_rounded : Icons.person,
-                                        size: 16,
-                                        color: isCaptain ? Colors.white : Colors.indigo,
+                              child: InkWell(
+                                borderRadius: BorderRadius.circular(12),
+                                onTap: () async {
+                                  final result = await Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => TeamDetailsPage(
+                                        teamId: g['teamId'] ?? g['id'],
+                                        canManage: canManage,
                                       ),
                                     ),
-                                    title: Text(m['fullName'] ?? 'Student'),
-                                    subtitle: Text(
-                                      "${m["regNo"]} • ${m["department"] ?? ''} ${m["year"] ?? ''} ${m["section"] ?? ''}".trim(),
-                                      style: const TextStyle(fontSize: 12),
-                                    ),
-                                    trailing: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        if (isCaptain)
-                                          const Chip(
-                                            label: Text('Captain', style: TextStyle(fontSize: 10)),
-                                            backgroundColor: Colors.amber,
-                                          ),
-                                        if (canManage)
-                                            IconButton(
-                                              icon: const Icon(Icons.person_remove, color: Colors.red, size: 20),
-                                              tooltip: 'Remove Member',
-                                              onPressed: () {
-                                                if (isCaptain) {
-                                                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Cannot remove Captain. Please change the captain first.')));
-                                                  _showChangeCaptainDialog(g);
-                                                } else {
-                                                  _removeMemberByCC(g['teamId'], m['regNo'], m['fullName'] ?? 'Student');
-                                                }
-                                              },
-                                            ),
-                                      ],
-                                    ),
                                   );
-                                  }),
-                                ],
+                                  // Refresh if a team was deleted or changed
+                                  if (result == true) {
+                                    _fetchGroups();
+                                  }
+                                },
+                                child: Padding(
+                                  padding: const EdgeInsets.all(16.0),
+                                  child: Row(
+                                    children: [
+                                      CircleAvatar(
+                                        backgroundColor: Colors.indigo.withValues(alpha: 0.1),
+                                        child: const Icon(Icons.groups_rounded, color: Colors.indigo),
+                                      ),
+                                      const SizedBox(width: 16),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              groupName,
+                                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                                            ),
+                                            const SizedBox(height: 4),
+                                            Text(
+                                              'Captain: $captainName  •  $memberCount/$size members',
+                                              style: const TextStyle(fontSize: 12, color: Colors.grey),
+                                            ),
+                                            const SizedBox(height: 8),
+                                            Row(
+                                              children: [
+                                                const Icon(Icons.location_on_outlined, size: 14, color: Colors.grey),
+                                                const SizedBox(width: 4),
+                                                Text(
+                                                  "${g['departmentName'] ?? '-'} • ${g['year'] ?? '-'} - ${g['sectionName'] ?? '-'}",
+                                                  style: const TextStyle(fontSize: 11, color: Colors.grey),
+                                                ),
+                                                const SizedBox(width: 12),
+                                                Container(
+                                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                                  decoration: BoxDecoration(color: Colors.amber.shade50, borderRadius: BorderRadius.circular(6)),
+                                                  child: Text(
+                                                    'Stage $currentStage',
+                                                    style: TextStyle(color: Colors.amber.shade800, fontSize: 10, fontWeight: FontWeight.bold),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      const Icon(Icons.chevron_right, color: Colors.grey),
+                                    ],
+                                  ),
+                                ),
                               ),
                             );
                           },
@@ -334,25 +289,39 @@ class _TeamGroupManagementTabState extends State<TeamGroupManagementTab> {
   }
 
 
-  Future<void> _removeMemberByCC(int teamId, String regNo, String name) async {
+  Future<void> _createGroup(String name, int limit, String captainStudentId) async {
     try {
+      final body = jsonEncode({
+        'name': name,
+        'size': limit,
+        'captainStudentId': captainStudentId,
+      });
+
       final response = await getIt<TeamProxyService>().post(
-        Uri.parse('${ApiConfig.baseUrl}/api/v1/teams/$teamId/remove-member?regNo=$regNo'),
+        Uri.parse('${ApiConfig.baseUrl}/api/v1/teams'),
         headers: {
           'Authorization': 'Bearer ${context.read<AuthProvider>().token!}',
+          'Content-Type': 'application/json',
         },
+        body: body,
       );
 
       final data = json.decode(response.body);
       if (!mounted) return;
-      if (response.statusCode == 200 && data['success'] == true) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Removed $name successfully!'), backgroundColor: Colors.green),
-        );
-        _fetchGroups();
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        if (data['success'] == true) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Team created successfully!'), backgroundColor: Colors.green),
+          );
+          _fetchGroups();
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(data['message'] ?? 'Failed to create team'), backgroundColor: Colors.redAccent),
+          );
+        }
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(data['message'] ?? 'Failed to remove member'), backgroundColor: Colors.redAccent),
+          SnackBar(content: Text(data['message'] ?? 'Failed to create team'), backgroundColor: Colors.redAccent),
         );
       }
     } catch (e) {
@@ -361,5 +330,86 @@ class _TeamGroupManagementTabState extends State<TeamGroupManagementTab> {
         SnackBar(content: Text('Error: $e'), backgroundColor: Colors.orange),
       );
     }
+  }
+
+  void _showCreateGroupDialog() {
+    final nameCtrl = TextEditingController();
+    final limitCtrl = TextEditingController(text: "5");
+    Map<String, dynamic>? selectedCaptain;
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: const Text('Create New Team'),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextField(
+                      controller: nameCtrl,
+                      decoration: const InputDecoration(labelText: 'Team Name', border: OutlineInputBorder()),
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: limitCtrl,
+                      decoration: const InputDecoration(labelText: 'Max Size Limit', border: OutlineInputBorder()),
+                      keyboardType: TextInputType.number,
+                    ),
+                    const SizedBox(height: 12),
+                    StudentSearchField(
+                      selectedStudent: selectedCaptain,
+                      onStudentSelected: (student) {
+                        setState(() {
+                          selectedCaptain = student;
+                        });
+                      },
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Cancel'),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    final name = nameCtrl.text.trim();
+                    final limit = int.tryParse(limitCtrl.text) ?? 5;
+                    
+                    if (name.isEmpty) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Team Name is required'), backgroundColor: Colors.redAccent),
+                      );
+                      return;
+                    }
+                    if (limit < 1) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Team Capacity must be at least 1'), backgroundColor: Colors.redAccent),
+                      );
+                      return;
+                    }
+                    if (selectedCaptain == null) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Captain is required'), backgroundColor: Colors.redAccent),
+                      );
+                      return;
+                    }
+
+                    Navigator.pop(context);
+                    _createGroup(name, limit, selectedCaptain!['regNo']);
+                  },
+                  style: ElevatedButton.styleFrom(backgroundColor: Colors.indigo),
+                  child: const Text('Create'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
   }
 }

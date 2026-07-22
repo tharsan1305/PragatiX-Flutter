@@ -401,14 +401,14 @@ class _PerformanceActivitiesTabState extends State<PerformanceActivitiesTab> {
           backgroundColor: Colors.redAccent,
         ),
       );
-    } catch (_) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Error submitting batch award'),
-          backgroundColor: Colors.redAccent,
-        ),
-      );
+    } catch (e) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e.toString()),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
     } finally {
       setState(() {
         _isAwarding = false;
@@ -1183,3 +1183,4 @@ class _PerformanceActivitiesTabState extends State<PerformanceActivitiesTab> {
     );
   }
 }
+

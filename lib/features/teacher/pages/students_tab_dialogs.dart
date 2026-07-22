@@ -591,9 +591,7 @@ extension StudentsTabDialogs on _StudentsTabState {
                                           );
                                         }
                                       } catch (e) {
-                                        messenger.showSnackBar(
-                                          const SnackBar(content: Text('Network error creating group')),
-                                        );
+                                        ErrorHandler.showSnackBar(context, e);
                                       }
                                     },
                                     style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF11998e)),
@@ -872,9 +870,7 @@ extension StudentsTabDialogs on _StudentsTabState {
       }
     } catch (e) {
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Network/Server error updating student details.'), backgroundColor: Colors.redAccent),
-      );
+      ErrorHandler.showSnackBar(context, e);
     }
   }
 
@@ -905,9 +901,7 @@ extension StudentsTabDialogs on _StudentsTabState {
     } catch (e) {
       debugPrint('DELETE exception: $e');
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Network error deleting student: $e'), backgroundColor: Colors.redAccent),
-      );
+      ErrorHandler.showSnackBar(context, e);
     }
   }
 
