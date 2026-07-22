@@ -408,6 +408,56 @@ extension StudentsTabDialogs on _StudentsTabState {
                         });
                       },
                     ),
+                    Card(
+                      elevation: 2,
+                      margin: const EdgeInsets.symmetric(vertical: 16),
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text('Guardian Information', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.blueGrey)),
+                            const SizedBox(height: 12),
+                            TextField(
+                              controller: guardianNameCtrl,
+                              decoration: const InputDecoration(labelText: 'Guardian Name *'),
+                            ),
+                            const SizedBox(height: 10),
+                            DropdownButtonFormField<String>(
+                              value: selectedGuardianRel,
+                              decoration: const InputDecoration(labelText: 'Relationship *'),
+                              items: const [
+                                DropdownMenuItem(value: 'Father', child: Text('Father')),
+                                DropdownMenuItem(value: 'Mother', child: Text('Mother')),
+                                DropdownMenuItem(value: 'Guardian', child: Text('Guardian')),
+                                DropdownMenuItem(value: 'Parent', child: Text('Parent')),
+                              ],
+                              onChanged: (value) {
+                                setDialogState(() {
+                                  selectedGuardianRel = value;
+                                  guardianRelCtrl.text = value ?? '';
+                                });
+                              },
+                            ),
+                            const SizedBox(height: 10),
+                            TextField(
+                              controller: guardianPhoneCtrl,
+                              keyboardType: TextInputType.phone,
+                              maxLength: 10,
+                              decoration: const InputDecoration(
+                                labelText: 'Parent Mobile Number *',
+                                counterText: '',
+                              ),
+                            ),
+                            const SizedBox(height: 10),
+                            TextField(
+                              controller: guardianEmailCtrl,
+                              decoration: const InputDecoration(labelText: 'Guardian Email'),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -819,6 +869,10 @@ extension StudentsTabDialogs on _StudentsTabState {
     required String address,
     required bool active,
     required String password,
+    required String? guardianName,
+    required String? guardianRel,
+    required String? guardianPhone,
+    required String? guardianEmail,
   }) async {
     if (fullName.isEmpty || email.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -850,6 +904,12 @@ extension StudentsTabDialogs on _StudentsTabState {
           'address': address,
           'active': active,
           'password': password.isEmpty ? null : password,
+          'guardian': {
+            'guardianName': guardianName,
+            'relationship': guardianRel,
+            'phoneNo': guardianPhone,
+            'email': guardianEmail,
+          },
         }),
       );
 
@@ -913,6 +973,49 @@ extension StudentsTabDialogs on _StudentsTabState {
     final TextEditingController addressCtrl = TextEditingController(text: student['address'] ?? '');
     final TextEditingController passwordCtrl = TextEditingController();
 
+    // Guardian Controllers
+    final TextEditingController guardianNameCtrl = TextEditingController();
+    final TextEditingController guardianRelCtrl = TextEditingController();
+    final TextEditingController guardianPhoneCtrl = TextEditingController();
+    final TextEditingController guardianEmailCtrl = TextEditingController();
+    String? selectedGuardianRel;
+    final List<String> guardianRelations = ['Father', 'Mother', 'Guardian', 'Parent'];
+
+    final g = student['guardian'];
+    if (g != null) {
+      guardianNameCtrl.text = g['guardianName'] ?? '';
+      guardianPhoneCtrl.text = g['phoneNo'] ?? '';
+      guardianEmailCtrl.text = g['email'] ?? '';
+      String relStr = g['relationship'] ?? '';
+      if (relStr.isNotEmpty) {
+        relStr = relStr[0].toUpperCase() + relStr.substring(1).toLowerCase();
+        if (guardianRelations.contains(relStr)) {
+          selectedGuardianRel = relStr;
+        } else if (relStr.toUpperCase() == 'LOCAL_GUARDIAN') {
+          selectedGuardianRel = 'Parent';
+        }
+      }
+      guardianRelCtrl.text = selectedGuardianRel ?? '';
+    }
+
+    List<dynamic> dedup(List<dynamic> list) {
+      final seenIds = <int>{};
+      return list.where((item) {
+        if (item == null || item['id'] == null) return false;
+        final id = item['id'] as int;
+        if (seenIds.contains(id)) return false;
+        seenIds.add(id);
+        return true;
+      }).toList();
+    }
+
+    final uniqueDepartments = dedup(departments);
+    final uniqueAcademicYears = dedup(academicYears);
+    final uniqueYears = dedup(years);
+    final uniqueSemesters = dedup(semesters);
+    final uniqueGenders = dedup(genders);
+    final uniqueGroups = dedup(groups);
+
     DateTime? editDob;
     if (student['dateOfBirth'] != null) {
       try {
@@ -922,47 +1025,47 @@ extension StudentsTabDialogs on _StudentsTabState {
 
     int? selectedDeptId = student['departmentId'];
     if (selectedDeptId == null && student['departmentName'] != null) {
-      final match = departments.firstWhere((d) => d['name'] == student['departmentName'], orElse: () => null);
+      final match = uniqueDepartments.firstWhere((d) => d['name'] == student['departmentName'], orElse: () => null);
       if (match != null) selectedDeptId = match['id'];
     }
-    if (selectedDeptId == null && departments.isNotEmpty) {
-      selectedDeptId = departments.first['id'];
+    if (selectedDeptId == null && uniqueDepartments.isNotEmpty) {
+      selectedDeptId = uniqueDepartments.first['id'];
     }
 
     int? selectedAcademicYearId = student['academicYearId'];
     if (selectedAcademicYearId == null && student['academicYear'] != null) {
-      final match = academicYears.firstWhere((ay) => ay['academicYear'] == student['academicYear'], orElse: () => null);
+      final match = uniqueAcademicYears.firstWhere((ay) => ay['academicYear'] == student['academicYear'], orElse: () => null);
       if (match != null) selectedAcademicYearId = match['id'];
     }
-    if (selectedAcademicYearId == null && academicYears.isNotEmpty) {
-      selectedAcademicYearId = academicYears.first['id'];
+    if (selectedAcademicYearId == null && uniqueAcademicYears.isNotEmpty) {
+      selectedAcademicYearId = uniqueAcademicYears.first['id'];
     }
 
     int? selectedYearId = student['yearId'];
     if (selectedYearId == null && student['year'] != null) {
-      final match = years.firstWhere((y) => y['yearNo']?.toString() == student['year'], orElse: () => null);
+      final match = uniqueYears.firstWhere((y) => y['yearNo']?.toString() == student['year'], orElse: () => null);
       if (match != null) selectedYearId = match['id'];
     }
-    if (selectedYearId == null && years.isNotEmpty) {
-      selectedYearId = years.first['id'];
+    if (selectedYearId == null && uniqueYears.isNotEmpty) {
+      selectedYearId = uniqueYears.first['id'];
     }
 
     int? selectedSemesterId = student['semesterId'];
     if (selectedSemesterId == null && student['semester'] != null) {
-      final match = semesters.firstWhere((s) => s['semesterNo']?.toString() == student['semester'], orElse: () => null);
+      final match = uniqueSemesters.firstWhere((s) => s['semesterNo']?.toString() == student['semester'], orElse: () => null);
       if (match != null) selectedSemesterId = match['id'];
     }
-    if (selectedSemesterId == null && semesters.isNotEmpty) {
-      selectedSemesterId = semesters.first['id'];
+    if (selectedSemesterId == null && uniqueSemesters.isNotEmpty) {
+      selectedSemesterId = uniqueSemesters.first['id'];
     }
 
     int? selectedGenderId = student['genderId'];
     if (selectedGenderId == null && student['gender'] != null) {
-      final match = genders.firstWhere((g) => g['genderName']?.toString().toUpperCase() == student['gender'].toString().toUpperCase(), orElse: () => null);
+      final match = uniqueGenders.firstWhere((g) => g['genderName']?.toString().toUpperCase() == student['gender'].toString().toUpperCase(), orElse: () => null);
       if (match != null) selectedGenderId = match['id'];
     }
-    if (selectedGenderId == null && genders.isNotEmpty) {
-      selectedGenderId = genders.first['id'];
+    if (selectedGenderId == null && uniqueGenders.isNotEmpty) {
+      selectedGenderId = uniqueGenders.first['id'];
     }
 
     int? selectedSectionId = student['sectionId'];
@@ -988,7 +1091,8 @@ extension StudentsTabDialogs on _StudentsTabState {
               final depId = sec['department'] != null ? sec['department']['id'] : sec['departmentId'];
               return depId == selectedDeptId;
             }).toList();
-            if (selectedSectionId != null && !filteredSections.any((sec) => sec['id'] == selectedSectionId)) {
+            final uniqueFilteredSections = dedup(filteredSections);
+            if (selectedSectionId != null && !uniqueFilteredSections.any((sec) => sec['id'] == selectedSectionId)) {
               selectedSectionId = null;
             }
 
@@ -1047,9 +1151,9 @@ extension StudentsTabDialogs on _StudentsTabState {
                     ),
                     const SizedBox(height: 10),
                     DropdownButtonFormField<int>(
-                      initialValue: departments.any((d) => d['id'] == selectedDeptId) ? selectedDeptId : null,
+                      value: uniqueDepartments.any((d) => d['id'] == selectedDeptId) ? selectedDeptId : null,
                       decoration: const InputDecoration(labelText: 'Department *'),
-                      items: departments.map((d) {
+                      items: uniqueDepartments.map((d) {
                         return DropdownMenuItem<int>(
                           value: d['id'],
                           child: Text(d['code'] ?? d['name']),
@@ -1063,9 +1167,9 @@ extension StudentsTabDialogs on _StudentsTabState {
                       },
                     ),
                     DropdownButtonFormField<int>(
-                      initialValue: academicYears.any((ay) => ay['id'] == selectedAcademicYearId) ? selectedAcademicYearId : null,
+                      value: uniqueAcademicYears.any((ay) => ay['id'] == selectedAcademicYearId) ? selectedAcademicYearId : null,
                       decoration: const InputDecoration(labelText: 'Academic Year *'),
-                      items: academicYears.map((ay) {
+                      items: uniqueAcademicYears.map((ay) {
                         return DropdownMenuItem<int>(
                           value: ay['id'],
                           child: Text(ay['academicYear'] ?? ''),
@@ -1078,9 +1182,9 @@ extension StudentsTabDialogs on _StudentsTabState {
                       },
                     ),
                     DropdownButtonFormField<int>(
-                      initialValue: years.any((y) => y['id'] == selectedYearId) ? selectedYearId : null,
+                      value: uniqueYears.any((y) => y['id'] == selectedYearId) ? selectedYearId : null,
                       decoration: const InputDecoration(labelText: 'Year *'),
-                      items: years.map((y) {
+                      items: uniqueYears.map((y) {
                         return DropdownMenuItem<int>(
                           value: y['id'],
                           child: Text(y['yearNo'] != null ? "Year ${y["yearNo"]}" : ''),
@@ -1093,9 +1197,9 @@ extension StudentsTabDialogs on _StudentsTabState {
                       },
                     ),
                     DropdownButtonFormField<int>(
-                      initialValue: semesters.any((s) => s['id'] == selectedSemesterId) ? selectedSemesterId : null,
+                      value: uniqueSemesters.any((s) => s['id'] == selectedSemesterId) ? selectedSemesterId : null,
                       decoration: const InputDecoration(labelText: 'Semester *'),
-                      items: semesters.map((s) {
+                      items: uniqueSemesters.map((s) {
                         return DropdownMenuItem<int>(
                           value: s['id'],
                           child: Text(s['semesterNo'] != null ? "Semester ${s["semesterNo"]}" : ''),
@@ -1108,9 +1212,9 @@ extension StudentsTabDialogs on _StudentsTabState {
                       },
                     ),
                     DropdownButtonFormField<int>(
-                      initialValue: genders.any((g) => g['id'] == selectedGenderId) ? selectedGenderId : null,
+                      value: uniqueGenders.any((g) => g['id'] == selectedGenderId) ? selectedGenderId : null,
                       decoration: const InputDecoration(labelText: 'Gender *'),
-                      items: genders.map((g) {
+                      items: uniqueGenders.map((g) {
                         return DropdownMenuItem<int>(
                           value: g['id'],
                           child: Text(g['genderName'] ?? ''),
@@ -1123,14 +1227,14 @@ extension StudentsTabDialogs on _StudentsTabState {
                       },
                     ),
                     DropdownButtonFormField<int?>(
-                      initialValue: filteredSections.any((sec) => sec['id'] == selectedSectionId) ? selectedSectionId : null,
+                      value: uniqueFilteredSections.any((sec) => sec['id'] == selectedSectionId) ? selectedSectionId : null,
                       decoration: const InputDecoration(labelText: 'Section (Optional)'),
                       items: [
                         const DropdownMenuItem<int?>(
                           value: null,
                           child: Text('No Section Selected (Optional)'),
                         ),
-                        ...filteredSections.map((sec) {
+                        ...uniqueFilteredSections.map((sec) {
                           return DropdownMenuItem<int?>(
                             value: sec['id'],
                             child: Text(sec['sectionName'] ?? ''),
@@ -1144,14 +1248,14 @@ extension StudentsTabDialogs on _StudentsTabState {
                       },
                     ),
                     DropdownButtonFormField<int?>(
-                      initialValue: groups.any((grp) => grp['id'] == selectedGroupId) ? selectedGroupId : null,
+                      value: uniqueGroups.any((grp) => grp['id'] == selectedGroupId) ? selectedGroupId : null,
                       decoration: const InputDecoration(labelText: 'Group (Optional)'),
                       items: [
                         const DropdownMenuItem<int?>(
                           value: null,
                           child: Text('No Group Selected (Optional)'),
                         ),
-                        ...groups.map((grp) {
+                        ...uniqueGroups.map((grp) {
                           return DropdownMenuItem<int?>(
                             value: grp['id'],
                             child: Text(grp['name'] ?? ''),
@@ -1163,6 +1267,56 @@ extension StudentsTabDialogs on _StudentsTabState {
                           selectedGroupId = value;
                         });
                       },
+                    ),
+                    Card(
+                      elevation: 2,
+                      margin: const EdgeInsets.symmetric(vertical: 16),
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text('Guardian Information', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.blueGrey)),
+                            const SizedBox(height: 12),
+                            TextField(
+                              controller: guardianNameCtrl,
+                              decoration: const InputDecoration(labelText: 'Guardian Name *'),
+                            ),
+                            const SizedBox(height: 10),
+                            DropdownButtonFormField<String>(
+                              value: selectedGuardianRel,
+                              decoration: const InputDecoration(labelText: 'Relationship *'),
+                              items: guardianRelations.map((rel) {
+                                return DropdownMenuItem<String>(
+                                  value: rel,
+                                  child: Text(rel),
+                                );
+                              }).toList(),
+                              onChanged: (value) {
+                                setDialogState(() {
+                                  selectedGuardianRel = value;
+                                  guardianRelCtrl.text = value ?? '';
+                                });
+                              },
+                            ),
+                            const SizedBox(height: 10),
+                            TextField(
+                              controller: guardianPhoneCtrl,
+                              keyboardType: TextInputType.phone,
+                              maxLength: 10,
+                              decoration: const InputDecoration(
+                                labelText: 'Parent Mobile Number *',
+                                counterText: '',
+                              ),
+                            ),
+                            const SizedBox(height: 10),
+                            TextField(
+                              controller: guardianEmailCtrl,
+                              decoration: const InputDecoration(labelText: 'Guardian Email'),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
                     SwitchListTile(
                       title: const Text('Active'),
@@ -1197,6 +1351,10 @@ extension StudentsTabDialogs on _StudentsTabState {
                       address: addressCtrl.text.trim(),
                       active: active,
                       password: passwordCtrl.text.trim(),
+                      guardianName: guardianNameCtrl.text.trim(),
+                      guardianRel: selectedGuardianRel,
+                      guardianPhone: guardianPhoneCtrl.text.trim(),
+                      guardianEmail: guardianEmailCtrl.text.trim(),
                     );
                   },
                   style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF11998e)),

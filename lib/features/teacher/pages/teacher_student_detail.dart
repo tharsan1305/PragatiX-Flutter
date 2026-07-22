@@ -234,6 +234,44 @@ class _TeacherStudentDetailState extends State<TeacherStudentDetail> {
 
             const SizedBox(height: 30),
 
+            if (widget.student['guardian'] != null) ...[
+              const Text('Guardian Information', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 10),
+              Card(
+                elevation: 2,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      ListTile(
+                        leading: const Icon(Icons.person, color: Colors.blueGrey),
+                        title: Text(widget.student['guardian']['guardianName'] ?? '', style: const TextStyle(fontWeight: FontWeight.bold)),
+                        subtitle: Text(widget.student['guardian']['relationship'] ?? 'Guardian'),
+                        contentPadding: EdgeInsets.zero,
+                      ),
+                      const Divider(height: 1),
+                      ListTile(
+                        leading: const Icon(Icons.phone, color: Colors.blueGrey),
+                        title: Text(widget.student['guardian']['phoneNo'] ?? 'No Phone'),
+                        contentPadding: EdgeInsets.zero,
+                      ),
+                      if (widget.student['guardian']['email'] != null && widget.student['guardian']['email'].toString().isNotEmpty) ...[
+                        const Divider(height: 1),
+                        ListTile(
+                          leading: const Icon(Icons.email, color: Colors.blueGrey),
+                          title: Text(widget.student['guardian']['email'] ?? ''),
+                          contentPadding: EdgeInsets.zero,
+                        ),
+                      ]
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 30),
+            ],
+
             Center(
               child: Column(
                 children: [

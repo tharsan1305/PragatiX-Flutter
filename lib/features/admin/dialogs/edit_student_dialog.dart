@@ -7,6 +7,10 @@ class EditStudentDialog extends StatefulWidget {
   final TextEditingController emailController;
   final TextEditingController phoneController;
   final TextEditingController sprNoController;
+  final TextEditingController guardianNameController;
+  final TextEditingController guardianRelController;
+  final TextEditingController guardianPhoneController;
+  final TextEditingController guardianEmailController;
   final List<dynamic> departments;
   final List<dynamic> academicYears;
   final List<dynamic> years;
@@ -42,6 +46,10 @@ class EditStudentDialog extends StatefulWidget {
     required this.emailController,
     required this.phoneController,
     required this.sprNoController,
+    required this.guardianNameController,
+    required this.guardianRelController,
+    required this.guardianPhoneController,
+    required this.guardianEmailController,
     required this.departments,
     required this.academicYears,
     required this.years,
@@ -71,6 +79,9 @@ class _EditStudentDialogState extends State<EditStudentDialog> {
   List<dynamic> dialogSections = [];
   bool isActive = true;
   final TextEditingController passwordController = TextEditingController();
+  final List<String> guardianRelations = ['Father', 'Mother', 'Guardian', 'Parent'];
+  String? selectedGuardianRel;
+  bool isFetchingSections = false;
 
   String _normalizeSectionName(String name) {
     String cleaned = name.trim().toLowerCase();
@@ -105,6 +116,32 @@ class _EditStudentDialogState extends State<EditStudentDialog> {
     addressController.text = s['address'] ?? '';
     isActive = s['active'] ?? true;
     passwordController.text = '';
+
+    final g = s['guardian'];
+    if (g != null) {
+      widget.guardianNameController.text = g['guardianName'] ?? '';
+      
+      String relStr = g['relationship'] ?? '';
+      // Map 'FATHER' to 'Father'
+      if (relStr.isNotEmpty) {
+        relStr = relStr[0].toUpperCase() + relStr.substring(1).toLowerCase();
+        if (guardianRelations.contains(relStr)) {
+          selectedGuardianRel = relStr;
+        } else if (relStr.toUpperCase() == 'LOCAL_GUARDIAN') {
+          selectedGuardianRel = 'Parent';
+        }
+      }
+      widget.guardianRelController.text = selectedGuardianRel ?? '';
+
+      widget.guardianPhoneController.text = g['phoneNo'] ?? '';
+      widget.guardianEmailController.text = g['email'] ?? '';
+    } else {
+      widget.guardianNameController.text = '';
+      widget.guardianRelController.text = '';
+      widget.guardianPhoneController.text = '';
+      widget.guardianEmailController.text = '';
+      selectedGuardianRel = null;
+    }
 
     if (s['dob'] != null) {
       try {
@@ -175,11 +212,13 @@ class _EditStudentDialogState extends State<EditStudentDialog> {
   @override
   Widget build(BuildContext context) {
     if (lastFetchedDeptId != selectedDeptId) {
+      isFetchingSections = true;
       Future.microtask(() async {
         final list = await widget.fetchSectionsForDept(selectedDeptId);
         if (mounted) {
           setState(() {
             dialogSections = list;
+            isFetchingSections = false;
             // Also validate selected section immediately
             if (selectedSectionId != null && !list.any((sec) => sec['id'] == selectedSectionId)) {
               selectedSectionId = null;
@@ -204,7 +243,8 @@ class _EditStudentDialogState extends State<EditStudentDialog> {
     if (selectedSemesterId != null && !uniqueSemesters.any((sem) => sem['id'] == selectedSemesterId)) selectedSemesterId = null;
     if (selectedGenderId != null && !uniqueGenders.any((g) => g['id'] == selectedGenderId)) selectedGenderId = null;
     if (selectedGroupId != null && !uniqueGroups.any((g) => g['id'] == selectedGroupId)) selectedGroupId = null;
-    if (selectedSectionId != null && !uniqueSections.any((sec) => sec['id'] == selectedSectionId)) selectedSectionId = null;
+    if (!isFetchingSections && selectedSectionId != null && !uniqueSections.any((sec) => sec['id'] == selectedSectionId)) selectedSectionId = null;
+    if (selectedGuardianRel != null && !guardianRelations.contains(selectedGuardianRel)) selectedGuardianRel = null;
 
     final inputDecoration = (String label) => InputDecoration(
           labelText: label,
@@ -266,7 +306,7 @@ class _EditStudentDialogState extends State<EditStudentDialog> {
                             TextField(controller: addressController, decoration: inputDecoration('Address'), maxLines: 2),
                             const SizedBox(height: 16),
                             DropdownButtonFormField<int>(
-                              initialValue: selectedGenderId,
+                              value: selectedGenderId,
                               decoration: inputDecoration('Gender'),
                               items: uniqueGenders.map((g) => DropdownMenuItem<int>(value: g['id'], child: Text(g['genderName'] ?? ''))).toList(),
                               onChanged: (val) => setState(() => selectedGenderId = val),
@@ -312,9 +352,49 @@ class _EditStudentDialogState extends State<EditStudentDialog> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
+                            _buildSectionTitle('Guardian Information'),
+                            TextField(controller: widget.guardianNameController, decoration: inputDecoration('Guardian Name *')),
+                            const SizedBox(height: 16),
+                            DropdownButtonFormField<String>(
+                              value: selectedGuardianRel,
+                              decoration: inputDecoration('Relationship (e.g. Father, Mother) *'),
+                              items: guardianRelations.map((rel) {
+                                return DropdownMenuItem<String>(
+                                  value: rel,
+                                  child: Text(rel),
+                                );
+                              }).toList(),
+                              onChanged: (value) {
+                                setState(() {
+                                  selectedGuardianRel = value;
+                                  widget.guardianRelController.text = value ?? '';
+                                });
+                              },
+                            ),
+                            const SizedBox(height: 16),
+                            TextField(
+                              controller: widget.guardianPhoneController,
+                              keyboardType: TextInputType.phone,
+                              maxLength: 10,
+                              decoration: inputDecoration('Guardian Phone *').copyWith(counterText: ''),
+                            ),
+                            const SizedBox(height: 16),
+                            TextField(controller: widget.guardianEmailController, decoration: inputDecoration('Guardian Email')),
+                          ],
+                        ),
+                      ),
+                    ),
+                    Card(
+                      elevation: 2,
+                      margin: const EdgeInsets.only(bottom: 16),
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
                             _buildSectionTitle('Academic Information'),
                             DropdownButtonFormField<int>(
-                              initialValue: selectedDeptId,
+                              value: selectedDeptId,
                               decoration: inputDecoration('Department'),
                               items: uniqueDepartments.map((d) => DropdownMenuItem<int>(value: d['id'], child: Text(d['code'] ?? d['name']))).toList(),
                               onChanged: (val) => setState(() {
@@ -324,32 +404,34 @@ class _EditStudentDialogState extends State<EditStudentDialog> {
                             ),
                             const SizedBox(height: 16),
                             DropdownButtonFormField<int>(
-                              initialValue: selectedAcademicYearId,
+                              value: selectedAcademicYearId,
                               decoration: inputDecoration('Academic Year'),
                               items: uniqueAcademicYears.map((ay) => DropdownMenuItem<int>(value: ay['id'], child: Text(ay['academicYear'] ?? ''))).toList(),
                               onChanged: (val) => setState(() => selectedAcademicYearId = val),
                             ),
                             const SizedBox(height: 16),
                             DropdownButtonFormField<int>(
-                              initialValue: selectedYearId,
+                              value: selectedYearId,
                               decoration: inputDecoration('Year'),
                               items: uniqueYears.map((y) => DropdownMenuItem<int>(value: y['id'], child: Text(y['yearNo'] != null ? "Year ${y['yearNo']}" : ''))).toList(),
                               onChanged: (val) => setState(() => selectedYearId = val),
                             ),
                             const SizedBox(height: 16),
                             DropdownButtonFormField<int>(
-                              initialValue: selectedSemesterId,
+                              value: selectedSemesterId,
                               decoration: inputDecoration('Semester'),
                               items: uniqueSemesters.map((sem) => DropdownMenuItem<int>(value: sem['id'], child: Text(sem['semesterNo'] != null ? "Semester ${sem['semesterNo']}" : ''))).toList(),
                               onChanged: (val) => setState(() => selectedSemesterId = val),
                             ),
                             const SizedBox(height: 16),
-                            DropdownButtonFormField<int>(
-                              initialValue: selectedSectionId,
-                              decoration: inputDecoration('Section'),
-                              items: uniqueSections.map((sec) => DropdownMenuItem<int>(value: sec['id'], child: Text(sec['sectionName'] ?? ''))).toList(),
-                              onChanged: (val) => setState(() => selectedSectionId = val),
-                            ),
+                            isFetchingSections 
+                              ? const Center(child: Padding(padding: EdgeInsets.all(8.0), child: CircularProgressIndicator()))
+                              : DropdownButtonFormField<int>(
+                                  value: selectedSectionId,
+                                  decoration: inputDecoration('Section'),
+                                  items: uniqueSections.map((sec) => DropdownMenuItem<int>(value: sec['id'], child: Text(sec['sectionName'] ?? ''))).toList(),
+                                  onChanged: (val) => setState(() => selectedSectionId = val),
+                                ),
                           ],
                         ),
                       ),
@@ -363,7 +445,7 @@ class _EditStudentDialogState extends State<EditStudentDialog> {
                           children: [
                             _buildSectionTitle('Account & Security'),
                             DropdownButtonFormField<int>(
-                              initialValue: selectedGroupId,
+                              value: selectedGroupId,
                               decoration: inputDecoration('Group'),
                               items: uniqueGroups.map((grp) => DropdownMenuItem<int>(value: grp['id'], child: Text(grp['groupName'] ?? ''))).toList(),
                               onChanged: (val) => setState(() => selectedGroupId = val),

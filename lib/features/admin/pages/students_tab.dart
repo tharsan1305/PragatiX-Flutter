@@ -94,11 +94,13 @@ class _StudentsTabState extends State<StudentsTab> {
   final TextEditingController phoneController = TextEditingController();
 
   final TextEditingController sprNoController = TextEditingController();
-
   final TextEditingController regNoController = TextEditingController();
+  final TextEditingController guardianNameController = TextEditingController();
+  final TextEditingController guardianRelController = TextEditingController();
+  final TextEditingController guardianPhoneController = TextEditingController();
+  final TextEditingController guardianEmailController = TextEditingController();
 
   DateTime? selectedDob;
-
   int? selectedDeptId;
 
 
@@ -130,11 +132,12 @@ class _StudentsTabState extends State<StudentsTab> {
     phoneController.dispose();
 
     sprNoController.dispose();
-
     regNoController.dispose();
-
+    guardianNameController.dispose();
+    guardianRelController.dispose();
+    guardianPhoneController.dispose();
+    guardianEmailController.dispose();
     super.dispose();
-
   }
 
 
@@ -272,7 +275,14 @@ class _StudentsTabState extends State<StudentsTab> {
         'genderId': genderId,
         'sectionId': sectionId,
         'teamId': groupId,
-        'active': true
+        'active': true,
+        if (guardianNameController.text.trim().isNotEmpty)
+          'guardian': {
+            'guardianName': guardianNameController.text.trim(),
+            'relationship': guardianRelController.text.trim().isEmpty ? 'Guardian' : guardianRelController.text.trim(),
+            'phoneNo': guardianPhoneController.text.trim(),
+            'email': guardianEmailController.text.trim(),
+          }
       });
 
       if (!mounted) return;
@@ -364,6 +374,13 @@ class _StudentsTabState extends State<StudentsTab> {
         'teamId': groupId,
         'active': active,
         if (password.isNotEmpty) 'password': password,
+        if (guardianNameController.text.trim().isNotEmpty)
+          'guardian': {
+            'guardianName': guardianNameController.text.trim(),
+            'relationship': guardianRelController.text.trim().isEmpty ? 'Guardian' : guardianRelController.text.trim(),
+            'phoneNo': guardianPhoneController.text.trim(),
+            'email': guardianEmailController.text.trim(),
+          }
       });
 
       if (!mounted) return;
@@ -420,11 +437,12 @@ class _StudentsTabState extends State<StudentsTab> {
     emailController.clear();
 
     phoneController.clear();
-
     sprNoController.clear();
-
+    guardianNameController.clear();
+    guardianRelController.clear();
+    guardianPhoneController.clear();
+    guardianEmailController.clear();
     selectedDob = null;
-
   }
 
 
@@ -439,6 +457,10 @@ class _StudentsTabState extends State<StudentsTab> {
         emailController: emailController,
         phoneController: phoneController,
         sprNoController: sprNoController,
+        guardianNameController: guardianNameController,
+        guardianRelController: guardianRelController,
+        guardianPhoneController: guardianPhoneController,
+        guardianEmailController: guardianEmailController,
         departments: departments,
         academicYears: academicYears,
         years: years,
@@ -484,6 +506,10 @@ class _StudentsTabState extends State<StudentsTab> {
         emailController: emailController,
         phoneController: phoneController,
         sprNoController: sprNoController,
+        guardianNameController: guardianNameController,
+        guardianRelController: guardianRelController,
+        guardianPhoneController: guardianPhoneController,
+        guardianEmailController: guardianEmailController,
         departments: departments,
         academicYears: academicYears,
         years: years,

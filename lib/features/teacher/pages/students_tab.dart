@@ -46,6 +46,12 @@ class _StudentsTabState extends State<StudentsTab> {
   final TextEditingController phoneController = TextEditingController();
   final TextEditingController sprNoController = TextEditingController();
   final TextEditingController regNoController = TextEditingController();
+  final TextEditingController guardianNameCtrl = TextEditingController();
+  final TextEditingController guardianRelCtrl = TextEditingController();
+  final TextEditingController guardianPhoneCtrl = TextEditingController();
+  final TextEditingController guardianEmailCtrl = TextEditingController();
+  String? selectedGuardianRel;
+
   DateTime? selectedDob;
   int? selectedDeptId;
 
@@ -69,6 +75,10 @@ class _StudentsTabState extends State<StudentsTab> {
     phoneController.dispose();
     sprNoController.dispose();
     regNoController.dispose();
+    guardianNameCtrl.dispose();
+    guardianRelCtrl.dispose();
+    guardianPhoneCtrl.dispose();
+    guardianEmailCtrl.dispose();
     editNameController.dispose();
     editEmailController.dispose();
     editPhoneController.dispose();
@@ -352,7 +362,13 @@ class _StudentsTabState extends State<StudentsTab> {
           'sectionId': sectionId,
           'groupId': groupId,
           'sprNo': sprNoController.text.trim(),
-          'active': true
+          'active': true,
+          'guardian': {
+            'guardianName': guardianNameCtrl.text.trim(),
+            'relationship': selectedGuardianRel,
+            'phoneNo': guardianPhoneCtrl.text.trim(),
+            'email': guardianEmailCtrl.text.trim(),
+          }
         }),
       );
 
@@ -520,7 +536,15 @@ class _StudentsTabState extends State<StudentsTab> {
     phoneController.clear();
     sprNoController.clear();
     regNoController.clear();
-    selectedDob = null;
+    guardianNameCtrl.clear();
+    guardianRelCtrl.clear();
+    guardianPhoneCtrl.clear();
+    guardianEmailCtrl.clear();
+    selectedGuardianRel = null;
+    setState(() {
+      selectedDob = null;
+      selectedDeptId = null;
+    });
     if (departments.isNotEmpty) {
       selectedDeptId = departments.first['id'];
     }
