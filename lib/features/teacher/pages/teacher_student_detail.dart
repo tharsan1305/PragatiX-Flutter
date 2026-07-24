@@ -30,7 +30,7 @@ class _TeacherStudentDetailState extends State<TeacherStudentDetail> {
   void initState() {
     super.initState();
     currentScore = widget.student['score'] ?? 100;
-    isCurrentlyCaptain = widget.student['isCaptain'] ?? false;
+    isCurrentlyCaptain = widget.student['teamRole'] == 'CAPTAIN' || widget.student['teamRole'] == 'VICE_CAPTAIN';
     _fetchHistoryLogs();
     _fetchStages();
   }

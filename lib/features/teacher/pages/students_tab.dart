@@ -736,7 +736,7 @@ class _StudentsTabState extends State<StudentsTab> {
                                 'regNo': sId,
                                 'dept': deptName,
                                 'score': score,
-                                'isCaptain': s['isCaptain'] ?? s['captain'] ?? false,
+                                'teamRole': s['teamRole'] ?? 'MEMBER',
                               };
                               Navigator.push(
                                 context,

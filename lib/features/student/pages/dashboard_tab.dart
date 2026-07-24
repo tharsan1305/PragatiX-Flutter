@@ -98,7 +98,7 @@ class _DashboardTabState extends State<DashboardTab> {
             year = resData['year'] ?? 'III';
             department = resData['department'] ?? 'Information Technology';
             score = resData['score'] ?? 95;
-            isCaptain = resData['isCaptain'] ?? false;
+            isCaptain = resData['teamRole'] == 'CAPTAIN' || resData['teamRole'] == 'VICE_CAPTAIN';
             teamName = resData['teamName'] ?? '';
             if (resData['stage'] != null && activeStageDetails == null) {
               currentStage = resData['stage'];

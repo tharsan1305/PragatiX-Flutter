@@ -34,7 +34,22 @@ class TeamMemberCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bool isCaptain = member['regNo'] == captainId;
+    final bool isCaptain = member['regNo'] == captainId || member['teamRole'] == 'CAPTAIN';
+    final bool isViceCaptain = member['teamRole'] == 'VICE_CAPTAIN';
+
+    Color avatarBgColor = Colors.indigo.shade50;
+    Color avatarIconColor = Colors.indigo.shade400;
+    IconData avatarIcon = Icons.person;
+
+    if (isCaptain) {
+      avatarBgColor = Colors.amber.shade100;
+      avatarIconColor = Colors.amber.shade800;
+      avatarIcon = Icons.star_rounded;
+    } else if (isViceCaptain) {
+      avatarBgColor = Colors.blueGrey.shade100;
+      avatarIconColor = Colors.blueGrey.shade700;
+      avatarIcon = Icons.star_half_rounded;
+    }
 
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
@@ -51,11 +66,11 @@ class TeamMemberCard extends StatelessWidget {
           children: [
             CircleAvatar(
               radius: 20,
-              backgroundColor: isCaptain ? Colors.amber.shade100 : Colors.indigo.shade50,
+              backgroundColor: avatarBgColor,
               child: Icon(
-                isCaptain ? Icons.star_rounded : Icons.person,
+                avatarIcon,
                 size: 20,
-                color: isCaptain ? Colors.amber.shade800 : Colors.indigo.shade400,
+                color: avatarIconColor,
               ),
             ),
             const SizedBox(width: 12),
@@ -78,12 +93,19 @@ class TeamMemberCard extends StatelessWidget {
                           backgroundColor: Colors.amber,
                           padding: EdgeInsets.zero,
                           materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        )
+                      else if (isViceCaptain)
+                        const Chip(
+                          label: Text('VICE CAPTAIN', style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Colors.white)),
+                          backgroundColor: Colors.blueGrey,
+                          padding: EdgeInsets.zero,
+                          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                         ),
                       if (canManage && !isCaptainRoleSection)
-                        if (!isCaptain)
+                        if (!isCaptain || (isCaptain && onChangeCaptainRequest == null))
                           IconButton(
                             icon: const Icon(Icons.person_remove, color: Colors.red, size: 18),
-                            tooltip: 'Remove Member',
+                            tooltip: isCaptain ? 'Remove Captain' : 'Remove Member',
                             constraints: const BoxConstraints(),
                             padding: EdgeInsets.zero,
                             onPressed: onRemove,

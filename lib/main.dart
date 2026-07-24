@@ -48,7 +48,7 @@ class MyApp extends StatelessWidget {
           if (auth.isAuthenticated) {
             final role = auth.role ?? '';
             final userType = auth.currentUser?['userType'] ?? '';
-            final isCaptain = (auth.currentUser?['isCaptain'] ?? auth.currentUser?['captain'] ?? false) == true;
+            final isCaptain = auth.currentUser?['teamRole'] == 'CAPTAIN' || auth.currentUser?['teamRole'] == 'VICE_CAPTAIN';
 
             if (role == 'ROLE_ADMIN') {
               return const AdminDashboard();

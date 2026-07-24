@@ -365,6 +365,8 @@ class _PerformanceActivitiesTabState extends State<PerformanceActivitiesTab> {
         'remarks': _remarksController.text.trim(),
       };
 
+      debugPrint('FLUTTER DEBUG: Selected studentId: ${_selectedStudentIds.toList()}');
+
       final response = await getIt<TeacherProxyService>().post(
         Uri.parse('${ApiConfig.baseUrl}/api/v1/student-xp/award/batch'),
         headers: {

@@ -96,7 +96,7 @@ class _LoginPageState extends State<LoginPage> {
         final String token = responseData['token'] ?? '';
         final String userType = responseData['userType'] ?? '';
         if (context.mounted) await Provider.of<AuthProvider>(context, listen: false).login(token, userType, responseData);
-        final bool isCaptain = (responseData['isCaptain'] ?? responseData['captain'] ?? false) == true;
+        final bool isCaptain = responseData['teamRole'] == 'CAPTAIN' || responseData['teamRole'] == 'VICE_CAPTAIN';
 
         if (userType == 'CAPTAIN' || isCaptain) {
           ScaffoldMessenger.of(context).showSnackBar(

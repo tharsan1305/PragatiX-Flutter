@@ -401,7 +401,7 @@ class _TeamDetailsPageState extends State<TeamDetailsPage> {
                 captainId: _team!.captainId,
                 canManage: widget.canManage,
                 onRemove: () => _removeMember(m['regNo']),
-                onChangeCaptainRequest: () {
+                onChangeCaptainRequest: members.length == 1 ? null : () {
                   ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Cannot remove Captain. Please change the captain first.')));
                   _showChangeCaptainDialog();
                 },
@@ -414,6 +414,16 @@ class _TeamDetailsPageState extends State<TeamDetailsPage> {
 
   Widget _buildHeaderCard(int stage, int memberCount) {
     String getVal(String? val) => (val == null || val.trim().isEmpty) ? '-' : val;
+
+    String? vcName;
+    if (_team?.members != null) {
+      for (var m in _team!.members!) {
+        if (m['teamRole'] == 'VICE_CAPTAIN') {
+          vcName = m['fullName'];
+          break;
+        }
+      }
+    }
 
     return Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -440,6 +450,7 @@ class _TeamDetailsPageState extends State<TeamDetailsPage> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Expanded(child: _buildInfoItem('Captain', getVal(_team!.captainName))),
+                Expanded(child: _buildInfoItem('Vice Captain', getVal(vcName))),
                 Expanded(child: _buildInfoItem('Members', '$memberCount / ${_team!.size}')),
               ],
             ),
