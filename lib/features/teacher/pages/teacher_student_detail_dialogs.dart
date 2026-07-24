@@ -40,7 +40,7 @@ extension TeacherStudentDetailDialogs on _TeacherStudentDetailState {
       for (var sub in subs) {
         allSubgroups.add({
           'id': sub['id'],
-          'name': "${stage["name"]} - ${sub["name"]}",
+          'name': "${stage["name"]} - ${StringUtils.toTitleCase(sub["name"])}",
         });
       }
     }

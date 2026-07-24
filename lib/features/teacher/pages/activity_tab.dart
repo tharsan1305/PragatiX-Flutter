@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:spdms_app/features/teacher/services/teacher_proxy_service.dart';
 import 'package:spdms_app/features/activity/pages/activity_list_page.dart';
 import 'package:spdms_app/core/di/service_locator.dart';
+import 'package:spdms_app/core/utils/string_utils.dart';
 
 class ActivityTab extends StatefulWidget {
   const ActivityTab({super.key, });
@@ -173,7 +174,8 @@ class _ActivityTabState extends State<ActivityTab> {
                               itemCount: subgroups.length,
                               itemBuilder: (context, subIndex) {
                                 final sub = subgroups[subIndex];
-                                final String subName = sub['name'] ?? '';
+                                final String rawSubName = sub['name'] ?? '';
+                                final String subName = StringUtils.toTitleCase(rawSubName);
                                 final int threshold = sub['threshold'] ?? 0;
 
                                 return InkWell(
@@ -184,7 +186,7 @@ class _ActivityTabState extends State<ActivityTab> {
                                         builder: (_) => ActivityListPage(
                                           
                                           subgroupId: sub['id'] as int,
-                                          subgroupName: subName,
+                                          subgroupName: rawSubName,
                                           subgroupCategory: name,
                                           teachersList: const [],
                                           isCc: true,

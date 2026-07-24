@@ -1,6 +1,7 @@
 
 import 'package:spdms_app/features/activity/models/activity_model.dart';
 import 'package:spdms_app/features/activity/models/my_activity_model.dart';
+import 'package:spdms_app/features/activity/models/grouped_activity_model.dart';
 import 'package:spdms_app/features/activity/services/activity_service.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -22,10 +23,17 @@ class ActivityRepository {
         .toList();
   }
 
-  Future<List<ActivityModel>> getActivities({int? stageId, String? subgroupName}) async {
+    Future<List<ActivityModel>> getActivities({int? stageId, String? subgroupName}) async {
     final raw = await _service.fetchActivities(stageId: stageId, subgroupName: subgroupName);
     return raw
         .map((e) => ActivityModel.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  Future<List<GroupedActivityModel>> getGroupedActivities({String? subgroupName}) async {
+    final raw = await _service.fetchGroupedActivities(subgroupName: subgroupName);
+    return raw
+        .map((e) => GroupedActivityModel.fromJson(e as Map<String, dynamic>))
         .toList();
   }
 

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:spdms_app/features/student/widgets/student_activity_card.dart';
 import 'package:spdms_app/features/student/screens/activity_details_screen.dart';
+import 'package:spdms_app/core/utils/string_utils.dart';
 
 class StageDetailsScreen extends StatelessWidget {
   final Map<String, dynamic> stage;
@@ -151,7 +152,8 @@ class StageDetailsScreen extends StatelessWidget {
               )
             else
               ...validSubgroups.map((subgroup) {
-                final String subName = subgroup['name'] ?? 'Category';
+                final String rawSubName = subgroup['name'] ?? 'Category';
+                final String subName = StringUtils.toTitleCase(rawSubName);
                 final List activities = subgroup['activities'] ?? [];
                 
                 int completedCount = 0;

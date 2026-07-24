@@ -15,6 +15,20 @@ class ActivityProvider extends ChangeNotifier {
 
   String get token => _repository.token;
 
+  bool _isDisposed = false;
+
+  @override
+  void dispose() {
+    _isDisposed = true;
+    super.dispose();
+  }
+
+  void _safeNotify() {
+    if (!_isDisposed && hasListeners) {
+      notifyListeners();
+    }
+  }
+
   // ── List state ────────────────────────────────────────────────────────────
   List<ActivityModel> activities = [];
   List<MyActivityModel> myActivities = [];
@@ -33,7 +47,7 @@ class ActivityProvider extends ChangeNotifier {
   Future<void> loadMyActivities() async {
     isLoadingActivities = true;
     error = null;
-    notifyListeners();
+    _safeNotify();
     try {
       myActivities = await _repository.getMyActivities();
     } catch (e) {
@@ -41,7 +55,7 @@ class ActivityProvider extends ChangeNotifier {
       myActivities = [];
     } finally {
       isLoadingActivities = false;
-      notifyListeners();
+      _safeNotify();
     }
   }
 
@@ -49,7 +63,7 @@ class ActivityProvider extends ChangeNotifier {
   Future<void> loadActivities({int? stageId, String? subgroupName}) async {
     isLoadingActivities = true;
     error = null;
-    notifyListeners();
+    _safeNotify();
     try {
       activities = await _repository.getActivities(stageId: stageId, subgroupName: subgroupName);
     } catch (e) {
@@ -57,14 +71,14 @@ class ActivityProvider extends ChangeNotifier {
       activities = [];
     } finally {
       isLoadingActivities = false;
-      notifyListeners();
+      _safeNotify();
     }
   }
 
   // ── Load form dependencies (departments + teachers + sections) ───────────
   Future<void> loadDependencies() async {
     isLoadingDependencies = true;
-    notifyListeners();
+    _safeNotify();
     try {
       departments = await _repository.getDepartments();
     } catch (_) {
@@ -95,14 +109,14 @@ class ActivityProvider extends ChangeNotifier {
       customFrequencies = [];
     }
     isLoadingDependencies = false;
-    notifyListeners();
+    _safeNotify();
   }
 
   // ── CRUD ──────────────────────────────────────────────────────────────────
   Future<bool> createActivity(Map<String, dynamic> body, {int? stageId, String? subgroupName}) async {
     isSaving = true;
     error = null;
-    notifyListeners();
+    _safeNotify();
     try {
       final created = await _repository.create(body, stageId: stageId, subgroupName: subgroupName);
       activities = [...activities, created];
@@ -112,21 +126,21 @@ class ActivityProvider extends ChangeNotifier {
       return false;
     } finally {
       isSaving = false;
-      notifyListeners();
+      _safeNotify();
     }
   }
 
   Future<Map<String, dynamic>?> createCustomFrequency(Map<String, dynamic> body) async {
     error = null;
-    notifyListeners();
+    _safeNotify();
     try {
       final newFreq = await _repository.createCustomFrequency(body);
       customFrequencies = [...customFrequencies, newFreq];
-      notifyListeners();
+      _safeNotify();
       return newFreq;
     } catch (e) {
       error = e.toString();
-      notifyListeners();
+      _safeNotify();
       return null;
     }
   }
@@ -135,7 +149,7 @@ class ActivityProvider extends ChangeNotifier {
       int activityId, Map<String, dynamic> body) async {
     isSaving = true;
     error = null;
-    notifyListeners();
+    _safeNotify();
     try {
       final updated = await _repository.update(activityId, body);
       activities = activities
@@ -147,13 +161,13 @@ class ActivityProvider extends ChangeNotifier {
       return false;
     } finally {
       isSaving = false;
-      notifyListeners();
+      _safeNotify();
     }
   }
   Future<bool> mapExistingActivityToStage(int stageId, ActivityModel activity, String subgroupName) async {
     isSaving = true;
     error = null;
-    notifyListeners();
+    _safeNotify();
     try {
       await _repository.mapActivityToStage(stageId, activity.id, subgroupName);
       
@@ -165,7 +179,7 @@ class ActivityProvider extends ChangeNotifier {
       return false;
     } finally {
       isSaving = false;
-      notifyListeners();
+      _safeNotify();
     }
   }
 
@@ -197,7 +211,7 @@ class ActivityProvider extends ChangeNotifier {
       int activityId, int departmentId, String year, int? sectionId, int? teacherId, String scope) async {
     isSaving = true;
     error = null;
-    notifyListeners();
+    _safeNotify();
     try {
       await _repository.addAssignment(activityId, departmentId, year, sectionId, teacherId, scope);
     } catch (e) {
@@ -205,14 +219,14 @@ class ActivityProvider extends ChangeNotifier {
       rethrow;
     } finally {
       isSaving = false;
-      notifyListeners();
+      _safeNotify();
     }
   }
 
   Future<void> removeAssignment(int assignmentId) async {
     isSaving = true;
     error = null;
-    notifyListeners();
+    _safeNotify();
     try {
       await _repository.removeAssignment(assignmentId);
     } catch (e) {
@@ -220,14 +234,14 @@ class ActivityProvider extends ChangeNotifier {
       rethrow;
     } finally {
       isSaving = false;
-      notifyListeners();
+      _safeNotify();
     }
   }
 
   Future<void> clearAllAssignments(int activityId) async {
     isSaving = true;
     error = null;
-    notifyListeners();
+    _safeNotify();
     try {
       await _repository.clearAllAssignments(activityId);
     } catch (e) {
@@ -235,14 +249,14 @@ class ActivityProvider extends ChangeNotifier {
       rethrow;
     } finally {
       isSaving = false;
-      notifyListeners();
+      _safeNotify();
     }
   }
 
   Future<void> assignActivity(int activityId, bool ccEnabled, bool globalEnabled) async {
     isSaving = true;
     error = null;
-    notifyListeners();
+    _safeNotify();
     try {
       await _repository.assignActivity(activityId, ccEnabled, globalEnabled);
     } catch (e) {
@@ -250,7 +264,7 @@ class ActivityProvider extends ChangeNotifier {
       rethrow;
     } finally {
       isSaving = false;
-      notifyListeners();
+      _safeNotify();
     }
   }
 }

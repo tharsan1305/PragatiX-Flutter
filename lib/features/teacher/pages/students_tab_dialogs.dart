@@ -803,7 +803,7 @@ extension StudentsTabDialogs on _StudentsTabState {
                                         final int pts = log['points'] ?? 0;
                                         final String reason = log['reason'] ?? 'No reason given';
                                         final String recordedBy = log['recordedByName'] ?? 'Faculty';
-                                        final String actName = log['subgroupName'] ?? 'General';
+                                        final String actName = StringUtils.toTitleCase(log['subgroupName'] ?? 'General');
                                         final String dtStr = log['createdAt'] != null 
                                             ? log['createdAt'].toString().replaceAll('T', ' ').substring(0, 16) 
                                             : '';

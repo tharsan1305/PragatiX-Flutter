@@ -3,6 +3,8 @@ import 'package:spdms_app/features/student/widgets/student_activity_card.dart';
 import 'package:spdms_app/features/student/screens/activity_details_screen.dart';
 import 'package:spdms_app/features/student/widgets/progress_card.dart';
 
+import 'package:spdms_app/core/utils/string_utils.dart';
+
 class SubgroupDetailsScreen extends StatelessWidget {
   final Map<String, dynamic> subgroup;
 
@@ -10,7 +12,8 @@ class SubgroupDetailsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final String name = subgroup['name'] ?? 'Subgroup Details';
+    final String rawName = subgroup['name'] ?? 'Subgroup Details';
+    final String name = StringUtils.toTitleCase(rawName);
     final List activities = subgroup['activities'] ?? [];
     
     int completedCount = 0;

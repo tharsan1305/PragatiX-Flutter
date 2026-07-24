@@ -45,6 +45,11 @@ class _ActivitiesTabState extends State<ActivitiesTab> {
           
           final List<Map<String, dynamic>> mapped = fetchedStages.map((st) {
              return st as Map<String, dynamic>;
+          }).where((st) {
+             final bool isLocked = st['isLocked'] == true;
+             final bool isCompleted = st['isCompleted'] == true;
+             // Hide future stages entirely, show only past (completed) and current stages
+             return !(isLocked && !isCompleted);
           }).toList();
 
           mapped.sort((a, b) => ((a['displayOrder'] ?? a['id']) as num).compareTo((b['displayOrder'] ?? b['id']) as num));

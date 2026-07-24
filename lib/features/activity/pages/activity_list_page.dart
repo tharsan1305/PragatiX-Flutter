@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:spdms_app/features/activity/models/activity_model.dart';
+import 'package:spdms_app/features/activity/models/grouped_activity_model.dart';
 import 'package:spdms_app/features/activity/providers/activity_provider.dart';
 import 'package:spdms_app/shared/widgets/activity_card.dart';
 import 'package:spdms_app/features/activity/pages/create_activity_page.dart';
@@ -9,6 +10,7 @@ import 'package:spdms_app/features/activity/pages/group_activity_year_page.dart'
 import 'package:spdms_app/features/activity/pages/assign_staff_page.dart';
 import 'package:spdms_app/features/activity/repository/activity_repository.dart';
 import 'package:spdms_app/core/di/service_locator.dart';
+import 'package:spdms_app/core/utils/string_utils.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Activity List Page – entry point from SubgroupDetailsPage.
@@ -49,30 +51,7 @@ class _ActivityListPageState extends State<ActivityListPage> {
 
   late final ActivityProvider _provider;
 
-  String _getCleanName(String fullName) {
-    final lower = fullName.toLowerCase();
-    if (lower.endsWith(' (must)')) {
-      return fullName.substring(0, fullName.length - 7);
-    }
-    if (lower.endsWith(' (individual)')) {
-      return fullName.substring(0, fullName.length - 13);
-    }
-    if (lower.endsWith(' (group)')) {
-      return fullName.substring(0, fullName.length - 8);
-    }
-    return fullName;
-  }
 
-  String get _categoryLabel {
-    final cat = widget.subgroupCategory.toLowerCase();
-    if (cat == 'must' || cat == 'group' || cat == 'individual') {
-      return cat.toUpperCase();
-    }
-    final name = widget.subgroupName.toLowerCase();
-    if (name.contains('must')) return 'MUST';
-    if (name.contains('group')) return 'GROUP';
-    return 'INDIVIDUAL';
-  }
 
   @override
   void initState() {
@@ -81,7 +60,7 @@ class _ActivityListPageState extends State<ActivityListPage> {
     if (widget.isMyActivitiesOnly) {
       _provider.loadMyActivities();
     } else {
-      _provider.loadActivities(stageId: widget.stageId);
+      _provider.loadActivities(stageId: widget.stageId, subgroupName: widget.subgroupName);
     }
     _provider.loadDependencies();
   }
@@ -110,7 +89,7 @@ class _ActivityListPageState extends State<ActivityListPage> {
       if (widget.isMyActivitiesOnly) {
         await _provider.loadMyActivities();
       } else {
-        await _provider.loadActivities(stageId: widget.stageId);
+        await _provider.loadActivities(stageId: widget.stageId, subgroupName: widget.subgroupName);
       }
       if (widget.isAdmin && _provider.activities.isNotEmpty) {
         final newAct = _provider.activities.last;
@@ -147,7 +126,7 @@ class _ActivityListPageState extends State<ActivityListPage> {
       if (widget.isMyActivitiesOnly) {
         await _provider.loadMyActivities();
       } else {
-        await _provider.loadActivities(stageId: widget.stageId);
+        await _provider.loadActivities(stageId: widget.stageId, subgroupName: widget.subgroupName);
       }
     }
   }
@@ -206,58 +185,29 @@ class _ActivityListPageState extends State<ActivityListPage> {
     );
 
     try {
-      final allRaw = await getIt<ActivityRepository>().getActivities();
+      final groupedRaw = await getIt<ActivityRepository>().getGroupedActivities(subgroupName: widget.subgroupName);
       if (!mounted) return;
       Navigator.pop(context); // close loading
 
-      final existingIds = _provider.activities.map((a) => a.id).toSet();
-      final available = allRaw.where((a) => !existingIds.contains(a.id)).toList();
-
-      if (available.isEmpty) {
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('No available activities found.')),
-        );
-        return;
-      }
-
+      final existingNames = _provider.activities.map((a) => a.name.toLowerCase()).toSet();
+      
       showDialog(
         context: context,
-        builder: (ctx) => AlertDialog(
-          title: const Text('Select Activity'),
-          content: SizedBox(
-            width: double.maxFinite,
-            child: ListView.builder(
-              shrinkWrap: true,
-              itemCount: available.length,
-              itemBuilder: (context, index) {
-                final act = available[index];
-                return ListTile(
-                  title: Text(act.name),
-                  subtitle: Text(act.description ?? ''),
-                  onTap: () async {
-                    Navigator.pop(ctx);
-                    final success = await _provider.mapExistingActivityToStage(
-                      widget.stageId!,
-                      act,
-                      widget.subgroupName ?? 'MUST',
-                    );
-                    if (success && mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Activity mapped successfully'), backgroundColor: Colors.green),
-                      );
-                    }
-                  },
-                );
-              },
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text('Cancel'),
-            ),
-          ],
+        builder: (ctx) => GroupedActivitySelectionDialog(
+          groupedActivities: groupedRaw,
+          existingNames: existingNames,
+          onSelect: (ActivityOptionModel act) async {
+            final success = await _provider.mapExistingActivityToStage(
+              widget.stageId!,
+              act.toActivityModel(),
+              widget.subgroupName,
+            );
+            if (success && mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Activity mapped successfully'), backgroundColor: Colors.green),
+              );
+            }
+          },
         ),
       );
     } catch (e) {
@@ -375,7 +325,7 @@ class _ActivityListPageState extends State<ActivityListPage> {
   // ── Build ─────────────────────────────────────────────────────────────────
   @override
   Widget build(BuildContext context) {
-    final cleanTitle = _getCleanName(widget.subgroupName);
+    final cleanTitle = StringUtils.toTitleCase(widget.subgroupName);
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
@@ -415,14 +365,7 @@ class _ActivityListPageState extends State<ActivityListPage> {
 
           final baseList = widget.isMyActivitiesOnly 
               ? _provider.myActivities.map((e) => e.toActivityModel()).toList() 
-              : _provider.activities.where((a) {
-                  if (a.subgroup == null) return false;
-                  final sub = a.subgroup!.toUpperCase();
-                  if (_categoryLabel == 'MUST') return sub.contains('MUST') || sub == 'M';
-                  if (_categoryLabel == 'GROUP') return sub.contains('GROUP') || sub == 'G';
-                  if (_categoryLabel == 'INDIVIDUAL') return sub.contains('INDIVIDUAL') || sub == 'I';
-                  return false;
-                }).toList();
+              : _provider.activities;
                 
           final list = baseList;
 
@@ -524,7 +467,7 @@ class _ActivityListPageState extends State<ActivityListPage> {
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
-                      _categoryLabel,
+                      cleanTitle.toUpperCase(),
                       style: const TextStyle(
                           color: _primary,
                           fontSize: 11,
@@ -608,7 +551,7 @@ class _ActivityListPageState extends State<ActivityListPage> {
                   if (widget.isMyActivitiesOnly) {
                     _provider.loadMyActivities();
                   } else {
-                    _provider.loadActivities(stageId: widget.stageId);
+                    _provider.loadActivities(stageId: widget.stageId, subgroupName: widget.subgroupName);
                   }
                 },
                 child: const Text('Retry'),
@@ -620,3 +563,231 @@ class _ActivityListPageState extends State<ActivityListPage> {
     );
   }
 }
+
+class GroupedActivitySelectionDialog extends StatelessWidget {
+  final List<GroupedActivityModel> groupedActivities;
+  final Set<String> existingNames;
+  final Function(ActivityOptionModel) onSelect;
+
+  const GroupedActivitySelectionDialog({
+    super.key,
+    required this.groupedActivities,
+    required this.existingNames,
+    required this.onSelect,
+  });
+
+  IconData _getIconForSubgroup(String name) {
+    final lower = name.toLowerCase();
+    if (lower.contains('must')) return Icons.star;
+    if (lower.contains('individual')) return Icons.person;
+    if (lower.contains('group')) return Icons.groups;
+    return Icons.category;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // Filter out already mapped activities by checking names (case-insensitive)
+    final filteredGroups = groupedActivities.map((g) {
+      return GroupedActivityModel(
+        subgroup: g.subgroup,
+        activities: g.activities.where((a) => !existingNames.contains(a.name.toLowerCase())).toList(),
+      );
+    }).where((g) => g.activities.isNotEmpty).toList();
+
+    return Dialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Container(
+        width: MediaQuery.of(context).size.width * 0.90,
+        constraints: BoxConstraints(
+          maxWidth: 500,
+          minWidth: 320,
+          maxHeight: MediaQuery.of(context).size.height * 0.8,
+        ),
+        child: Column(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: const BoxDecoration(
+                color: Color(0xFF1E293B),
+                borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.list_alt, color: Colors.white),
+                  const SizedBox(width: 12),
+                  const Expanded(
+                    child: Text(
+                      'Select Existing Activity',
+                      style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close, color: Colors.white),
+                    onPressed: () => Navigator.pop(context),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: filteredGroups.isEmpty
+                  ? Center(
+                      child: Text(
+                        'No available activities found.',
+                        style: TextStyle(color: Colors.grey.shade600, fontSize: 16),
+                      ),
+                    )
+                  : ListView.builder(
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      itemCount: filteredGroups.length,
+                      itemBuilder: (context, groupIndex) {
+                        final group = filteredGroups[groupIndex];
+                        final icon = _getIconForSubgroup(group.subgroup);
+
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Section Header
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                              margin: const EdgeInsets.only(top: 8, bottom: 4),
+                              color: Colors.grey.shade100,
+                              child: Row(
+                                children: [
+                                  Icon(icon, size: 20, color: const Color(0xFFEA4335)),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      '${StringUtils.toTitleCase(group.subgroup).toUpperCase()} ACTIVITIES',
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 14,
+                                        letterSpacing: 1.1,
+                                        color: Color(0xFF1E293B),
+                                      ),
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            // Activities List
+                            ...group.activities.asMap().entries.map((entry) {
+                              final int actIndex = entry.key;
+                              final ActivityOptionModel act = entry.value;
+
+                              return Column(
+                                children: [
+                                  Material(
+                                    color: Colors.transparent,
+                                    child: InkWell(
+                                      onTap: () {
+                                        Navigator.pop(context);
+                                        onSelect(act);
+                                      },
+                                      child: Padding(
+                                        padding: const EdgeInsets.all(16),
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Row(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              children: [
+                                                Expanded(
+                                                  child: Text(
+                                                    act.name,
+                                                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                                                    maxLines: 2,
+                                                    overflow: TextOverflow.ellipsis,
+                                                  ),
+                                                ),
+                                                Container(
+                                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                                  decoration: BoxDecoration(
+                                                    color: Colors.green.shade50,
+                                                    borderRadius: BorderRadius.circular(12),
+                                                    border: Border.all(color: Colors.green.shade200),
+                                                  ),
+                                                  child: Text(
+                                                    '+\${act.awardXp} XP',
+                                                    style: TextStyle(
+                                                      color: Colors.green.shade700,
+                                                      fontWeight: FontWeight.bold,
+                                                      fontSize: 12,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                            if (act.description.isNotEmpty) ...[
+                                              const SizedBox(height: 6),
+                                              Text(
+                                                act.description,
+                                                style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
+                                                maxLines: 2,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                            ],
+                                            const SizedBox(height: 10),
+                                            Wrap(
+                                              spacing: 16,
+                                              runSpacing: 8,
+                                              crossAxisAlignment: WrapCrossAlignment.center,
+                                              children: [
+                                                Row(
+                                                  mainAxisSize: MainAxisSize.min,
+                                                  children: [
+                                                    Icon(Icons.loop, size: 14, color: Colors.grey.shade500),
+                                                    const SizedBox(width: 4),
+                                                    Flexible(
+                                                      child: Text(
+                                                        act.awardFrequency,
+                                                        style: TextStyle(color: Colors.grey.shade700, fontSize: 12),
+                                                        maxLines: 1,
+                                                        overflow: TextOverflow.ellipsis,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                                Row(
+                                                  mainAxisSize: MainAxisSize.min,
+                                                  children: [
+                                                    Icon(Icons.local_activity, size: 14, color: Colors.grey.shade500),
+                                                    const SizedBox(width: 4),
+                                                    Flexible(
+                                                      child: Text(
+                                                        act.type,
+                                                        style: TextStyle(color: Colors.grey.shade700, fontSize: 12),
+                                                        maxLines: 1,
+                                                        overflow: TextOverflow.ellipsis,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ],
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  if (actIndex < group.activities.length - 1)
+                                    const Divider(height: 1, indent: 16, endIndent: 16),
+                                ],
+                              );
+                            }),
+                            const SizedBox(height: 8),
+                          ],
+                        );
+                      },
+                    ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+

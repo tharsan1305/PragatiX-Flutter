@@ -54,6 +54,31 @@ class ActivityService {
     }
   }
 
+  Future<List<dynamic>> fetchGroupedActivities({String? subgroupName}) async {
+    String url = '${ActivityConstants.baseUrl}/activities/grouped';
+    if (subgroupName != null && subgroupName.isNotEmpty) {
+      url += '?subgroup=$subgroupName';
+    }
+    try {
+      final response = await http.get(
+        Uri.parse(url),
+        headers: _authHeaders,
+      );
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body) as Map<String, dynamic>;
+        if (data['success'] == true) {
+          return (data['data'] as List?) ?? [];
+        }
+      }
+      throw Exception('Failed to fetch grouped activities (status ${response.statusCode})');
+    } catch (e) {
+      if (e is Exception && !e.toString().contains('SocketException')) {
+        rethrow;
+      }
+      throw Exception('Internet Connection Error');
+    }
+  }
+
   Future<List<dynamic>> fetchDepartments() async {
     final response = await http.get(
       Uri.parse('${ActivityConstants.baseUrl}/departments'),

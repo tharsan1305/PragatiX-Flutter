@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:spdms_app/features/activity/services/activity_proxy_service.dart';
 import 'package:spdms_app/features/activity/pages/activity_list_page.dart';
 import 'package:spdms_app/core/di/service_locator.dart';
+import 'package:spdms_app/core/utils/string_utils.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Stage Details Page – shows subgroup list for a given stage.
@@ -67,18 +68,31 @@ class _StageDetailsPageState extends State<StageDetailsPage> {
               _individualThreshold = stage['individualThreshold'] ?? 0;
               _groupThreshold = stage['groupThreshold'] ?? 0;
               
-              // Map existing subgroups to retain IDs for activity navigation, or create defaults.
               List<dynamic> existingSubs = stage['subgroups'] as List<dynamic>? ?? [];
               
-              int mustId = existingSubs.firstWhere((s) => (s['name'] as String).toLowerCase().contains('must'), orElse: () => {'id': 1})['id'];
-              int indId = existingSubs.firstWhere((s) => (s['name'] as String).toLowerCase() == 'individual' || (s['name'] as String).toLowerCase().contains('individual') && !(s['name'] as String).toLowerCase().contains('must'), orElse: () => {'id': 2})['id'];
-              int groupId = existingSubs.firstWhere((s) => (s['name'] as String).toLowerCase().contains('group'), orElse: () => {'id': 3})['id'];
-
-              _subgroups = [
-                {'id': mustId, 'name': 'must (individual)', 'threshold': _mustThreshold, 'category': 'must'},
-                {'id': indId, 'name': 'individual', 'threshold': _individualThreshold, 'category': 'individual'},
-                {'id': groupId, 'name': 'groups', 'threshold': _groupThreshold, 'category': 'group'},
-              ];
+              if (existingSubs.isNotEmpty) {
+                final seenNames = <String>{};
+                _subgroups = [];
+                for (var s in existingSubs) {
+                  final name = s['name'] as String;
+                  if (!seenNames.contains(name.toLowerCase())) {
+                    seenNames.add(name.toLowerCase());
+                    _subgroups.add({
+                      'id': s['id'],
+                      'name': name,
+                      'threshold': s['threshold'] ?? 0,
+                      'category': s['category'] ?? name.toLowerCase(),
+                    });
+                  }
+                }
+              } else {
+                // Fallback if no subgroups are in the database yet
+                _subgroups = [
+                  {'id': 1, 'name': 'Must', 'threshold': _mustThreshold, 'category': 'must'},
+                  {'id': 2, 'name': 'Individual', 'threshold': _individualThreshold, 'category': 'individual'},
+                  {'id': 3, 'name': 'Group', 'threshold': _groupThreshold, 'category': 'group'},
+                ];
+              }
               _isLoading = false;
             });
             return;
@@ -89,9 +103,9 @@ class _StageDetailsPageState extends State<StageDetailsPage> {
     setState(() {
       if (_subgroups.isEmpty) {
         _subgroups = [
-          {'id': 1, 'name': 'must (individual)', 'threshold': 0, 'category': 'must'},
-          {'id': 2, 'name': 'individual', 'threshold': 0, 'category': 'individual'},
-          {'id': 3, 'name': 'groups', 'threshold': 0, 'category': 'group'},
+          {'id': 1, 'name': 'Must', 'threshold': 0, 'category': 'must'},
+          {'id': 2, 'name': 'Individual', 'threshold': 0, 'category': 'individual'},
+          {'id': 3, 'name': 'Group', 'threshold': 0, 'category': 'group'},
         ];
       }
       _isLoading = false;
@@ -99,11 +113,7 @@ class _StageDetailsPageState extends State<StageDetailsPage> {
   }
 
   String _getCleanName(String fullName) {
-    final lower = fullName.toLowerCase();
-    if (lower.endsWith(' (must)')) return fullName.substring(0, fullName.length - 7);
-    if (lower.endsWith(' (individual)')) return fullName.substring(0, fullName.length - 13);
-    if (lower.endsWith(' (group)')) return fullName.substring(0, fullName.length - 8);
-    return fullName;
+    return StringUtils.toTitleCase(fullName);
   }
 
   @override

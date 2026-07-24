@@ -12,8 +12,8 @@ class StageCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bool isLocked = stage['isLocked'] == true;
     final bool isCompleted = stage['isCompleted'] == true;
+    final bool isLocked = stage['isLocked'] == true && !isCompleted;
     final String name = stage['name'] ?? 'Stage';
     final int completedCount = stage['overallCompletedSubgroups'] ?? 0;
     final int totalCount = stage['overallTotalSubgroups'] ?? 0;
@@ -27,12 +27,12 @@ class StageCard extends StatelessWidget {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
         side: BorderSide(
-          color: isLocked ? Colors.grey.shade200.withOpacity(0.5) : Colors.grey.shade200,
+          color: isLocked ? Colors.grey.shade200.withValues(alpha: 0.5) : Colors.grey.shade200,
           width: isLocked ? 0.8 : 1.0,
         ),
       ),
       margin: const EdgeInsets.only(bottom: 16),
-      color: isLocked ? Colors.grey.shade50.withOpacity(0.8) : Colors.white,
+      color: isLocked ? Colors.grey.shade50.withValues(alpha: 0.8) : Colors.white,
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
         onTap: isLocked ? null : onTap,
@@ -46,7 +46,7 @@ class StageCard extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: isLocked 
                       ? Colors.grey.shade200 
-                      : (isCompleted ? Colors.green.withOpacity(0.1) : primaryColor.withOpacity(0.1)),
+                      : (isCompleted ? Colors.green.withValues(alpha: 0.1) : primaryColor.withValues(alpha: 0.1)),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
@@ -76,7 +76,7 @@ class StageCard extends StatelessWidget {
                     Text(
                       isLocked 
                           ? 'Stage Locked' 
-                          : 'Progress: ${(percentage * 100).toInt()}% • $completedCount/$totalCount Subgroups',
+                          : (isCompleted ? 'Stage Completed' : 'Progress: ${(percentage * 100).toInt()}% • $completedCount/$totalCount Subgroups'),
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,

@@ -30,6 +30,7 @@ class _DashboardTabState extends State<DashboardTab> {
   int rank = 1;
   int currentStage = 1;
   bool isCaptain = false;
+  String teamName = '';
   Map<String, dynamic>? activeStageDetails;
 
   @override
@@ -98,6 +99,7 @@ class _DashboardTabState extends State<DashboardTab> {
             department = resData['department'] ?? 'Information Technology';
             score = resData['score'] ?? 95;
             isCaptain = resData['isCaptain'] ?? false;
+            teamName = resData['teamName'] ?? '';
             if (resData['stage'] != null && activeStageDetails == null) {
               currentStage = resData['stage'];
             }
@@ -1038,10 +1040,10 @@ class _DashboardTabState extends State<DashboardTab> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Expanded(
+              Expanded(
                 child: Text(
-                  'My Group: IT Innovators',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF1E293B)),
+                  'My Group: ${teamName.isNotEmpty ? teamName : 'Unassigned'}',
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF1E293B)),
                   overflow: TextOverflow.ellipsis,
                   maxLines: 1,
                 ),

@@ -176,20 +176,31 @@ class ActivityCard extends StatelessWidget {
                     padding: const EdgeInsets.only(left: 21),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
-                      children: activity.assignmentSummary.map((assign) {
-                        final secName = assign['section'] as String?;
-                        final teachName = assign['teacher'] as String? ?? 'Unknown Teacher';
-                        final text = secName != null
-                            ? 'Section $secName → $teachName'
-                            : 'Assigned to → $teachName';
-                        return Padding(
-                          padding: const EdgeInsets.only(bottom: 2),
-                          child: Text(
-                            '• $text',
-                            style: TextStyle(fontSize: 12, color: Colors.grey.shade700),
-                          ),
-                        );
-                      }).toList(),
+                      children: (() {
+                        final uniqueAssignments = <String>{};
+                        final uniqueWidgets = <Widget>[];
+                        for (final assign in activity.assignmentSummary) {
+                          final secName = assign['section'] as String?;
+                          final teachName = assign['teacher'] as String? ?? 'Unknown Teacher';
+                          final text = secName != null
+                              ? 'Section $secName → $teachName'
+                              : 'Assigned to → $teachName';
+                          
+                          if (!uniqueAssignments.contains(text)) {
+                            uniqueAssignments.add(text);
+                            uniqueWidgets.add(
+                              Padding(
+                                padding: const EdgeInsets.only(bottom: 2),
+                                child: Text(
+                                  '• $text',
+                                  style: TextStyle(fontSize: 12, color: Colors.grey.shade700),
+                                ),
+                              ),
+                            );
+                          }
+                        }
+                        return uniqueWidgets;
+                      })(),
                     ),
                   ),
                 ],

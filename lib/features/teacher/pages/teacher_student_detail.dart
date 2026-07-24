@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:spdms_app/core/utils/error_handler.dart';
 import 'package:spdms_app/features/teacher/services/teacher_proxy_service.dart';
 import 'package:spdms_app/core/di/service_locator.dart';
+import 'package:spdms_app/core/utils/string_utils.dart';
 
 part 'teacher_student_detail_dialogs.dart';
 
@@ -357,7 +358,7 @@ class _TeacherStudentDetailState extends State<TeacherStudentDetail> {
                           final int pts = log['points'] ?? 0;
                           final String reason = log['reason'] ?? 'No reason given';
                           final String recordedBy = log['recordedByName'] ?? 'Faculty';
-                          final String actName = log['subgroupName'] ?? 'General';
+                          final String actName = StringUtils.toTitleCase(log['subgroupName'] ?? 'General');
                           final String dtStr = log['createdAt'] != null 
                               ? log['createdAt'].toString().replaceAll('T', ' ').substring(0, 16) 
                               : '';

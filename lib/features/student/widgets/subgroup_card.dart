@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:spdms_app/features/student/widgets/progress_card.dart';
 
+import 'package:spdms_app/core/utils/string_utils.dart';
+
 class SubgroupCard extends StatelessWidget {
   final Map<String, dynamic> subgroup;
   final VoidCallback onTap;
@@ -13,7 +15,8 @@ class SubgroupCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final String name = subgroup['name'] ?? 'Subgroup';
+    final String rawName = subgroup['name'] ?? 'Subgroup';
+    final String name = StringUtils.toTitleCase(rawName);
     final List activities = subgroup['activities'] ?? [];
     
     // For progress, we calculate based on the activities completed
