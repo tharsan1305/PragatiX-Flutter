@@ -11,6 +11,7 @@ import 'package:spdms_app/features/attendance/providers/attendance_provider.dart
 import 'package:spdms_app/features/attendance/widgets/fire_streak_icon.dart';
 import 'package:spdms_app/features/captain/pages/student_group_tab.dart';
 import 'package:spdms_app/core/di/service_locator.dart';
+import 'package:spdms_app/features/team/services/team_proxy_service.dart';
 
 class DashboardTab extends StatefulWidget {
   const DashboardTab({super.key, });
@@ -30,18 +31,23 @@ class _DashboardTabState extends State<DashboardTab> {
   int rank = 1;
   int currentStage = 1;
   bool isCaptain = false;
+  bool isViceCaptain = false;
+  bool isMember = false;
   String teamName = '';
   Map<String, dynamic>? activeStageDetails;
+  Map<String, dynamic>? teamDetailsData;
 
   @override
   void initState() {
     super.initState();
     _fetchProfileData();
+    _fetchTeamDetails();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final xpProv = Provider.of<XpProvider>(context, listen: false);
       xpProv.fetchSummary(regNo, context.read<AuthProvider>().token!);
       xpProv.fetchHistory(regNo, context.read<AuthProvider>().token!);
       xpProv.fetchStreaks(regNo, context.read<AuthProvider>().token!);
+      xpProv.fetchProgression(context.read<AuthProvider>().token!);
     });
     _fetchStages();
   }
@@ -72,6 +78,32 @@ class _DashboardTabState extends State<DashboardTab> {
     } catch (_) {}
   }
 
+  Future<void> _fetchTeamDetails() async {
+    if (context.read<AuthProvider>().token! == 'debug_token') return;
+    try {
+      final response = await getIt<TeamProxyService>().get(
+        Uri.parse('${ApiConfig.baseUrl}/api/v1/teams/my-team/details'),
+        headers: {'Authorization': 'Bearer ${context.read<AuthProvider>().token!}'},
+      );
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['success'] == true && data['data'] != null) {
+          if (mounted) {
+            setState(() {
+              teamDetailsData = data['data'];
+            });
+          }
+        } else {
+          if (mounted) setState(() => teamDetailsData = null);
+        }
+      } else {
+        if (mounted) setState(() => teamDetailsData = null);
+      }
+    } catch (_) {
+      if (mounted) setState(() => teamDetailsData = null);
+    }
+  }
+
   Future<void> _fetchProfileData() async {
     if (context.read<AuthProvider>().token! == 'debug_token') {
       setState(() {
@@ -97,8 +129,11 @@ class _DashboardTabState extends State<DashboardTab> {
             section = resData['section'] ?? 'A';
             year = resData['year'] ?? 'III';
             department = resData['department'] ?? 'Information Technology';
-            score = resData['score'] ?? 95;
-            isCaptain = resData['teamRole'] == 'CAPTAIN' || resData['teamRole'] == 'VICE_CAPTAIN';
+            score = resData['score'] ?? 0;
+            rank = resData['rank'] ?? 0;
+            isCaptain = resData['isCaptain'] == true;
+            isViceCaptain = resData['isViceCaptain'] == true;
+            isMember = resData['isMember'] == true;
             teamName = resData['teamName'] ?? '';
             if (resData['stage'] != null && activeStageDetails == null) {
               currentStage = resData['stage'];
@@ -127,26 +162,7 @@ class _DashboardTabState extends State<DashboardTab> {
     });
   }
 
-  // Calculate current level and thresholds from XP
-  Map<String, dynamic> _getLevelInfo(int totalXp) {
-    if (totalXp <= 100) {
-      return {'level': 1, 'title': 'Explorer', 'min': 0, 'max': 100};
-    } else if (totalXp <= 500) {
-      return {'level': 2, 'title': 'Builder', 'min': 101, 'max': 500};
-    } else if (totalXp <= 1500) {
-      return {'level': 3, 'title': 'Innovator', 'min': 501, 'max': 1500};
-    } else if (totalXp <= 3000) {
-      return {'level': 4, 'title': 'Specialist', 'min': 1501, 'max': 3000};
-    } else if (totalXp <= 5000) {
-      return {'level': 5, 'title': 'Leader', 'min': 3001, 'max': 5000};
-    } else if (totalXp <= 7000) {
-      return {'level': 6, 'title': 'Mentor', 'min': 5001, 'max': 7000};
-    } else if (totalXp <= 10000) {
-      return {'level': 7, 'title': 'Architect', 'min': 7001, 'max': 10000};
-    } else {
-      return {'level': 8, 'title': 'Industry Ready', 'min': 10001, 'max': 99999};
-    }
-  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -164,12 +180,12 @@ class _DashboardTabState extends State<DashboardTab> {
     }
 
     final totalXp = xpProvider.totalXp;
-    final levelInfo = _getLevelInfo(totalXp);
-    final int levelNum = levelInfo['level'];
-    final String levelTitle = levelInfo['title'];
-    final int minXp = levelInfo['min'];
-    final int maxXp = levelInfo['max'];
-    final double levelProgress = (totalXp - minXp) / (maxXp - minXp);
+    final progression = xpProvider.progression;
+    final int levelNum = progression != null ? (progression['currentLevel'] ?? 1) : 1;
+    final String levelTitle = progression != null ? (progression['currentLevelName'] ?? 'Explorer') : 'Explorer';
+    final int minXp = progression != null ? (progression['currentLevelMinXp'] ?? 0) : 0;
+    final int maxXp = progression != null ? (progression['currentLevelMaxXp'] ?? 100) : 100;
+    final double levelProgress = progression != null ? ((progression['progressPercentage'] ?? 0.0) / 100.0) : 0.0;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
@@ -217,6 +233,7 @@ class _DashboardTabState extends State<DashboardTab> {
         onRefresh: () async {
           await _fetchProfileData();
           await _fetchStages();
+          await _fetchTeamDetails();
           if (!mounted) return;
           final xpProv = Provider.of<XpProvider>(context, listen: false);
           if (!mounted) return;
@@ -225,6 +242,8 @@ class _DashboardTabState extends State<DashboardTab> {
           await xpProv.fetchHistory(regNo, context.read<AuthProvider>().token!);
           if (!mounted) return;
           await xpProv.fetchStreaks(regNo, context.read<AuthProvider>().token!);
+          if (!mounted) return;
+          await xpProv.fetchProgression(context.read<AuthProvider>().token!);
         },
         color: const Color(0xFF4F46E5),
         child: SingleChildScrollView(
@@ -283,6 +302,74 @@ class _DashboardTabState extends State<DashboardTab> {
                           SizedBox(width: 4),
                           Text(
                             'CAPTAIN',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ] else if (isViceCaptain) ...[
+                    const SizedBox(width: 10),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF94A3B8), Color(0xFF64748B)],
+                        ),
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.grey.withValues(alpha: 0.3),
+                            blurRadius: 4,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.shield, color: Colors.white, size: 12),
+                          SizedBox(width: 4),
+                          Text(
+                            'VICE CAPTAIN',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ] else if (isMember) ...[
+                    const SizedBox(width: 10),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF3B82F6), Color(0xFF2563EB)],
+                        ),
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.blue.withValues(alpha: 0.3),
+                            blurRadius: 4,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.person, color: Colors.white, size: 12),
+                          SizedBox(width: 4),
+                          Text(
+                            'MEMBER',
                             style: TextStyle(
                               color: Colors.white,
                               fontSize: 10,
@@ -483,18 +570,11 @@ class _DashboardTabState extends State<DashboardTab> {
   }
 
   Widget _buildCategoryBarChart(Map<String, int> categories) {
-    final double acadXp = (categories['ACADEMIC'] ?? 0).toDouble();
-    final double skillXp = (categories['SKILL'] ?? 0).toDouble();
-    final double commXp = (categories['COMMUNICATION'] ?? 0).toDouble();
-    final double leadXp = (categories['LEADERSHIP'] ?? 0).toDouble();
-    final double innoXp = (categories['INNOVATION'] ?? 0).toDouble();
-    final double placXp = (categories['PLACEMENT'] ?? 0).toDouble();
-    final double discXp = (categories['DISCIPLINE'] ?? 0).toDouble();
-    final double commuXp = (categories['COMMUNITY'] ?? 0).toDouble();
-    final double sporXp = (categories['SPORTS'] ?? 0).toDouble();
-    final double cultXp = (categories['CULTURAL'] ?? 0).toDouble();
+    final double individualXp = (categories['individualXp'] ?? 0).toDouble();
+    final double groupXp = (categories['groupXp'] ?? 0).toDouble();
+    final double mustXp = (categories['mustXp'] ?? 0).toDouble();
 
-    double maxVal = [acadXp, skillXp, commXp, leadXp, innoXp, placXp, discXp, commuXp, sporXp, cultXp]
+    double maxVal = [individualXp, groupXp, mustXp]
         .reduce((curr, next) => curr > next ? curr : next);
     if (maxVal < 10) maxVal = 100;
 
@@ -528,16 +608,9 @@ class _DashboardTabState extends State<DashboardTab> {
                 getTitlesWidget: (double value, TitleMeta meta) {
                   const style = TextStyle(color: Color(0xFF64748B), fontWeight: FontWeight.bold, fontSize: 8);
                   switch (value.toInt()) {
-                    case 0: return const Text('Acad', style: style);
-                    case 1: return const Text('Skill', style: style);
-                    case 2: return const Text('Comm', style: style);
-                    case 3: return const Text('Lead', style: style);
-                    case 4: return const Text('Inno', style: style);
-                    case 5: return const Text('Plac', style: style);
-                    case 6: return const Text('Disc', style: style);
-                    case 7: return const Text('Commu', style: style);
-                    case 8: return const Text('Sport', style: style);
-                    case 9: return const Text('Cult', style: style);
+                    case 0: return const Text('Individual', style: style);
+                    case 1: return const Text('Group', style: style);
+                    case 2: return const Text('MUST', style: style);
                     default: return const Text('', style: style);
                   }
                 },
@@ -550,16 +623,9 @@ class _DashboardTabState extends State<DashboardTab> {
           gridData: const FlGridData(show: false),
           borderData: FlBorderData(show: false),
           barGroups: [
-            _makeBarGroup(0, acadXp, Colors.blue),
-            _makeBarGroup(1, skillXp, Colors.purple),
-            _makeBarGroup(2, commXp, Colors.indigo),
-            _makeBarGroup(3, leadXp, Colors.amber),
-            _makeBarGroup(4, innoXp, Colors.orange),
-            _makeBarGroup(5, placXp, Colors.green),
-            _makeBarGroup(6, discXp, Colors.red),
-            _makeBarGroup(7, commuXp, Colors.teal),
-            _makeBarGroup(8, sporXp, Colors.pink),
-            _makeBarGroup(9, cultXp, Colors.cyan),
+            _makeBarGroup(0, individualXp, Colors.purple),
+            _makeBarGroup(1, groupXp, Colors.green),
+            _makeBarGroup(2, mustXp, Colors.amber),
           ],
         ),
       ),
@@ -568,16 +634,10 @@ class _DashboardTabState extends State<DashboardTab> {
 
   Widget _buildXpSummaryGrid(Map<String, int> categories, int totalXp) {
     final list = [
-      {'label': 'Academic XP', 'value': categories['ACADEMIC'] ?? 0, 'color': Colors.blue},
-      {'label': 'Skill XP', 'value': categories['SKILL'] ?? 0, 'color': Colors.purple},
-      {'label': 'Communication XP', 'value': categories['COMMUNICATION'] ?? 0, 'color': Colors.indigo},
-      {'label': 'Leadership XP', 'value': categories['LEADERSHIP'] ?? 0, 'color': Colors.amber},
-      {'label': 'Innovation XP', 'value': categories['INNOVATION'] ?? 0, 'color': Colors.orange},
-      {'label': 'Placement XP', 'value': categories['PLACEMENT'] ?? 0, 'color': Colors.green},
-      {'label': 'Discipline XP', 'value': categories['DISCIPLINE'] ?? 0, 'color': Colors.red},
-      {'label': 'Community XP', 'value': categories['COMMUNITY'] ?? 0, 'color': Colors.teal},
-      {'label': 'Sports XP', 'value': categories['SPORTS'] ?? 0, 'color': Colors.pink},
-      {'label': 'Cultural XP', 'value': categories['CULTURAL'] ?? 0, 'color': Colors.cyan},
+      {'label': 'Total XP', 'value': totalXp, 'color': Colors.blue},
+      {'label': 'Individual XP', 'value': categories['individualXp'] ?? 0, 'color': Colors.purple},
+      {'label': 'Group XP', 'value': categories['groupXp'] ?? 0, 'color': Colors.green},
+      {'label': 'MUST XP', 'value': categories['mustXp'] ?? 0, 'color': Colors.amber},
     ];
 
     return Container(

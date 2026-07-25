@@ -7,6 +7,7 @@ import 'package:spdms_app/features/teacher/services/teacher_proxy_service.dart';
 import 'package:spdms_app/features/teacher/pages/students_tab.dart';
 import 'package:spdms_app/features/activity/pages/group_activity_year_page.dart';
 import 'package:spdms_app/core/di/service_locator.dart';
+import 'package:spdms_app/features/badge/pages/cc_badge_requests_page.dart';
 
 class PerformanceActivitiesTab extends StatefulWidget {
   final List<String> subRoles;
@@ -28,6 +29,7 @@ class _PerformanceActivitiesTabState extends State<PerformanceActivitiesTab> {
 
   String? _selectedCategory;
   List<dynamic> _myActivities = [];
+  int _pendingBadgeRequests = 0;
   bool _isLoadingActivities = false;
 
   dynamic _selectedEvent; // Activity representation
@@ -81,6 +83,30 @@ class _PerformanceActivitiesTabState extends State<PerformanceActivitiesTab> {
   void initState() {
     super.initState();
     _fetchMyActivities();
+    if (widget.subRoles.any((r) => r.toUpperCase() == 'CC' || r.toUpperCase() == 'CLASS_COORDINATOR' || r.toUpperCase() == 'ROLE_CC')) {
+      _fetchPendingBadges();
+    }
+  }
+
+  Future<void> _fetchPendingBadges() async {
+    try {
+      final token = context.read<AuthProvider>().token;
+      if (token == null) return;
+      final response = await getIt<TeacherProxyService>().get(
+        Uri.parse('${ApiConfig.baseUrl}/api/v1/cc/dashboard/stats'),
+        headers: {'Authorization': 'Bearer $token'},
+      );
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['success'] == true && mounted) {
+           setState(() {
+             _pendingBadgeRequests = data['data']['pendingBadgeRequests'] ?? 0;
+           });
+        }
+      }
+    } catch (e) {
+      // Ignore
+    }
   }
 
   @override
@@ -564,20 +590,39 @@ class _PerformanceActivitiesTabState extends State<PerformanceActivitiesTab> {
               : null,
           actions: [
             if (widget.subRoles.any((r) => r.toUpperCase() == 'CC' || r.toUpperCase() == 'CLASS_COORDINATOR' || r.toUpperCase() == 'ROLE_CC') && _currentFlowStep == 0)
-              IconButton(
-                icon: const Icon(Icons.people_alt_rounded, color: Colors.white),
-                tooltip: 'Students Directory',
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => StudentsTab(
-                        
-                        subRoles: widget.subRoles,
-                      ),
+              Row(
+                children: [
+                  IconButton(
+                    icon: Badge(
+                      isLabelVisible: _pendingBadgeRequests > 0,
+                      label: Text(_pendingBadgeRequests.toString(), style: const TextStyle(color: Colors.white)),
+                      backgroundColor: Colors.red,
+                      child: const Icon(Icons.notifications, color: Colors.white),
                     ),
-                  );
-                },
+                    tooltip: 'Badge Requests',
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const CCBadgeRequestsPage()),
+                      ).then((_) => _fetchPendingBadges());
+                    },
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.people_alt_rounded, color: Colors.white),
+                    tooltip: 'Students Directory',
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => StudentsTab(
+                            
+                            subRoles: widget.subRoles,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ],
               ),
           ],
         ),

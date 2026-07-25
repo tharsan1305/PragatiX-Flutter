@@ -261,6 +261,8 @@ class _SharedLeaderboardPageState extends State<SharedLeaderboardPage> {
                               score: student['score'] ?? 0,
                               isCurrentUser: isCurrentUser,
                               subtitle: '${student['departmentName'] ?? ''} - ${student['year'] ?? ''} (${student['section'] ?? ''})',
+                              isCaptain: student['teamRole'] == 'CAPTAIN',
+                              isViceCaptain: student['teamRole'] == 'VICE_CAPTAIN',
                             );
                           },
                         ),

@@ -8,6 +8,8 @@ class SharedLeaderboardTile extends StatelessWidget {
   final int score;
   final bool isCurrentUser;
   final Color themeColor;
+  final bool isCaptain;
+  final bool isViceCaptain;
 
   const SharedLeaderboardTile({
     super.key,
@@ -17,6 +19,8 @@ class SharedLeaderboardTile extends StatelessWidget {
     required this.score,
     this.isCurrentUser = false,
     this.themeColor = AppColors.studentPrimary,
+    this.isCaptain = false,
+    this.isViceCaptain = false,
   });
 
   @override
@@ -62,13 +66,23 @@ class SharedLeaderboardTile extends StatelessWidget {
             ),
           ),
         ),
-        title: Text(
-          name,
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            color: isCurrentUser ? themeColor : AppColors.textPrimary,
-            fontSize: 14,
-          ),
+        title: Row(
+          children: [
+            if (isCaptain) const Text('👑 ', style: TextStyle(fontSize: 14)),
+            if (isViceCaptain) const Text('🥈 ', style: TextStyle(fontSize: 14)),
+            Expanded(
+              child: Text(
+                name,
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: isCurrentUser ? themeColor : AppColors.textPrimary,
+                  fontSize: 14,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
         ),
         subtitle: Text(
           subtitle,

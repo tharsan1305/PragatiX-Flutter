@@ -1,23 +1,31 @@
 import 'package:flutter/material.dart';
-import 'package:spdms_app/features/admin/repository/admin_repository.dart';
-import 'package:spdms_app/features/admin/pages/students_tab.dart';
-import 'package:spdms_app/features/admin/pages/teachers_tab.dart';
-import 'package:spdms_app/features/admin/pages/departments_tab.dart';
-import 'package:spdms_app/core/di/service_locator.dart';
-import 'package:spdms_app/features/leaderboard/pages/shared_leaderboard_page.dart';
 
-class OverviewTab extends StatefulWidget {
-  const OverviewTab({super.key, });
+// Import necessary dependencies
+
+import 'package:spdms_app/features/auth/providers/auth_provider.dart';
+import 'package:provider/provider.dart';
+import 'package:spdms_app/core/config/api_config.dart';
+import 'dart:convert';
+import 'package:spdms_app/features/teacher/services/teacher_proxy_service.dart';
+import 'package:spdms_app/core/di/service_locator.dart';
+import 'package:spdms_app/features/badge/pages/cc_badge_requests_page.dart';
+import 'package:spdms_app/features/teacher/pages/performance_activities_tab.dart';
+import 'package:spdms_app/features/teacher/pages/students_tab.dart';
+import 'package:spdms_app/features/attendance/pages/teacher_attendance_tab.dart';
+
+
+class CCOverviewTab extends StatefulWidget {
+  final List<String> subRoles;
+  const CCOverviewTab({super.key, required this.subRoles});
 
   @override
-  State<OverviewTab> createState() => _OverviewTabState();
+  State<CCOverviewTab> createState() => _CCOverviewTabState();
 }
 
-class _OverviewTabState extends State<OverviewTab> {
+class _CCOverviewTabState extends State<CCOverviewTab> {
+  int totalActivities = 0;
   int totalStudents = 0;
-  int totalTeachers = 0;
-  int totalDepartments = 0;
-  int totalAlerts = 0;
+  int totalAttendance = 0;
   int pendingBadgeRequests = 0;
   bool isLoading = true;
   bool hasError = false;
@@ -34,18 +42,47 @@ class _OverviewTabState extends State<OverviewTab> {
       hasError = false;
     });
     try {
-      final stats = await getIt<AdminRepository>().getStats();
-      setState(() {
-        totalStudents = stats['totalStudents'] ?? 0;
-        totalTeachers = stats['teachersCount'] ?? 0;
-        totalDepartments = stats['totalDepartments'] ?? 0;
-        totalAlerts = stats['totalAlerts'] ?? 0;
-        pendingBadgeRequests = stats['pendingBadgeRequests'] ?? 0;
-        isLoading = false;
-      });
-    } catch (e, stackTrace) {
-      debugPrint('Error fetching dashboard stats: $e');
-      debugPrint('Stack trace: $stackTrace');
+      final token = context.read<AuthProvider>().token;
+      if (token == 'debug_token') {
+        setState(() {
+          totalActivities = 10;
+          totalStudents = 120;
+          totalAttendance = 95;
+          pendingBadgeRequests = 5;
+          isLoading = false;
+        });
+        return;
+      }
+      
+      final response = await getIt<TeacherProxyService>().get(
+        Uri.parse('${ApiConfig.baseUrl}/api/v1/cc/dashboard/stats'),
+        headers: {'Authorization': 'Bearer $token'},
+      );
+      
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['success'] == true) {
+           final stats = data['data'];
+           setState(() {
+             totalActivities = stats['totalActivities'] ?? 0;
+             totalStudents = stats['totalStudents'] ?? 0;
+             totalAttendance = stats['totalAttendance'] ?? 0;
+             pendingBadgeRequests = stats['pendingBadgeRequests'] ?? 0;
+             isLoading = false;
+           });
+        } else {
+           setState(() {
+            hasError = true;
+            isLoading = false;
+          });
+        }
+      } else {
+         setState(() {
+          hasError = true;
+          isLoading = false;
+        });
+      }
+    } catch (e) {
       setState(() {
         hasError = true;
         isLoading = false;
@@ -57,7 +94,7 @@ class _OverviewTabState extends State<OverviewTab> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Admin Overview', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+        title: const Text('CC Overview', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
         backgroundColor: const Color(0xFF1E293B),
         elevation: 0,
         actions: [
@@ -103,7 +140,7 @@ class _OverviewTabState extends State<OverviewTab> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text(
-                      'Welcome back, System Admin',
+                      'Welcome to CC Dashboard',
                       style: TextStyle(
                         fontSize: 22,
                         fontWeight: FontWeight.bold,
@@ -112,7 +149,7 @@ class _OverviewTabState extends State<OverviewTab> {
                     ),
                     const SizedBox(height: 4),
                     const Text(
-                      'Here is a summary of the discipline system metrics.',
+                      'Here is a summary of your class metrics.',
                       style: TextStyle(
                         fontSize: 13,
                         color: Colors.white70,
@@ -130,36 +167,33 @@ class _OverviewTabState extends State<OverviewTab> {
                       childAspectRatio: 1.2,
                       children: [
                         _buildStatCard(
+                          title: 'Activities',
+                          count: totalActivities.toString(),
+                          icon: Icons.event_note_rounded,
+                          color: const Color(0xFF4A90E2),
+                          onTap: () {}, // Handled by bottom nav normally
+                        ),
+                        _buildStatCard(
                           title: 'Students',
                           count: totalStudents.toString(),
                           icon: Icons.people_alt_rounded,
-                          color: const Color(0xFF4A90E2),
-                          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const StudentsTab())),
-                        ),
-                        _buildStatCard(
-                          title: 'Teachers',
-                          count: totalTeachers.toString(),
-                          icon: Icons.school_rounded,
                           color: const Color(0xFF34A853),
-                          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const TeachersTab())),
+                          onTap: () {},
                         ),
                         _buildStatCard(
-                          title: 'Departments',
-                          count: totalDepartments.toString(),
-                          icon: Icons.account_balance_rounded,
+                          title: 'Attendance',
+                          count: '$totalAttendance%', // Mocked as %
+                          icon: Icons.co_present_rounded,
                           color: const Color(0xFFFBBC05),
-                          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const DepartmentsTab())),
+                          onTap: () {},
                         ),
                         _buildStatCard(
-                          title: 'Leaderboard',
-                          count: 'Top',
-                          icon: Icons.emoji_events_rounded,
-                          color: const Color(0xFFE91E63),
-                          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SharedLeaderboardPage(
-                            title: 'Global Leaderboard',
-                            showFilters: true,
-                            showCurrentUserRank: false,
-                          ))),
+                          title: 'Badge Requests',
+                          count: pendingBadgeRequests.toString(),
+                          icon: Icons.badge_rounded,
+                          color: const Color(0xFF9C27B0),
+                          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CCBadgeRequestsPage()))
+                                  .then((_) => _fetchStats()),
                         ),
                       ],
                     ),
@@ -196,7 +230,7 @@ class _OverviewTabState extends State<OverviewTab> {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: color.withValues(alpha: 0.1),
+                    color: color.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Icon(icon, color: color, size: 24),
@@ -229,28 +263,6 @@ class _OverviewTabState extends State<OverviewTab> {
         ),
       ),
       ),
-    );
-  }
-
-  Widget _buildOverviewRow(IconData icon, String title, String value, Color statusColor) {
-    return Row(
-      children: [
-        Icon(icon, color: Colors.blueGrey.shade600),
-        const SizedBox(width: 16),
-        Text(title, style: const TextStyle(fontWeight: FontWeight.w600, color: Color(0xFF1E293B))),
-        const Spacer(),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-          decoration: BoxDecoration(
-            color: statusColor.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Text(
-            value,
-            style: TextStyle(color: statusColor, fontSize: 12, fontWeight: FontWeight.bold),
-          ),
-        ),
-      ],
     );
   }
 }

@@ -9,15 +9,17 @@ class XpProvider extends ChangeNotifier {
   List<dynamic> _history = [];
   List<dynamic> _streaks = [];
   List<Map<String, dynamic>> _stages = [];
+  Map<String, dynamic>? _progression;
   bool _isLoading = false;
 
   Map<String, int> get xpByCategory => _xpByCategory;
   List<dynamic> get history => _history;
   List<dynamic> get streaks => _streaks;
   List<Map<String, dynamic>> get stages => _stages;
+  Map<String, dynamic>? get progression => _progression;
   bool get isLoading => _isLoading;
 
-  int get totalXp => _xpByCategory.values.fold(0, (sum, val) => sum + val);
+  int get totalXp => _xpByCategory['totalXp'] ?? 0;
 
   Future<void> fetchSummary(String regNo, String token) async {
     _isLoading = true;
@@ -228,6 +230,32 @@ class XpProvider extends ChangeNotifier {
     } catch (e) {
       debugPrint('Error fetching stages: $e');
       _stages = [];
+    }
+    _isLoading = false;
+    notifyListeners();
+  }
+
+  Future<void> fetchProgression(String token) async {
+    _isLoading = true;
+    notifyListeners();
+    try {
+      final response = await http.get(
+        Uri.parse('${ApiConfig.baseUrl}/api/v1/student-level/progression'),
+        headers: {'Authorization': 'Bearer $token'},
+      );
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['success'] == true && data['data'] != null) {
+          _progression = data['data'];
+        } else {
+          _progression = null;
+        }
+      } else {
+        _progression = null;
+      }
+    } catch (e) {
+      debugPrint('Error fetching progression: $e');
+      _progression = null;
     }
     _isLoading = false;
     notifyListeners();

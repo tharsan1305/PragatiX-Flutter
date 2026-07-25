@@ -6,6 +6,7 @@ import 'package:spdms_app/features/student/services/student_proxy_service.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:provider/provider.dart';
 import 'package:spdms_app/features/badge/providers/badge_provider.dart';
+import 'package:spdms_app/features/xp/providers/xp_provider.dart';
 import 'package:spdms_app/features/attendance/providers/attendance_provider.dart';
 import 'package:spdms_app/features/attendance/widgets/fire_streak_icon.dart';
 import 'package:spdms_app/core/di/service_locator.dart';
@@ -32,80 +33,7 @@ class _LevelsBadgesTabState extends State<LevelsBadgesTab> with SingleTickerProv
   final Color subtitleColor = const Color(0xFF64748B); // Slate Grey Subtitle
 
   // 8 Levels Data (as per JJCET Guidelines)
-  final List<Map<String, dynamic>> _levels = [
-    {
-      'level': 1,
-      'title': 'Explorer',
-      'xpMin': 0,
-      'xpMax': 100,
-      'stage': 'Foundation',
-      'objective': 'Build participation habits',
-      'unlocks': 'Onboarding missions, basic badges, attend all sessions'
-    },
-    {
-      'level': 2,
-      'title': 'Builder',
-      'xpMin': 101,
-      'xpMax': 500,
-      'stage': 'Foundation',
-      'objective': 'Develop consistency & discipline',
-      'unlocks': 'Study groups, quiz battles, attendance streaks'
-    },
-    {
-      'level': 3,
-      'title': 'Innovator',
-      'xpMin': 501,
-      'xpMax': 1500,
-      'stage': 'Skill-Building',
-      'objective': 'Build technical & collaborative skills',
-      'unlocks': 'Skill pathways unlocked, mini-projects, peer collaboration'
-    },
-    {
-      'level': 4,
-      'title': 'Specialist',
-      'xpMin': 1501,
-      'xpMax': 3000,
-      'stage': 'Skill-Building',
-      'objective': 'Demonstrate competency & peer support',
-      'unlocks': 'Advanced missions, certification tracks, own deliverables'
-    },
-    {
-      'level': 5,
-      'title': 'Leader',
-      'xpMin': 3001,
-      'xpMax': 5000,
-      'stage': 'Leadership',
-      'objective': 'Guide peers, lead teams strategically',
-      'unlocks': 'Mentorship roles, leadership missions, project lead'
-    },
-    {
-      'level': 6,
-      'title': 'Mentor',
-      'xpMin': 5001,
-      'xpMax': 7000,
-      'stage': 'Leadership',
-      'objective': 'Sustain ecosystem & peer development',
-      'unlocks': 'Governance participation, ecosystem stewardship'
-    },
-    {
-      'level': 7,
-      'title': 'Architect',
-      'xpMin': 7001,
-      'xpMax': 10000,
-      'stage': 'Mastery',
-      'objective': 'Influence ecosystem growth & innovation',
-      'unlocks': 'Industry opportunities, innovation access, strategic leadership'
-    },
-    {
-      'level': 8,
-      'title': 'Industry Ready',
-      'xpMin': 10001,
-      'xpMax': 99999,
-      'stage': 'Mastery',
-      'objective': 'Professional-level readiness - placement & alumni',
-      'unlocks': 'Full privileges, alumni bridge, institutional ambassador'
-    }
-  ];
+  // Levels data removed; handled by backend API now.
 
   // Skill Pathways Data (Available from Level 3 onwards)
   final List<Map<String, String>> _pathways = [
@@ -207,33 +135,30 @@ class _LevelsBadgesTabState extends State<LevelsBadgesTab> with SingleTickerProv
       // Ignore
     }
 
-    // Fetch Badges using Provider
     if (mounted) {
       final bp = Provider.of<BadgeProvider>(context, listen: false);
+      final xp = Provider.of<XpProvider>(context, listen: false);
       await bp.fetchMyBadges(context.read<AuthProvider>().token!);
       if (!mounted) return;
+      await bp.fetchMyBadgeRequests(context.read<AuthProvider>().token!);
+      if (!mounted) return;
       await bp.fetchAllBadges(context.read<AuthProvider>().token!);
+      if (!mounted) return;
+      await xp.fetchProgression(context.read<AuthProvider>().token!);
     }
 
     setState(() => _isLoading = false);
   }
 
-  // Get Level Info map from XP
-  Map<String, dynamic> _getCurrentLevelInfo() {
-    for (var lvl in _levels) {
-      if (_studentXp >= lvl['xpMin'] && _studentXp <= lvl['xpMax']) {
-        return lvl;
-      }
-    }
-    return _levels.last;
-  }
+
 
   // Submit Badge Claim
   @override
   Widget build(BuildContext context) {
     final badgeProvider = Provider.of<BadgeProvider>(context);
+    final xpProvider = Provider.of<XpProvider>(context);
 
-    if (_isLoading || badgeProvider.isLoading) {
+    if (_isLoading || badgeProvider.isLoading || xpProvider.isLoading) {
       return Scaffold(
         backgroundColor: bgColor,
         body: Center(
@@ -244,13 +169,16 @@ class _LevelsBadgesTabState extends State<LevelsBadgesTab> with SingleTickerProv
       );
     }
 
-    final currentLevel = _getCurrentLevelInfo();
-    final int currentLevelNum = currentLevel['level'];
-    final String currentLevelTitle = currentLevel['title'];
-    final int xpMin = currentLevel['xpMin'];
-    final int xpMax = currentLevel['xpMax'];
-    final double levelProgress = (_studentXp - xpMin) / (xpMax - xpMin);
+    final progression = xpProvider.progression;
+    if (progression == null) {
+      return Scaffold(
+        backgroundColor: bgColor,
+        body: const Center(child: Text('Progression data unavailable')),
+      );
+    }
 
+    final int currentLevelNum = progression['currentLevel'] ?? 1;
+    
     return Scaffold(
       backgroundColor: bgColor, // Light background matching dashboard
       appBar: AppBar(
@@ -287,7 +215,7 @@ class _LevelsBadgesTabState extends State<LevelsBadgesTab> with SingleTickerProv
       body: TabBarView(
         controller: _tabController,
         children: [
-          _buildLevelsTab(currentLevelNum, currentLevelTitle, levelProgress, xpMin, xpMax),
+          _buildLevelsTab(progression),
           _buildBadgesTab(currentLevelNum),
         ],
       ),
@@ -295,7 +223,18 @@ class _LevelsBadgesTabState extends State<LevelsBadgesTab> with SingleTickerProv
   }
 
   // ── LEVELS AND PATHWAY TAB (LIGHT THEME) ──────────────────────────
-  Widget _buildLevelsTab(int currentLevelNum, String currentLevelTitle, double levelProgress, int xpMin, int xpMax) {
+  Widget _buildLevelsTab(Map<String, dynamic> progression) {
+    final int currentLevelNum = progression['currentLevel'] ?? 0;
+    final String currentLevelTitle = progression['currentLevelName'] ?? 'Level';
+    final int totalXp = progression['totalXp'] ?? 0;
+    final int xpMax = progression['currentLevelMaxXp'] ?? 100;
+    final double levelProgress = (progression['progressPercentage'] ?? 0.0) / 100.0;
+    final bool isMaxLevel = progression['isMaxLevel'] ?? false;
+    final int remainingXp = progression['remainingXp'] ?? 0;
+    final List<dynamic> unlockedLevels = progression['unlockedLevels'] ?? [];
+    final List<dynamic> lockedLevels = progression['lockedLevels'] ?? [];
+    final List<dynamic> allLevels = [...unlockedLevels, ...lockedLevels];
+
     final bool isEligibleForPathway = currentLevelNum >= 3;
 
     return SingleChildScrollView(
@@ -367,11 +306,11 @@ class _LevelsBadgesTabState extends State<LevelsBadgesTab> with SingleTickerProv
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      '$_studentXp XP Points',
+                      '$totalXp XP Points',
                       style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15),
                     ),
                     Text(
-                      'Target: $xpMax XP',
+                      isMaxLevel ? 'Maximum Level Achieved' : 'Target: $xpMax XP (Remaining: $remainingXp)',
                       style: const TextStyle(color: Colors.white70, fontSize: 13),
                     ),
                   ],
@@ -438,15 +377,15 @@ class _LevelsBadgesTabState extends State<LevelsBadgesTab> with SingleTickerProv
           ListView.builder(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
-            itemCount: _levels.length,
+            itemCount: allLevels.length,
             itemBuilder: (context, index) {
-              final lvl = _levels[index];
-              final int lvlNum = lvl['level'];
+              final lvl = allLevels[index];
+              final int lvlNum = lvl['levelNumber'];
               final String lvlTitle = lvl['title'];
-              final String range = "${lvl["xpMin"]} - ${lvl["xpMax"] == 99999 ? '10000+' : lvl["xpMax"]}";
-              final String objective = lvl['objective'];
-              final String unlocks = lvl['unlocks'];
-              final String stageName = lvl['stage'];
+              final String range = "${lvl['xpMin']} - ${lvl['xpMax'] == 99999 ? '10000+' : lvl['xpMax']}";
+              final String objective = lvl['primaryObjective'] ?? 'No objective';
+              final String unlocks = lvl['keyUnlocks'] ?? 'No unlocks';
+              final String stageName = "Stage ${lvl['stage'] ?? 1}";
 
               final bool isCurrent = lvlNum == currentLevelNum;
               final bool isCompleted = lvlNum < currentLevelNum;
@@ -494,7 +433,7 @@ class _LevelsBadgesTabState extends State<LevelsBadgesTab> with SingleTickerProv
                           ),
                         ),
                       ),
-                      if (index != _levels.length - 1)
+                      if (index != allLevels.length - 1)
                         Container(
                           width: 2.5,
                           height: 110,
@@ -623,7 +562,7 @@ class _LevelsBadgesTabState extends State<LevelsBadgesTab> with SingleTickerProv
             const SizedBox(height: 12),
             DropdownButtonFormField<String>(
               dropdownColor: Colors.white,
-              initialValue: _selectedPathway == 'None' ? null : _selectedPathway,
+              value: _selectedPathway == 'None' ? null : _selectedPathway,
               hint: Text('Select a Skill Pathway', style: TextStyle(color: subtitleColor)),
               style: TextStyle(color: textColor, fontSize: 14),
               decoration: InputDecoration(
@@ -739,14 +678,16 @@ class _LevelsBadgesTabState extends State<LevelsBadgesTab> with SingleTickerProv
       ),
       itemBuilder: (context, index) {
         final badge = list[index];
+        final int badgeId = badge['id'];
         final String name = badge['name'] ?? 'Unknown';
         final IconData icon = _getIconForBadge(badge['iconUrl']);
 
-        final bool isEarned = badgeProvider.earnedBadges.any((b) => b['badgeName'] == name);
-        final bool isPending = badgeProvider.pendingBadges.any((b) => b['badgeName'] == name);
+        final bool isEarned = badgeProvider.earnedBadges.any((b) => (b['badgeId'] ?? b['badge']?['id']) == badgeId);
+        final bool isPending = badgeProvider.myBadgeRequests.any((r) => r['badgeId'] == badgeId && r['status'] == 'PENDING');
+        final bool isRejected = badgeProvider.myBadgeRequests.any((r) => r['badgeId'] == badgeId && r['status'] == 'REJECTED');
 
         return GestureDetector(
-          onTap: () => _showBadgeDetailModal(badge, isEarned, isPending),
+          onTap: () => _showBadgeDetailModal(badge, isEarned, isPending, isRejected),
           child: Card(
             color: Colors.white,
             elevation: 2,
@@ -824,14 +765,14 @@ class _LevelsBadgesTabState extends State<LevelsBadgesTab> with SingleTickerProv
   }
 
   // ── BADGE MODAL (LIGHT THEME) ─────────────────────────────────────
-  void _showBadgeDetailModal(Map<String, dynamic> badge, bool isEarned, bool isPending) {
+  void _showBadgeDetailModal(Map<String, dynamic> badge, bool isEarned, bool isPending, bool isRejected) {
+    final int badgeId = badge['id'];
     final String name = badge['name'] ?? 'Unknown';
     final String desc = badge['description'] ?? 'No description';
     final String authority = badge['approvalAuthority'] ?? 'Program Management';
     final String rarity = badge['rarity'] ?? 'Common';
     final IconData icon = _getIconForBadge(badge['iconUrl']);
-
-    final evidenceController = TextEditingController();
+    final TextEditingController proofLinkController = TextEditingController();
 
     showModalBottomSheet(
       context: context,
@@ -901,14 +842,14 @@ class _LevelsBadgesTabState extends State<LevelsBadgesTab> with SingleTickerProv
                     ),
                     const SizedBox(height: 20),
 
-                    // 6-Step Approval Process (JJCET Workflow)
+                    // Badge Approval Workflow (6 Steps)
                     Text(
                       'Badge Approval Workflow (6 Steps)',
                       style: TextStyle(color: textColor, fontSize: 14, fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 12),
-                    _buildApprovalStep(1, 'Claim Submitted', 'Student uploads claim + evidence', true),
-                    _buildApprovalStep(2, 'Evaluator Review', 'Verifies evidence (1-3 days)', isEarned),
+                    _buildApprovalStep(1, 'Claim Submitted', 'Student requests badge via portal', true),
+                    _buildApprovalStep(2, 'Evaluator Review', 'Verifies eligibility (1-3 days)', isEarned || isPending),
                     _buildApprovalStep(3, 'Faculty Check', 'Quality committee check (2-5 days)', isEarned),
                     _buildApprovalStep(4, 'Maker-Checker Sign-off', 'Approval authority sign-off (1-2 days)', isEarned),
                     _buildApprovalStep(5, 'Badge Issued', 'Awarded to student profile', isEarned),
@@ -920,123 +861,120 @@ class _LevelsBadgesTabState extends State<LevelsBadgesTab> with SingleTickerProv
                     if (isEarned)
                       Container(
                         width: double.infinity,
-                        padding: const EdgeInsets.all(14),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
                         decoration: BoxDecoration(
                           color: const Color(0xFF10B981).withValues(alpha: 0.12),
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: const Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.check_circle_rounded, color: Color(0xFF059669)),
-                            SizedBox(width: 8),
-                            Text('You have already earned this Badge!', style: TextStyle(color: Color(0xFF059669), fontWeight: FontWeight.bold)),
-                          ],
+                        child: const Center(
+                          child: Text(
+                            'Badge Earned',
+                            style: TextStyle(color: Color(0xFF059669), fontWeight: FontWeight.bold),
+                          ),
                         ),
                       )
                     else if (isPending)
                       Container(
                         width: double.infinity,
-                        padding: const EdgeInsets.all(14),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
                         decoration: BoxDecoration(
                           color: Colors.amber.withValues(alpha: 0.12),
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.pending_actions_rounded, color: Colors.amber.shade800),
-                            const SizedBox(width: 8),
-                            Text('Verification in progress...', style: TextStyle(color: Colors.amber.shade800, fontWeight: FontWeight.bold)),
-                          ],
+                        child: const Center(
+                          child: Text(
+                            'Pending Approval',
+                            style: TextStyle(color: Colors.amber, fontWeight: FontWeight.bold),
+                          ),
                         ),
                       )
-                    else ...[
-                      const Divider(color: Color(0xFFF1F5F9)),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Submit Claim Evidence',
-                        style: TextStyle(color: textColor, fontSize: 13, fontWeight: FontWeight.bold),
-                      ),
-                      const SizedBox(height: 8),
-                      TextField(
-                        controller: evidenceController,
-                        style: TextStyle(color: textColor, fontSize: 13),
-                        decoration: InputDecoration(
-                          hintText: 'Paste your evidence link (Google Drive / GitHub / PDF link)',
-                          hintStyle: TextStyle(color: subtitleColor.withValues(alpha: 0.7)),
-                          filled: true,
-                          fillColor: Colors.grey.shade100,
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(color: Colors.grey.shade300),
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(color: Colors.grey.shade200),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      SizedBox(
-                        width: double.infinity,
-                        height: 48,
-                        child: ElevatedButton(
-                          onPressed: () {
-                            final link = evidenceController.text.trim();
-                            if (link.isEmpty) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Please enter an evidence URL to submit.')),
-                              );
-                              return;
-                            }
-                            final parsedUrl = Uri.tryParse(link);
-                            if (parsedUrl == null || !parsedUrl.hasAbsolutePath) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Please enter a valid URL (e.g. https://github.com/...)')),
-                              );
-                              return;
-                            }
-
-                            Navigator.pop(context);
-                            final provider = Provider.of<BadgeProvider>(context, listen: false);
-                            
-                            debugPrint('Submitting Badge...');
-                            debugPrint('Badge ID/Name: $name');
-                            debugPrint('Evidence URL: $link');
-
-                            provider.submitBadgeClaim(context.read<AuthProvider>().token!, name, link).then((response) {
-                              if (context.mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text(response['message'] ?? (response['success'] ? 'Claim submitted' : 'Failed to claim')),
-                                    backgroundColor: response['success'] ? Colors.green : Colors.red,
+                    else
+                      Column(
+                        children: [
+                          if (isRejected)
+                            Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                              margin: const EdgeInsets.only(bottom: 12),
+                              decoration: BoxDecoration(
+                                color: Colors.red.shade50,
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(color: Colors.red.shade200),
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(Icons.error_outline, color: Colors.red.shade700, size: 20),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      'Your previous request was rejected. You can submit a new claim below.',
+                                      style: TextStyle(color: Colors.red.shade700, fontSize: 13),
+                                    ),
                                   ),
-                                );
-                              }
-                            });
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: primaryColor,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                ],
+                              ),
+                            ),
+                          TextField(
+                            controller: proofLinkController,
+                            decoration: InputDecoration(
+                              labelText: 'Proof Link (Required)',
+                              hintText: 'e.g., https://github.com/my-repo',
+                              prefixIcon: const Icon(Icons.link),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
                           ),
-                          child: const Text(
-                            'Submit Claim',
-                            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                          const SizedBox(height: 12),
+                          SizedBox(
+                            width: double.infinity,
+                            height: 48,
+                            child: ElevatedButton(
+                              onPressed: () {
+                                final link = proofLinkController.text.trim();
+                                if (link.isEmpty || Uri.tryParse(link)?.hasAbsolutePath != true) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text('Please enter a valid URL for the Proof Link'),
+                                      backgroundColor: Colors.red,
+                                    ),
+                                  );
+                                  return;
+                                }
+                                final provider = context.read<BadgeProvider>();
+                                provider.requestBadgeWorkflow(context.read<AuthProvider>().token!, badgeId, link).then((response) {
+                                  if (context.mounted) {
+                                    Navigator.pop(context);
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(response['message'] ?? (response['success'] ? 'Badge requested' : 'Failed to request')),
+                                        backgroundColor: response['success'] ? Colors.green : Colors.red,
+                                      ),
+                                    );
+                                  }
+                                });
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: primaryColor,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              ),
+                              child: const Text(
+                                'Submit Claim',
+                                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                              ),
+                            ),
                           ),
-                        ),
+                        ],
                       ),
                     ],
-                  ],
+                  ),
                 ),
-              ),
-            );
-          },
-        );
-      },
-    );
-  }
+              );
+            },
+          );
+        },
+      );
+    }
 
   Widget _buildApprovalStep(int num, String title, String subtitle, bool isCompleted) {
     return Padding(
@@ -1054,7 +992,7 @@ class _LevelsBadgesTabState extends State<LevelsBadgesTab> with SingleTickerProv
             child: Center(
               child: isCompleted
                   ? const Icon(Icons.check_rounded, size: 12, color: Colors.white)
-                  : Text('$num', style: TextStyle(color: subtitleColor, fontSize: 10, fontWeight: FontWeight.bold)),
+                  : Text('$num', style: const TextStyle(color: Color(0xFF64748B), fontSize: 10, fontWeight: FontWeight.bold)),
             ),
           ),
           const SizedBox(width: 12),
@@ -1065,7 +1003,7 @@ class _LevelsBadgesTabState extends State<LevelsBadgesTab> with SingleTickerProv
                 Text(
                   title,
                   style: TextStyle(
-                    color: isCompleted ? textColor : subtitleColor,
+                    color: isCompleted ? const Color(0xFF1E293B) : const Color(0xFF64748B),
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
                   ),
@@ -1073,7 +1011,7 @@ class _LevelsBadgesTabState extends State<LevelsBadgesTab> with SingleTickerProv
                 Text(
                   subtitle,
                   style: TextStyle(
-                    color: isCompleted ? textColor.withValues(alpha: 0.6) : subtitleColor.withValues(alpha: 0.7),
+                    color: isCompleted ? const Color(0xFF1E293B).withValues(alpha: 0.6) : const Color(0xFF64748B).withValues(alpha: 0.7),
                     fontSize: 10,
                   ),
                 ),

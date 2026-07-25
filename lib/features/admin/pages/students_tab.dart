@@ -12,6 +12,7 @@ import '../dialogs/edit_student_dialog.dart';
 import '../widgets/student_filter_panel.dart';
 import '../widgets/student_list.dart';
 import '../widgets/student_fab.dart';
+import 'package:spdms_app/features/badge/pages/admin_badge_requests_page.dart';
 
 
 
@@ -100,6 +101,11 @@ class _StudentsTabState extends State<StudentsTab> {
   final TextEditingController guardianPhoneController = TextEditingController();
   final TextEditingController guardianEmailController = TextEditingController();
 
+  String? _selectedDepartment;
+  String? _selectedSection;
+
+  int _pendingBadgeRequests = 0;
+
   DateTime? selectedDob;
   int? selectedDeptId;
 
@@ -112,9 +118,23 @@ class _StudentsTabState extends State<StudentsTab> {
     super.initState();
 
     _fetchStudents();
+    _fetchPendingBadges();
 
     _loadAllLookups();
 
+  }
+
+  Future<void> _fetchPendingBadges() async {
+    try {
+      final stats = await getIt<AdminRepository>().getStats();
+      if (mounted) {
+        setState(() {
+          _pendingBadgeRequests = stats['pendingBadgeRequests'] ?? 0;
+        });
+      }
+    } catch (e) {
+      // Ignore
+    }
   }
 
 
@@ -563,15 +583,31 @@ class _StudentsTabState extends State<StudentsTab> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Student Management', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+        title: const Text('Students Directory', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
         backgroundColor: const Color(0xFF1E293B),
         elevation: 0,
         actions: [
+          IconButton(
+            icon: Badge(
+              isLabelVisible: _pendingBadgeRequests > 0,
+              label: Text(_pendingBadgeRequests.toString(), style: const TextStyle(color: Colors.white)),
+              backgroundColor: Colors.red,
+              child: const Icon(Icons.notifications, color: Colors.white),
+            ),
+            tooltip: 'Badge Requests',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const AdminBadgeRequestsPage()),
+              ).then((_) => _fetchPendingBadges());
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.refresh, color: Colors.white),
             onPressed: () {
               setState(() => isLoading = true);
               _fetchStudents();
+              _fetchPendingBadges();
             },
           )
         ],

@@ -4,6 +4,7 @@ import 'package:spdms_app/features/admin/pages/activity_tab.dart';
 import 'package:spdms_app/features/admin/pages/profile_tab.dart';
 import 'package:spdms_app/features/team/pages/team_group_management_tab.dart';
 import 'package:spdms_app/features/attendance/pages/admin_attendance_tab.dart';
+import 'package:spdms_app/features/badge/pages/admin_badge_requests_page.dart';
 class AdminDashboard extends StatefulWidget {
   const AdminDashboard({super.key, });
 
@@ -23,6 +24,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
       const ActivityTab(),
       const AdminAttendanceTab(),
       const TeamGroupManagementTab(),
+      const AdminBadgeRequestsPage(),
       const ProfileTab(),
       
     ];
@@ -55,7 +57,10 @@ class _AdminDashboardState extends State<AdminDashboard> {
             icon: Icon(Icons.groups_rounded),
             label: 'Groups',
           ),
-
+          BottomNavigationBarItem(
+            icon: Icon(Icons.workspace_premium),
+            label: 'Requests',
+          ),
           BottomNavigationBarItem(
             icon: Icon(Icons.admin_panel_settings_rounded),
             label: 'Profile',

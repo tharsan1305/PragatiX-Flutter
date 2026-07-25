@@ -8,6 +8,7 @@ import 'package:spdms_app/shared/widgets/profile_header.dart';
 import 'package:spdms_app/shared/widgets/shared_profile_card.dart';
 import 'package:spdms_app/shared/widgets/shared_logout_button.dart';
 import 'package:spdms_app/core/di/service_locator.dart';
+import 'package:spdms_app/features/badge/pages/cc_badge_requests_page.dart';
 
 class ProfileTab extends StatefulWidget {
   const ProfileTab({super.key, });
@@ -97,6 +98,29 @@ class _ProfileTabState extends State<ProfileTab> {
                       ],
                     ),
                   ),
+                  const SizedBox(height: 16),
+                  if (_role.contains('CC'))
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                      child: SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton.icon(
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (context) => const CCBadgeRequestsPage()),
+                            );
+                          },
+                          icon: const Icon(Icons.badge, color: Colors.white),
+                          label: const Text('Manage Class Badge Requests', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.blueAccent,
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          ),
+                        ),
+                      ),
+                    ),
                   const Spacer(),
                   const Padding(
                     padding: EdgeInsets.all(24.0),

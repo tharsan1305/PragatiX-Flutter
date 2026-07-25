@@ -121,4 +121,123 @@ class BadgeRepository {
       return {'success': false, 'message': e.toString()};
     }
   }
+
+  // --- NEW BADGE REQUEST API (Workflow) ---
+
+  Future<Map<String, dynamic>> requestBadge(String token, int badgeId, String proofLink) async {
+    try {
+      final bodyStr = jsonEncode({'badgeId': badgeId, 'proofLink': proofLink});
+      final response = await http.post(
+        Uri.parse('${ApiConfig.baseUrl}/api/badge-requests'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+        body: bodyStr,
+      );
+      final data = jsonDecode(response.body);
+      if (response.statusCode == 200 && data['success'] == true) {
+        return {'success': true, 'message': 'Badge requested successfully', 'data': data['data']};
+      }
+      return {'success': false, 'message': data['message'] ?? 'Failed to request badge'};
+    } catch (e) {
+      return {'success': false, 'message': 'Connection error: $e'};
+    }
+  }
+
+  Future<Map<String, dynamic>> getMyRequests(String token) async {
+    try {
+      final response = await http.get(
+        Uri.parse('${ApiConfig.baseUrl}/api/badge-requests/my'),
+        headers: {'Authorization': 'Bearer $token'},
+      );
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['success'] == true) {
+          return {'success': true, 'data': data['data'] ?? []};
+        }
+        return {'success': false, 'message': data['message'] ?? 'Failed to load requests'};
+      }
+      return {'success': false, 'message': 'Server error: ${response.statusCode}'};
+    } catch (e) {
+      return {'success': false, 'message': e.toString()};
+    }
+  }
+
+  Future<Map<String, dynamic>> getAdminRequests(String token) async {
+    try {
+      final response = await http.get(
+        Uri.parse('${ApiConfig.baseUrl}/api/admin/badge-requests'),
+        headers: {'Authorization': 'Bearer $token'},
+      );
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['success'] == true) {
+          return {'success': true, 'data': data['data'] ?? []};
+        }
+        return {'success': false, 'message': data['message'] ?? 'Failed to load requests'};
+      }
+      return {'success': false, 'message': 'Server error: ${response.statusCode}'};
+    } catch (e) {
+      return {'success': false, 'message': e.toString()};
+    }
+  }
+
+  Future<Map<String, dynamic>> getCCRequests(String token) async {
+    try {
+      final response = await http.get(
+        Uri.parse('${ApiConfig.baseUrl}/api/cc/badge-requests'),
+        headers: {'Authorization': 'Bearer $token'},
+      );
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['success'] == true) {
+          return {'success': true, 'data': data['data'] ?? []};
+        }
+        return {'success': false, 'message': data['message'] ?? 'Failed to load requests'};
+      }
+      return {'success': false, 'message': 'Server error: ${response.statusCode}'};
+    } catch (e) {
+      return {'success': false, 'message': e.toString()};
+    }
+  }
+
+  Future<Map<String, dynamic>> approveWorkflowRequest(String token, int requestId, String role) async {
+    try {
+      String endpoint = role == 'ADMIN' ? 'admin' : 'cc';
+      final response = await http.put(
+        Uri.parse('${ApiConfig.baseUrl}/api/$endpoint/badge-requests/$requestId/approve'),
+        headers: {'Authorization': 'Bearer $token'},
+      );
+      final data = jsonDecode(response.body);
+      if (response.statusCode == 200 && data['success'] == true) {
+        return {'success': true, 'message': 'Request approved'};
+      }
+      return {'success': false, 'message': data['message'] ?? 'Failed to approve request'};
+    } catch (e) {
+      return {'success': false, 'message': e.toString()};
+    }
+  }
+
+  Future<Map<String, dynamic>> rejectWorkflowRequest(String token, int requestId, String role, {String? remarks}) async {
+    try {
+      String endpoint = role == 'ADMIN' ? 'admin' : 'cc';
+      final bodyStr = remarks != null ? jsonEncode({'remarks': remarks}) : null;
+      final response = await http.put(
+        Uri.parse('${ApiConfig.baseUrl}/api/$endpoint/badge-requests/$requestId/reject'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          if (bodyStr != null) 'Content-Type': 'application/json',
+        },
+        body: bodyStr,
+      );
+      final data = jsonDecode(response.body);
+      if (response.statusCode == 200 && data['success'] == true) {
+        return {'success': true, 'message': 'Request rejected'};
+      }
+      return {'success': false, 'message': data['message'] ?? 'Failed to reject request'};
+    } catch (e) {
+      return {'success': false, 'message': e.toString()};
+    }
+  }
 }

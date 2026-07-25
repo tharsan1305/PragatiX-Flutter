@@ -32,6 +32,10 @@ class _ProfileTabState extends State<ProfileTab> {
   String phone = '+91 98765 43210';
   int score = 95;
   int streak = 12;
+  String teamRole = 'STUDENT';
+  String teamName = 'No Team';
+  int rank = 0;
+  String currentLevel = '1';
 
   @override
   void initState() {
@@ -68,6 +72,11 @@ class _ProfileTabState extends State<ProfileTab> {
             semester = resData['semester'] ?? 'VI Semester';
             phone = resData['phone'] ?? '+91 98765 43210';
             department = resData['department'] ?? 'Computer Science';
+            teamRole = resData['userType']?.toString().replaceAll('_', ' ') ?? 'STUDENT';
+            teamName = resData['teamName'] ?? 'No Team';
+            if (teamName.isEmpty) teamName = 'No Team';
+            rank = resData['rank'] ?? 0;
+            currentLevel = resData['currentLevel']?.toString() ?? '1';
             isLoading = false;
           });
           return;
@@ -136,7 +145,13 @@ class _ProfileTabState extends State<ProfileTab> {
               // Details Card
               SharedProfileCard(
                 children: [
-                  const SharedProfileRow(label: 'Role', value: 'STUDENT'),
+                  SharedProfileRow(label: 'Role', value: teamRole),
+                  const Divider(height: 20, thickness: 0.8),
+                  SharedProfileRow(label: 'Team Name', value: teamName),
+                  const Divider(height: 20, thickness: 0.8),
+                  SharedProfileRow(label: 'Level', value: currentLevel),
+                  const Divider(height: 20, thickness: 0.8),
+                  SharedProfileRow(label: 'Rank', value: '#$rank'),
                   const Divider(height: 20, thickness: 0.8),
                   SharedProfileRow(label: 'Full Name', value: studentName),
                   const Divider(height: 20, thickness: 0.8),

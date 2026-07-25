@@ -7,7 +7,7 @@ import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'package:spdms_app/features/captain/services/captain_proxy_service.dart';
 import 'package:spdms_app/core/di/service_locator.dart';
-import 'package:spdms_app/features/team/pages/team_details_page.dart';
+import 'package:spdms_app/features/team/pages/student_team_details_page.dart';
 
 
 class StudentGroupTab extends StatefulWidget {
@@ -112,14 +112,7 @@ class _StudentGroupTabState extends State<StudentGroupTab> {
       );
     }
 
-    // Return TeamDetailsPage configured for read-only view
-    final teamId = _groupData?['teamId'] ?? _groupData?['id'];
-    
-    // We wrap it in a Navigator or just display it inline.
-    // TeamDetailsPage has its own Scaffold and AppBar, so we just return it.
-    return TeamDetailsPage(
-      teamId: teamId,
-      canManage: false,
-    );
+    // Return StudentTeamDetailsPage configured for read-only leaderboard view
+    return const StudentTeamDetailsPage();
   }
 }
