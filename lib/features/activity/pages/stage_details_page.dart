@@ -18,6 +18,7 @@ class StageDetailsPage extends StatefulWidget {
   final String stageName;
   final String stageDescription;
   final List<dynamic> teachersList;
+  final String? selectedYear;
 
   const StageDetailsPage({
     super.key,
@@ -25,6 +26,7 @@ class StageDetailsPage extends StatefulWidget {
     required this.stageName,
     required this.stageDescription,
     required this.teachersList,
+    this.selectedYear,
   });
 
   @override
