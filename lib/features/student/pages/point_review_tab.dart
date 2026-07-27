@@ -20,7 +20,7 @@ class PointReviewTab extends StatefulWidget {
 
 class _PointReviewTabState extends State<PointReviewTab> {
   bool isLoading = true;
-  String regNo = '24IT077';
+  String regNo = '';
   int currentStage = 1;
 
   // Category Configuration
@@ -58,7 +58,7 @@ class _PointReviewTabState extends State<PointReviewTab> {
         if (data['success'] == true) {
           final resData = data['data'];
           setState(() {
-            regNo = resData['username'] ?? '24IT077';
+            regNo = resData['username'] ?? '';
             currentStage = resData['stage'] ?? 1;
           });
         }
@@ -595,6 +595,7 @@ class _PointReviewTabState extends State<PointReviewTab> {
                               Navigator.pop(context);
                               final url = evidenceDescController.text.trim();
                               final success = await xpProvider.submitXpClaim(
+                                regNo,
                                 context.read<AuthProvider>().token!,
                                 selectedCategory!,
                                 selectedActivity!['name'],

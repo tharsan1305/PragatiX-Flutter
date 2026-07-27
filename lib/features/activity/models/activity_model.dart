@@ -31,6 +31,7 @@ class ActivityModel {
   final String assignmentMode; // MANUAL | GLOBAL | CLASS_COORDINATOR
   final String? subgroup;
   final List<Map<String, dynamic>> mappedStages;
+  final bool allowStudentRequest;
 
   // Backward-compat aliases
   String get frequency => awardFrequency;
@@ -66,6 +67,7 @@ class ActivityModel {
     this.assignmentMode = 'MANUAL',
     this.subgroup,
     this.mappedStages = const [],
+    this.allowStudentRequest = false,
   });
 
   factory ActivityModel.fromJson(Map<String, dynamic> json) {
@@ -181,6 +183,7 @@ class ActivityModel {
       assignmentMode: json['assignmentMode']?.toString() ?? 'MANUAL',
       subgroup: json['subgroup']?.toString(),
       mappedStages: mappedStagesList,
+      allowStudentRequest: json['allowStudentRequest'] as bool? ?? false,
     );
   }
 
@@ -210,6 +213,7 @@ class ActivityModel {
         'xpType': xpType,
         'assignmentMode': assignmentMode,
         'subgroup': subgroup,
+        'allowStudentRequest': allowStudentRequest,
       };
 
   ActivityModel copyWith({
@@ -239,6 +243,7 @@ class ActivityModel {
     String? xpType,
     String? assignmentMode,
     String? subgroup,
+    bool? allowStudentRequest,
   }) {
     return ActivityModel(
       id: id ?? this.id,
@@ -267,6 +272,7 @@ class ActivityModel {
       xpType: xpType ?? this.xpType,
       assignmentMode: assignmentMode ?? this.assignmentMode,
       subgroup: subgroup ?? this.subgroup,
+      allowStudentRequest: allowStudentRequest ?? this.allowStudentRequest,
     );
   }
 }

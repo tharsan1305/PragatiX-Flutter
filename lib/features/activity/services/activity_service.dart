@@ -288,13 +288,14 @@ class ActivityService {
     }
   }
 
-  Future<void> assignActivity(int activityId, bool ccEnabled, bool globalEnabled) async {
+  Future<void> assignActivity(int activityId, bool ccEnabled, bool globalEnabled, [List<Map<String, dynamic>>? assignments]) async {
     final response = await http.post(
       Uri.parse('${ActivityConstants.baseUrl}/activities/$activityId/assign'),
       headers: _jsonHeaders,
       body: jsonEncode({
         'ccEnabled': ccEnabled,
         'globalEnabled': globalEnabled,
+        'assignments': assignments ?? [],
       }),
     );
     if (response.statusCode != 200) {

@@ -1,12 +1,97 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:spdms_app/features/activity/providers/activity_completion_provider.dart';
 
-class ActivityDetailsScreen extends StatelessWidget {
+class ActivityDetailsScreen extends StatefulWidget {
   final Map<String, dynamic> activity;
 
   const ActivityDetailsScreen({Key? key, required this.activity}) : super(key: key);
 
   @override
+  State<ActivityDetailsScreen> createState() => _ActivityDetailsScreenState();
+}
+
+class _ActivityDetailsScreenState extends State<ActivityDetailsScreen> {
+  final _reasonCtrl = TextEditingController();
+  final _proofUrlCtrl = TextEditingController();
+  bool _isSubmitting = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<ActivityCompletionProvider>().loadMyRequests();
+    });
+  }
+
+  @override
+  void dispose() {
+    _reasonCtrl.dispose();
+    _proofUrlCtrl.dispose();
+    super.dispose();
+  }
+
+  void _showRequestCompletionDialog(int activityId) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Request Completion'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: _reasonCtrl,
+              decoration: const InputDecoration(
+                labelText: 'Reason / Remarks',
+                border: OutlineInputBorder(),
+              ),
+              maxLines: 3,
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _proofUrlCtrl,
+              decoration: const InputDecoration(
+                labelText: 'Proof URL (Optional)',
+                border: OutlineInputBorder(),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(ctx);
+              setState(() => _isSubmitting = true);
+              final success = await context.read<ActivityCompletionProvider>().submitRequest(
+                activityId,
+                reason: _reasonCtrl.text.trim(),
+                proofUrl: _proofUrlCtrl.text.trim(),
+              );
+              setState(() => _isSubmitting = false);
+
+              if (mounted) {
+                if (success) {
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Request submitted successfully!'), backgroundColor: Colors.green));
+                } else {
+                  final err = context.read<ActivityCompletionProvider>().error;
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(err ?? 'Failed to submit request'), backgroundColor: Colors.red));
+                }
+              }
+            },
+            child: const Text('Submit'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final activity = widget.activity;
     final String name = activity['activityName'] ?? 'Activity Details';
     final String description = activity['description'] ?? 'No description provided.';
     final int rewardXp = activity['rewardXp'] ?? 0;
@@ -21,10 +106,20 @@ class ActivityDetailsScreen extends StatelessWidget {
     final dynamic evidenceRaw = activity['evidence'];
     final List<String> evidence = evidenceRaw is List 
         ? evidenceRaw.map((e) => e.toString()).toList() 
-        : (evidenceRaw != null ? [evidenceRaw.toString()] : []);
+        : (evidenceRaw != null && evidenceRaw.toString().isNotEmpty ? [evidenceRaw.toString()] : []);
 
-    return Scaffold(
-      backgroundColor: Colors.white,
+    final bool allowStudentRequest = activity['allowStudentRequest'] == true;
+    final int activityId = activity['activityId'] ?? activity['id'] ?? 0;
+
+    return Consumer<ActivityCompletionProvider>(
+      builder: (context, provider, _) {
+        final existingRequest = provider.getMyRequestForActivity(activityId);
+        final bool hasPendingRequest = existingRequest != null && existingRequest.status == 'PENDING';
+        final bool hasApprovedRequest = existingRequest != null && existingRequest.status == 'APPROVED';
+        final bool hasRejectedRequest = existingRequest != null && existingRequest.status == 'REJECTED';
+        
+        return Scaffold(
+          backgroundColor: Colors.white,
       appBar: AppBar(
         title: const Text('Activity Details', style: TextStyle(fontWeight: FontWeight.bold)),
         backgroundColor: Colors.white,
@@ -174,7 +269,71 @@ class ActivityDetailsScreen extends StatelessWidget {
           ],
         ),
       ),
+      bottomNavigationBar: allowStudentRequest ? SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (isCompleted || hasApprovedRequest)
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(color: Colors.green.shade50, borderRadius: BorderRadius.circular(8)),
+                  child: const Row(
+                    children: [
+                      Icon(Icons.lock, color: Colors.green),
+                      SizedBox(width: 8),
+                      Expanded(child: Text('Completed ✓', style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold))),
+                    ],
+                  ),
+                )
+              else if (hasPendingRequest)
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(color: Colors.amber.shade50, borderRadius: BorderRadius.circular(8)),
+                  child: const Row(
+                    children: [
+                      Icon(Icons.access_time, color: Colors.amber),
+                      SizedBox(width: 8),
+                      Expanded(child: Text('Your request is pending approval.', style: TextStyle(color: Colors.amber))),
+                    ],
+                  ),
+                )
+              else ...[
+                if (hasRejectedRequest)
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 12),
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(color: Colors.red.shade50, borderRadius: BorderRadius.circular(8)),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.error_outline, color: Colors.red),
+                        const SizedBox(width: 8),
+                        Expanded(child: Text('Previous request rejected: ${existingRequest.rejectedReason ?? "No reason provided"}', style: const TextStyle(color: Colors.red))),
+                      ],
+                    ),
+                  ),
+                SizedBox(
+                  width: double.infinity,
+                  height: 50,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFEA4335),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    onPressed: _isSubmitting ? null : () => _showRequestCompletionDialog(activityId),
+                    child: _isSubmitting 
+                        ? const CircularProgressIndicator(color: Colors.white) 
+                        : Text(hasRejectedRequest ? 'Request Again' : 'Request Completion', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ) : null,
     );
+  });
   }
 }
 

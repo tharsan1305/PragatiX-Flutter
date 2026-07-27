@@ -61,6 +61,7 @@ class ActivityFormState extends State<ActivityForm> {
   final _awardXpCtrl = TextEditingController(text: '0');
   final _penaltyXpCtrl = TextEditingController(text: '0');
   String _selectedStatus = 'ACTIVE';
+  bool _allowStudentRequest = false;
 
   // ── Selection state ───────────────────────────────────────────────────────
   dynamic _selectedTeacher;
@@ -243,6 +244,7 @@ class ActivityFormState extends State<ActivityForm> {
       _selectedStatus = d.status.isNotEmpty ? d.status : 'ACTIVE';
       _awardEnabled = d.awardEnabled;
       _penaltyEnabled = d.penaltyEnabled;
+      _allowStudentRequest = d.allowStudentRequest;
       _awardXpCtrl.text = d.awardXp.toString();
       _penaltyXpCtrl.text = d.penaltyXp.toString();
       _selectedAwardType = d.awardType.isNotEmpty ? d.awardType : 'Fixed XP';
@@ -505,6 +507,7 @@ class ActivityFormState extends State<ActivityForm> {
       'penaltyXp': _penaltyEnabled ? (int.tryParse(_penaltyXpCtrl.text.trim()) ?? 0) : 0,
       'awardType': _selectedAwardType,
       'xpType': computedXpType,
+      'allowStudentRequest': _allowStudentRequest,
     };
     debugPrint('Award Enabled : ${payload['awardEnabled']}');
     debugPrint('Award XP : ${payload['awardXp']}');
@@ -655,6 +658,26 @@ class ActivityFormState extends State<ActivityForm> {
                     child: TypeSelector(
                       selected: _selectedType,
                       onChanged: (v) => setState(() => _selectedType = v),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: Colors.grey.shade200),
+                      boxShadow: [
+                        BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10, offset: const Offset(0, 4))
+                      ],
+                    ),
+                    child: SwitchListTile(
+                      title: const Text('Allow Student Request', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16)),
+                      subtitle: const Text('Students can submit a completion request for this activity.', style: TextStyle(color: Colors.grey)),
+                      value: _allowStudentRequest,
+                      activeColor: _primary,
+                      onChanged: (val) => setState(() => _allowStudentRequest = val),
+                      contentPadding: EdgeInsets.zero,
                     ),
                   ),
                   const SizedBox(height: 16),

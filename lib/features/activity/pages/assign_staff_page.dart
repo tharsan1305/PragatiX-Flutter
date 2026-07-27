@@ -53,10 +53,19 @@ class _AssignStaffPageState extends State<AssignStaffPage> {
   Future<void> _saveConfiguration() async {
     setState(() => _isLoading = true);
     try {
+      final currentAssignments = _assignments.map((a) => {
+        'scope': a['assignmentScope'],
+        'departmentId': a['departmentId'],
+        'sectionId': a['sectionId'],
+        'teacherId': a['teacherId'],
+        'year': a['year'] ?? '1'
+      }).toList();
+
       await widget.provider.assignActivity(
         widget.activity.id,
         _ccAssignment,
         _globalAssignment,
+        currentAssignments
       );
       ErrorHandler.showSnackBar(context, 'Assignments saved successfully!');
       if (mounted) {
@@ -261,7 +270,7 @@ class _AssignStaffPageState extends State<AssignStaffPage> {
                               final roles = (teacher['roles'] as List<dynamic>?) ?? [];
                               final isCC = roles.contains('ROLE_CC') || teacher['sectionId'] != null;
                               
-                              final isAssignedHere = _assignments.any((a) => a['teacherId'] == teacher['id'] && a['sectionId'] == secId && a['departmentId'] == deptId);
+                              final isAssignedHere = _assignments.any((a) => a['teacherId']?.toString() == teacher['id']?.toString() && a['sectionId']?.toString() == secId?.toString() && a['departmentId']?.toString() == deptId.toString());
 
                               return Card(
                                 elevation: 0,
@@ -515,7 +524,7 @@ class _AssignStaffPageState extends State<AssignStaffPage> {
                   ...sections.map((sec) {
                     final secId = sec['id'] as int;
                     final secName = sec['sectionName'] ?? 'Section';
-                    final secAssignments = _assignments.where((a) => a['sectionId'] == secId && a['departmentId'] == deptId).toList();
+                    final secAssignments = _assignments.where((a) => a['sectionId']?.toString() == secId.toString() && a['departmentId']?.toString() == deptId.toString()).toList();
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 16),
                       child: Column(
@@ -531,7 +540,7 @@ class _AssignStaffPageState extends State<AssignStaffPage> {
                 else
                   Builder(
                     builder: (context) {
-                      final deptAssignments = _assignments.where((a) => a['sectionId'] == null && a['departmentId'] == deptId).toList();
+                      final deptAssignments = _assignments.where((a) => a['sectionId'] == null && a['departmentId']?.toString() == deptId.toString()).toList();
                       return Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [

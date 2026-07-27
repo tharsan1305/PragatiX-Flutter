@@ -253,12 +253,12 @@ class ActivityProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> assignActivity(int activityId, bool ccEnabled, bool globalEnabled) async {
+  Future<void> assignActivity(int activityId, bool ccEnabled, bool globalEnabled, [List<Map<String, dynamic>>? assignments]) async {
     isSaving = true;
     error = null;
     _safeNotify();
     try {
-      await _repository.assignActivity(activityId, ccEnabled, globalEnabled);
+      await _repository.assignActivity(activityId, ccEnabled, globalEnabled, assignments);
     } catch (e) {
       error = e.toString();
       rethrow;

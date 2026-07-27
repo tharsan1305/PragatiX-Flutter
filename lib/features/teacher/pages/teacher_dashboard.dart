@@ -9,6 +9,7 @@ import 'package:spdms_app/features/teacher/pages/leaderboard_tab.dart';
 import 'package:spdms_app/features/teacher/pages/profile_tab.dart';
 import 'package:spdms_app/features/teacher/pages/hod_performance_tab.dart';
 import 'package:spdms_app/features/attendance/pages/teacher_attendance_tab.dart';
+import 'package:spdms_app/features/teacher/pages/teacher_activity_requests_tab.dart';
 
 import 'package:spdms_app/features/team/pages/team_group_management_tab.dart';
 import 'package:spdms_app/core/di/service_locator.dart';
@@ -81,6 +82,7 @@ class _TeacherDashboardState extends State<TeacherDashboard> {
         PerformanceActivitiesTab( subRoles: subRoles),
         const TeacherAttendanceTab(),
         const LeaderboardTab(),
+        const TeacherActivityRequestsTab(),
         const TeamGroupManagementTab(),
         if (subRoles.contains('HOD'))
           const HodPerformanceTab(),
@@ -110,7 +112,10 @@ class _TeacherDashboardState extends State<TeacherDashboard> {
         icon: Icon(Icons.leaderboard_rounded),
         label: 'Leaderboard',
       ),
-
+      const BottomNavigationBarItem(
+        icon: Icon(Icons.mark_email_unread_rounded),
+        label: 'Requests',
+      ),
       const BottomNavigationBarItem(
         icon: Icon(Icons.groups_rounded),
         label: 'Groups',

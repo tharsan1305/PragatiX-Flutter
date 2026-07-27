@@ -112,7 +112,7 @@ class ActivityRepository {
     await _service.clearAllAssignments(activityId);
   }
 
-  Future<void> assignActivity(int activityId, bool ccEnabled, bool globalEnabled) async {
-    await _service.assignActivity(activityId, ccEnabled, globalEnabled);
+  Future<void> assignActivity(int activityId, bool ccEnabled, bool globalEnabled, [List<Map<String, dynamic>>? assignments]) async {
+    await _service.assignActivity(activityId, ccEnabled, globalEnabled, assignments);
   }
 }

@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:spdms_app/core/theme/app_theme.dart';
 import 'package:spdms_app/features/xp/providers/xp_provider.dart';
 import 'package:spdms_app/features/badge/providers/badge_provider.dart';
+import 'package:spdms_app/features/activity/providers/activity_completion_provider.dart';
 import 'package:spdms_app/features/student/pages/student_dashboard_page.dart';
 import 'package:spdms_app/features/teacher/pages/teacher_dashboard.dart';
 import 'package:spdms_app/features/admin/pages/admin_dashboard.dart';
@@ -28,6 +29,7 @@ void main() async {
         ChangeNotifierProvider(create: (_) => getIt<BadgeProvider>()),
         ChangeNotifierProvider(create: (_) => StudentSearchProvider()),
         ChangeNotifierProvider(create: (_) => AttendanceProvider()),
+        ChangeNotifierProvider(create: (_) => getIt<ActivityCompletionProvider>()),
       ],
       child: const MyApp(),
     ),

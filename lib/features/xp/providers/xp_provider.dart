@@ -22,6 +22,10 @@ class XpProvider extends ChangeNotifier {
   int get totalXp => _xpByCategory['totalXp'] ?? 0;
 
   Future<void> fetchSummary(String regNo, String token) async {
+    if (regNo.isEmpty) {
+      debugPrint('Skipping fetchSummary because regNo is empty');
+      return;
+    }
     _isLoading = true;
     notifyListeners();
 
@@ -51,6 +55,10 @@ class XpProvider extends ChangeNotifier {
   }
 
   Future<void> fetchHistory(String regNo, String token) async {
+    if (regNo.isEmpty) {
+      debugPrint('Skipping fetchHistory because regNo is empty');
+      return;
+    }
     _isLoading = true;
     notifyListeners();
 
@@ -79,6 +87,10 @@ class XpProvider extends ChangeNotifier {
   }
 
   Future<void> fetchStreaks(String regNo, String token) async {
+    if (regNo.isEmpty) {
+      debugPrint('Skipping fetchStreaks because regNo is empty');
+      return;
+    }
     _isLoading = true;
     notifyListeners();
 
@@ -107,6 +119,7 @@ class XpProvider extends ChangeNotifier {
   }
 
   Future<bool> submitXpClaim(
+    String regNo,
     String token,
     String category,
     String activityName,
@@ -132,8 +145,8 @@ class XpProvider extends ChangeNotifier {
         final data = jsonDecode(response.body);
         final bool success = data['success'] == true;
         if (success) {
-           await fetchHistory('', token); // Reload history
-           await fetchSummary('', token); // Reload summary
+           await fetchHistory(regNo, token); // Reload history
+           await fetchSummary(regNo, token); // Reload summary
         }
         return success;
       }

@@ -22,11 +22,11 @@ class DashboardTab extends StatefulWidget {
 
 class _DashboardTabState extends State<DashboardTab> {
   bool isLoading = true;
-  String studentName = 'sivaganesh';
-  String regNo = '24IT077';
-  String department = 'Information Technology';
-  String section = 'A';
-  String year = 'III';
+  String studentName = '';
+  String regNo = '';
+  String department = '';
+  String section = '';
+  String year = '';
   int score = 95; // Discipline points
   int rank = 1;
   int currentStage = 1;
@@ -40,16 +40,51 @@ class _DashboardTabState extends State<DashboardTab> {
   @override
   void initState() {
     super.initState();
-    _fetchProfileData();
-    _fetchTeamDetails();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final xpProv = Provider.of<XpProvider>(context, listen: false);
-      xpProv.fetchSummary(regNo, context.read<AuthProvider>().token!);
-      xpProv.fetchHistory(regNo, context.read<AuthProvider>().token!);
-      xpProv.fetchStreaks(regNo, context.read<AuthProvider>().token!);
-      xpProv.fetchProgression(context.read<AuthProvider>().token!);
-    });
-    _fetchStages();
+    _loadInitialData();
+  }
+
+  Future<void> _loadInitialData() async {
+    if (context.read<AuthProvider>().token! == 'debug_token') {
+      setState(() => isLoading = false);
+      return;
+    }
+
+    try {
+      await _fetchProfileData(); // This populates regNo
+      
+      if (regNo.isNotEmpty) {
+        debugPrint('Student ID loaded: $regNo');
+        debugPrint('Register Number: $regNo');
+        debugPrint('Department: $department');
+        debugPrint('Year: $year');
+        debugPrint('Section: $section');
+        debugPrint('Calling XP Summary with: $regNo');
+        debugPrint('Calling Team API with: $regNo');
+        debugPrint('Calling Rank API with: $regNo');
+
+        final token = context.read<AuthProvider>().token!;
+        final xpProv = Provider.of<XpProvider>(context, listen: false);
+
+        await Future.wait([
+          _fetchTeamDetails(),
+          _fetchStages(),
+          xpProv.fetchSummary(regNo, token),
+          xpProv.fetchHistory(regNo, token),
+          xpProv.fetchStreaks(regNo, token),
+          xpProv.fetchProgression(token),
+        ]);
+      } else {
+        debugPrint('Error: regNo is empty after _fetchProfileData');
+      }
+    } catch (e) {
+      debugPrint('Error loading initial data: $e');
+    } finally {
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+        });
+      }
+    }
   }
   
   Future<void> _fetchStages() async {
@@ -105,12 +140,6 @@ class _DashboardTabState extends State<DashboardTab> {
   }
 
   Future<void> _fetchProfileData() async {
-    if (context.read<AuthProvider>().token! == 'debug_token') {
-      setState(() {
-        isLoading = false;
-      });
-      return;
-    }
     try {
       final response = await getIt<StudentProxyService>().get(
         Uri.parse('${ApiConfig.baseUrl}/api/v1/auth/me'),
@@ -124,13 +153,13 @@ class _DashboardTabState extends State<DashboardTab> {
         if (data['success'] == true) {
           final resData = data['data'];
           setState(() {
-            studentName = resData['fullName'] ?? 'sivaganesh';
-            regNo = resData['username'] ?? '24IT077';
-            section = resData['section'] ?? 'A';
-            year = resData['year'] ?? 'III';
-            department = resData['department'] ?? 'Information Technology';
+            studentName = resData['fullName'] ?? '';
+            regNo = resData['username'] ?? '';
+            section = resData['section'] ?? '';
+            year = resData['year'] ?? '';
+            department = resData['department'] ?? '';
             score = resData['score'] ?? 0;
-            rank = resData['rank'] ?? 0;
+            rank = resData['rank'] != null && resData['rank'] > 0 ? resData['rank'] : 1;
             isCaptain = resData['isCaptain'] == true;
             isViceCaptain = resData['isViceCaptain'] == true;
             isMember = resData['isMember'] == true;
@@ -138,28 +167,12 @@ class _DashboardTabState extends State<DashboardTab> {
             if (resData['stage'] != null && activeStageDetails == null) {
               currentStage = resData['stage'];
             }
-            isLoading = false;
           });
-
-          // Refresh provider queries with corrected student ID
-          if (!context.mounted) return;
-          final xpProv = Provider.of<XpProvider>(context, listen: false);
-          if (!context.mounted) return;
-          xpProv.fetchSummary(regNo, context.read<AuthProvider>().token!);
-          if (!context.mounted) return;
-          xpProv.fetchHistory(regNo, context.read<AuthProvider>().token!);
-          if (!context.mounted) return;
-          xpProv.fetchStreaks(regNo, context.read<AuthProvider>().token!);
-          return;
         }
       }
     } catch (e) {
-      // Keep fallback
+      debugPrint('Error fetching profile data: $e');
     }
-
-    setState(() {
-      isLoading = false;
-    });
   }
 
 
@@ -468,14 +481,24 @@ class _DashboardTabState extends State<DashboardTab> {
                               style: TextStyle(color: Colors.white70, fontSize: 12),
                             ),
                             const SizedBox(height: 4),
-                            Text(
-                              '$year Year - Sec $section',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 14,
+                            if (year.isNotEmpty && section.isNotEmpty)
+                              Text(
+                                '$year Year - Sec $section',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 14,
+                                ),
+                              )
+                            else if (year.isNotEmpty)
+                              Text(
+                                '$year Year',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 14,
+                                ),
                               ),
-                            ),
                           ],
                         ),
                       ],
@@ -1086,6 +1109,46 @@ class _DashboardTabState extends State<DashboardTab> {
 
   // Widget 6: Group Card
   Widget _buildGroupCard() {
+    if (teamDetailsData == null) {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: Colors.grey.shade200),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.02),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            )
+          ]
+        ),
+        child: const Center(
+          child: Column(
+            children: [
+              Icon(Icons.group_off, color: Colors.grey, size: 40),
+              SizedBox(height: 12),
+              Text(
+                'No Team Assigned',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.grey),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    final String name = teamDetailsData!['teamName'] ?? 'Unnamed Team';
+    final String captain = teamDetailsData!['captainName'] ?? 'Not Assigned';
+    final String viceCaptain = teamDetailsData!['viceCaptainName'] ?? 'Not Assigned';
+    final int teamXp = teamDetailsData!['totalTeamXp'] ?? 0;
+    final String stage = teamDetailsData!['stage'] ?? 'Stage 1';
+    final String dept = teamDetailsData!['department'] ?? 'N/A';
+    final String sec = teamDetailsData!['section'] ?? 'N/A';
+    final int memberCount = teamDetailsData!['currentMemberCount'] ?? (teamDetailsData!['members'] as List?)?.length ?? 0;
+    
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
@@ -1093,6 +1156,13 @@ class _DashboardTabState extends State<DashboardTab> {
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: Colors.grey.shade100),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          )
+        ]
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1102,40 +1172,118 @@ class _DashboardTabState extends State<DashboardTab> {
             children: [
               Expanded(
                 child: Text(
-                  'My Group: ${teamName.isNotEmpty ? teamName : 'Unassigned'}',
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF1E293B)),
+                  'My Group: $name',
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF1E293B)),
                   overflow: TextOverflow.ellipsis,
                   maxLines: 1,
                 ),
               ),
               const SizedBox(width: 8),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
-                  color: Colors.orange.shade50,
-                  borderRadius: BorderRadius.circular(8),
+                  color: Colors.indigo.shade50,
+                  borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
-                  'ADVANCED',
-                  style: TextStyle(color: Colors.orange.shade800, fontSize: 9, fontWeight: FontWeight.bold),
+                  stage.toUpperCase(),
+                  style: TextStyle(color: Colors.indigo.shade700, fontSize: 10, fontWeight: FontWeight.bold),
                 ),
               ),
             ],
           ),
+          const SizedBox(height: 16),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              _buildSmallBadge(Icons.business, dept),
+              _buildSmallBadge(Icons.class_, 'Sec: $sec'),
+              _buildSmallBadge(Icons.people, '$memberCount Members'),
+            ],
+          ),
+          const SizedBox(height: 16),
+          const Divider(color: Colors.black12),
           const SizedBox(height: 12),
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                'Captain: Sivaganesh',
-                style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Captain',
+                      style: TextStyle(color: Colors.grey.shade500, fontSize: 11, fontWeight: FontWeight.w600),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      captain,
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF1E293B)),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
               ),
-              const Text(
-                'Group XP: 3820 XP',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF1E293B)),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Vice Captain',
+                      style: TextStyle(color: Colors.grey.shade500, fontSize: 11, fontWeight: FontWeight.w600),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      viceCaptain,
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF1E293B)),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.green.shade50,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.green.shade100),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.stars_rounded, color: Colors.green, size: 20),
+                const SizedBox(width: 8),
+                Text(
+                  'Group XP: $teamXp XP',
+                  style: TextStyle(color: Colors.green.shade800, fontWeight: FontWeight.bold, fontSize: 14),
+                ),
+              ],
+            ),
+          )
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSmallBadge(IconData icon, String label) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade50,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.grey.shade200),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 12, color: Colors.grey.shade600),
+          const SizedBox(width: 4),
+          Text(label, style: TextStyle(fontSize: 11, color: Colors.grey.shade700, fontWeight: FontWeight.w500)),
         ],
       ),
     );

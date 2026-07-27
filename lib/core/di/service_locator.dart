@@ -5,11 +5,13 @@ import 'package:spdms_app/features/auth/providers/auth_provider.dart';
 import 'package:spdms_app/features/xp/providers/xp_provider.dart';
 import 'package:spdms_app/features/badge/providers/badge_provider.dart';
 import 'package:spdms_app/features/activity/providers/activity_provider.dart';
+import 'package:spdms_app/features/activity/providers/activity_completion_provider.dart';
 
 // Services
 import 'package:spdms_app/features/activity/services/activity_proxy_service.dart';
 import 'package:spdms_app/features/activity/services/activity_service.dart';
 import 'package:spdms_app/features/activity/services/group_activity_service.dart';
+import 'package:spdms_app/features/activity/services/activity_completion_service.dart';
 import 'package:spdms_app/features/admin/services/admin_proxy_service.dart';
 import 'package:spdms_app/features/admin/services/admin_service.dart';
 import 'package:spdms_app/features/auth/services/auth_service.dart';
@@ -39,11 +41,13 @@ void setupLocator() {
   getIt.registerLazySingleton(() => XpProvider());
   getIt.registerLazySingleton(() => BadgeProvider());
   getIt.registerFactory(() => ActivityProvider(getIt<ActivityRepository>()));
+  getIt.registerLazySingleton(() => ActivityCompletionProvider(getIt<ActivityCompletionService>()));
 
   // 2. Services
   getIt.registerLazySingleton(() => AuthService());
   getIt.registerLazySingleton(() => AdminService(getIt<AuthProvider>()));
   getIt.registerLazySingleton(() => ActivityService(getIt<AuthProvider>().token ?? ''));
+  getIt.registerLazySingleton(() => ActivityCompletionService(getIt<AuthProvider>().token ?? ''));
   getIt.registerLazySingleton(() => CaptainService(getIt<AuthProvider>()));
   getIt.registerLazySingleton(() => GroupActivityService(getIt<AuthProvider>().token ?? ''));
   getIt.registerLazySingleton(() => StudentService(getIt<AuthProvider>()));

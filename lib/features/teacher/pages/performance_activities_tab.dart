@@ -8,6 +8,7 @@ import 'package:spdms_app/features/teacher/pages/students_tab.dart';
 import 'package:spdms_app/features/activity/pages/group_activity_year_page.dart';
 import 'package:spdms_app/core/di/service_locator.dart';
 import 'package:spdms_app/features/badge/pages/cc_badge_requests_page.dart';
+import 'package:spdms_app/features/penalty/pages/penalty_requests_page.dart' as spdms_penalty;
 
 class PerformanceActivitiesTab extends StatefulWidget {
   final List<String> subRoles;
@@ -624,6 +625,20 @@ class _PerformanceActivitiesTabState extends State<PerformanceActivitiesTab> {
                   ),
                 ],
               ),
+            IconButton(
+              icon: const Icon(Icons.gavel_rounded, color: Colors.white),
+              tooltip: 'Penalty Requests',
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => spdms_penalty.PenaltyRequestsPage(
+                      isCC: widget.subRoles.any((r) => r.toUpperCase() == 'CC' || r.toUpperCase() == 'CLASS_COORDINATOR' || r.toUpperCase() == 'ROLE_CC'),
+                    ),
+                  ),
+                );
+              },
+            ),
           ],
         ),
         body: _buildAwardXpTabBody(),

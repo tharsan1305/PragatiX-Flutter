@@ -111,7 +111,7 @@ class ActivityOwnerSection extends StatelessWidget {
             child: DropdownButton<dynamic>(
               value: selectedSection != null
                   ? filteredSections.firstWhere(
-                      (s) => s['id'] == selectedSection['id'],
+                      (s) => s['id'].toString() == selectedSection['id'].toString(),
                       orElse: () => null,
                     )
                   : null,
@@ -233,7 +233,7 @@ class ActivityOwnerSection extends StatelessWidget {
                       separatorBuilder: (_, _) => const SizedBox(height: 12),
                       itemBuilder: (context, idx) {
                         final t = searchedTeachers[idx];
-                        final isSelected = selectedTeacher != null && selectedTeacher['id'] == t['id'];
+                        final isSelected = selectedTeacher != null && selectedTeacher['id']?.toString() == t['id']?.toString();
                         final deptName = t['departmentName'] ?? 'No Department';
                         final uName = t['username'] ?? '';
                         final fullName = t['fullName'] ?? '';
