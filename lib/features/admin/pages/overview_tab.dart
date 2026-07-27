@@ -5,6 +5,8 @@ import 'package:spdms_app/features/admin/pages/teachers_tab.dart';
 import 'package:spdms_app/features/admin/pages/departments_tab.dart';
 import 'package:spdms_app/core/di/service_locator.dart';
 import 'package:spdms_app/features/leaderboard/pages/shared_leaderboard_page.dart';
+import 'package:provider/provider.dart';
+import 'package:spdms_app/features/auth/providers/auth_provider.dart';
 
 class OverviewTab extends StatefulWidget {
   const OverviewTab({super.key, });
@@ -53,63 +55,82 @@ class _OverviewTabState extends State<OverviewTab> {
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Admin Overview', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
-        backgroundColor: const Color(0xFF1E293B),
-        elevation: 0,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh, color: Colors.white),
-            onPressed: () {
-              setState(() => isLoading = true);
-              _fetchStats();
-            },
-          )
-        ],
-      ),
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Color(0xFF1E293B), Color(0xFFF1F5F9)],
-            stops: [0.3, 0.3],
+      Widget build(BuildContext context) {
+        final authProvider = context.watch<AuthProvider>();
+        final currentUser = authProvider.currentUser ?? {};
+        final List<dynamic> roles = currentUser['roles'] ?? [];
+        final String? assignedYear = currentUser['assignedAcademicYear'];
+        
+        bool isSuperAdmin = roles.contains('ROLE_SUPER_ADMIN');
+        
+        String titlePrefix = 'Admin';
+        String welcomeText = 'System Admin';
+        
+        if (isSuperAdmin) {
+            titlePrefix = 'Super Admin';
+            welcomeText = 'Super Admin';
+        } else if (assignedYear != null) {
+            String cleanYear = assignedYear.replaceAll('_', ' ').toLowerCase();
+            cleanYear = cleanYear.split(' ').map((str) => str[0].toUpperCase() + str.substring(1)).join(' ');
+            titlePrefix = '$cleanYear Admin';
+            welcomeText = '$cleanYear Admin';
+        }
+
+        return Scaffold(
+          appBar: AppBar(
+            title: Text('$titlePrefix Overview', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+            backgroundColor: const Color(0xFF1E293B),
+            elevation: 0,
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.refresh, color: Colors.white),
+                onPressed: () {
+                  setState(() => isLoading = true);
+                  _fetchStats();
+                },
+              )
+            ],
           ),
-        ),
-        child: isLoading
-            ? const Center(child: CircularProgressIndicator())
-            : hasError
-                ? Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(Icons.error_outline, color: Colors.red, size: 48),
-                        const SizedBox(height: 16),
-                        const Text('Failed to load dashboard data', style: TextStyle(color: Colors.white, fontSize: 16)),
-                        const SizedBox(height: 16),
-                        ElevatedButton(
-                          onPressed: _fetchStats,
-                          child: const Text('Retry'),
+          body: Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [Color(0xFF1E293B), Color(0xFFF1F5F9)],
+                stops: [0.3, 0.3],
+              ),
+            ),
+            child: isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : hasError
+                    ? Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(Icons.error_outline, color: Colors.red, size: 48),
+                            const SizedBox(height: 16),
+                            const Text('Failed to load dashboard data', style: TextStyle(color: Colors.white, fontSize: 16)),
+                            const SizedBox(height: 16),
+                            ElevatedButton(
+                              onPressed: _fetchStats,
+                              child: const Text('Retry'),
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
-                  )
-                : SingleChildScrollView(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Welcome back, System Admin',
-                      style: TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
+                      )
+                    : SingleChildScrollView(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Welcome back, $welcomeText',
+                          style: const TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
                     const SizedBox(height: 4),
                     const Text(
                       'Here is a summary of the discipline system metrics.',

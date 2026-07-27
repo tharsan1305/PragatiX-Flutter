@@ -254,6 +254,33 @@ class AdminRepository {
     throw Exception('Failed to load profile');
   }
 
+  // SUPER ADMIN (Year Admins)
+  Future<List<dynamic>> getYearAdmins() async {
+    final response = await _adminService.get('/api/v1/superadmin/year-admins');
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      if (data['success'] == true) {
+        return data['data'] ?? [];
+      }
+    }
+    throw Exception('Failed to load year admins');
+  }
+
+  Future<Map<String, dynamic>> addYearAdmin(Map<String, dynamic> adminData) async {
+    final response = await _adminService.post('/api/v1/superadmin/year-admins', adminData);
+    return _handleResponse(response);
+  }
+
+  Future<Map<String, dynamic>> updateYearAdmin(int id, Map<String, dynamic> adminData) async {
+    final response = await _adminService.put('/api/v1/superadmin/year-admins/$id', adminData);
+    return _handleResponse(response);
+  }
+
+  Future<void> deleteYearAdmin(int id) async {
+    final response = await _adminService.delete('/api/v1/superadmin/year-admins/$id');
+    _handleResponse(response);
+  }
+
   // Generic handler for JSON response mapping
   Map<String, dynamic> _handleResponse(dynamic response) {
     final data = jsonDecode(response.body);

@@ -42,12 +42,23 @@ class _LoginPageState extends State<LoginPage> {
         final String token = responseData['token'] ?? '';
         if (context.mounted) await Provider.of<AuthProvider>(context, listen: false).login(token, userType, responseData);
 
-        if (roles.contains('ROLE_ADMIN')) {
+        if (roles.contains('ROLE_ADMIN') || roles.contains('ROLE_SUPER_ADMIN')) {
           if (!mounted) return;
           setState(() => _isLoading = false);
+          
+          final String? assignedYear = responseData['assignedAcademicYear'];
+          String welcomeMessage = 'Admin Access Granted. Welcome!';
+          if (roles.contains('ROLE_SUPER_ADMIN')) {
+              welcomeMessage = 'Super Admin Access Granted. Welcome!';
+          } else if (assignedYear != null) {
+              String cleanYear = assignedYear.replaceAll('_', ' ').toLowerCase();
+              cleanYear = cleanYear.split(' ').map((str) => str[0].toUpperCase() + str.substring(1)).join(' ');
+              welcomeMessage = '$cleanYear Admin Access Granted. Welcome!';
+          }
+          
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Admin Access Granted. Welcome!'),
+            SnackBar(
+              content: Text(welcomeMessage),
               backgroundColor: Colors.green,
             ),
           );
