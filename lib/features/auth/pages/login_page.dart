@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:spdms_app/features/student/pages/student_dashboard_page.dart';
 import 'package:spdms_app/features/teacher/pages/teacher_dashboard.dart';
 import 'package:spdms_app/features/admin/pages/admin_dashboard.dart';
+import 'package:spdms_app/features/admin/pages/super_admin_dashboard.dart';
 import 'package:spdms_app/features/captain/pages/captain_dashboard_page.dart';
 
 class LoginPage extends StatefulWidget {
@@ -62,12 +63,22 @@ class _LoginPageState extends State<LoginPage> {
               backgroundColor: Colors.green,
             ),
           );
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const AdminDashboard(),
-            ),
-          );
+          
+          if (roles.contains('ROLE_SUPER_ADMIN')) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const SuperAdminDashboard(),
+              ),
+            );
+          } else {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const AdminDashboard(),
+              ),
+            );
+          }
           return;
         } else if (userType == 'TEACHER' ||
             roles.contains('ROLE_TEACHER') ||

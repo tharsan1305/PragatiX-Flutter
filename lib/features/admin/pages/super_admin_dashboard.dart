@@ -5,17 +5,18 @@ import 'package:spdms_app/features/admin/pages/profile_tab.dart';
 import 'package:spdms_app/features/team/pages/team_group_management_tab.dart';
 import 'package:spdms_app/features/attendance/pages/admin_attendance_tab.dart';
 import 'package:spdms_app/features/badge/pages/admin_badge_requests_page.dart';
+import 'package:spdms_app/features/admin/pages/super_admin_management_tab.dart';
 import 'package:provider/provider.dart';
 import 'package:spdms_app/features/auth/providers/auth_provider.dart';
 
-class AdminDashboard extends StatefulWidget {
-  const AdminDashboard({super.key, });
+class SuperAdminDashboard extends StatefulWidget {
+  const SuperAdminDashboard({super.key, });
 
   @override
-  State<AdminDashboard> createState() => _AdminDashboardState();
+  State<SuperAdminDashboard> createState() => _SuperAdminDashboardState();
 }
 
-class _AdminDashboardState extends State<AdminDashboard> {
+class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
   int _currentIndex = 0;
   late final List<Widget> _tabs;
 
@@ -28,6 +29,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
       const AdminAttendanceTab(),
       const TeamGroupManagementTab(),
       const AdminBadgeRequestsPage(),
+      const SuperAdminManagementTab(),
       const ProfileTab(),
     ];
   }
@@ -62,6 +64,10 @@ class _AdminDashboardState extends State<AdminDashboard> {
           BottomNavigationBarItem(
             icon: Icon(Icons.workspace_premium),
             label: 'Requests',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.manage_accounts_rounded),
+            label: 'Admins',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.admin_panel_settings_rounded),
