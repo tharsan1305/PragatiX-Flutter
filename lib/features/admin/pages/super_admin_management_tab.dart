@@ -74,6 +74,9 @@ class _SuperAdminManagementTabState extends State<SuperAdminManagementTab> {
   void _showAdminDialog({Map<String, dynamic>? admin}) {
     final isEditing = admin != null;
     final usernameCtrl = TextEditingController(text: admin?['username'] ?? '');
+    final fullNameCtrl = TextEditingController(text: admin?['fullName'] ?? '');
+    final emailCtrl = TextEditingController(text: admin?['email'] ?? '');
+    final phoneCtrl = TextEditingController(text: admin?['phone'] ?? '');
     final passwordCtrl = TextEditingController();
     String selectedYear = admin?['assignedAcademicYear'] ?? 'FIRST_YEAR';
 
@@ -82,37 +85,54 @@ class _SuperAdminManagementTabState extends State<SuperAdminManagementTab> {
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text(isEditing ? 'Edit Year Admin' : 'New Year Admin'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: usernameCtrl,
-              decoration: const InputDecoration(labelText: 'Username', border: OutlineInputBorder()),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: passwordCtrl,
-              decoration: InputDecoration(
-                labelText: isEditing ? 'Password (leave blank to keep current)' : 'Password',
-                border: const OutlineInputBorder(),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: fullNameCtrl,
+                decoration: const InputDecoration(labelText: 'Full Name', border: OutlineInputBorder()),
               ),
-              obscureText: true,
-            ),
-            const SizedBox(height: 16),
-            DropdownButtonFormField<String>(
-              value: selectedYear,
-              decoration: const InputDecoration(labelText: 'Assigned Year', border: OutlineInputBorder()),
-              items: const [
-                DropdownMenuItem(value: 'FIRST_YEAR', child: Text('First Year')),
-                DropdownMenuItem(value: 'SECOND_YEAR', child: Text('Second Year')),
-                DropdownMenuItem(value: 'THIRD_YEAR', child: Text('Third Year')),
-                DropdownMenuItem(value: 'FOURTH_YEAR', child: Text('Fourth Year')),
-              ],
-              onChanged: (val) {
-                if (val != null) selectedYear = val;
-              },
-            ),
-          ],
+              const SizedBox(height: 16),
+              TextField(
+                controller: usernameCtrl,
+                decoration: const InputDecoration(labelText: 'Username', border: OutlineInputBorder()),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: passwordCtrl,
+                decoration: InputDecoration(
+                  labelText: isEditing ? 'Password (leave blank to keep current)' : 'Password',
+                  border: const OutlineInputBorder(),
+                ),
+                obscureText: true,
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: emailCtrl,
+                decoration: const InputDecoration(labelText: 'Email', border: OutlineInputBorder()),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: phoneCtrl,
+                decoration: const InputDecoration(labelText: 'Phone', border: OutlineInputBorder()),
+              ),
+              const SizedBox(height: 16),
+              DropdownButtonFormField<String>(
+                value: selectedYear,
+                decoration: const InputDecoration(labelText: 'Assigned Year', border: OutlineInputBorder()),
+                items: const [
+                  DropdownMenuItem(value: 'FIRST_YEAR', child: Text('First Year')),
+                  DropdownMenuItem(value: 'SECOND_YEAR', child: Text('Second Year')),
+                  DropdownMenuItem(value: 'THIRD_YEAR', child: Text('Third Year')),
+                  DropdownMenuItem(value: 'FOURTH_YEAR', child: Text('Fourth Year')),
+                ],
+                onChanged: (val) {
+                  if (val != null) selectedYear = val;
+                },
+              ),
+            ],
+          ),
         ),
         actions: [
           TextButton(
@@ -122,12 +142,16 @@ class _SuperAdminManagementTabState extends State<SuperAdminManagementTab> {
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF1E293B)),
             onPressed: () async {
-              if (usernameCtrl.text.trim().isEmpty) return;
+              if (usernameCtrl.text.trim().isEmpty || fullNameCtrl.text.trim().isEmpty) return;
               if (!isEditing && passwordCtrl.text.isEmpty) return;
 
               final data = {
+                'fullName': fullNameCtrl.text.trim(),
                 'username': usernameCtrl.text.trim(),
                 'assignedAcademicYear': selectedYear,
+                'email': emailCtrl.text.trim(),
+                'phone': phoneCtrl.text.trim(),
+                'active': true,
               };
               if (passwordCtrl.text.isNotEmpty) {
                 data['password'] = passwordCtrl.text;
