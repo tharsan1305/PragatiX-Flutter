@@ -127,8 +127,8 @@ class _GlobalActivityPageState extends State<GlobalActivityPage> with SingleTick
   String? _selectedYear;
 
   bool get _isSuperAdmin {
-    final roles = getIt<AuthProvider>().roles;
-    return roles.contains('ROLE_SUPER_ADMIN');
+    final role = getIt<AuthProvider>().role;
+    return role == 'ROLE_SUPER_ADMIN';
   }
 
   @override
