@@ -78,7 +78,7 @@ class _SuperAdminManagementTabState extends State<SuperAdminManagementTab> {
     final emailCtrl = TextEditingController(text: admin?['email'] ?? '');
     final phoneCtrl = TextEditingController(text: admin?['phone'] ?? '');
     final passwordCtrl = TextEditingController();
-    String selectedYear = admin?['assignedAcademicYear'] ?? 'FIRST_YEAR';
+    String? selectedYear = admin?['assignedAcademicYear'];
 
     showDialog(
       context: context,
@@ -122,13 +122,14 @@ class _SuperAdminManagementTabState extends State<SuperAdminManagementTab> {
                 value: selectedYear,
                 decoration: const InputDecoration(labelText: 'Assigned Year', border: OutlineInputBorder()),
                 items: const [
+                  DropdownMenuItem(value: null, child: Text('Not Assigned')),
                   DropdownMenuItem(value: 'FIRST_YEAR', child: Text('First Year')),
                   DropdownMenuItem(value: 'SECOND_YEAR', child: Text('Second Year')),
                   DropdownMenuItem(value: 'THIRD_YEAR', child: Text('Third Year')),
                   DropdownMenuItem(value: 'FOURTH_YEAR', child: Text('Fourth Year')),
                 ],
                 onChanged: (val) {
-                  if (val != null) selectedYear = val;
+                  selectedYear = val;
                 },
               ),
             ],
@@ -145,16 +146,41 @@ class _SuperAdminManagementTabState extends State<SuperAdminManagementTab> {
               if (usernameCtrl.text.trim().isEmpty || fullNameCtrl.text.trim().isEmpty) return;
               if (!isEditing && passwordCtrl.text.isEmpty) return;
 
-              final data = {
+              final data = <String, dynamic>{
                 'fullName': fullNameCtrl.text.trim(),
                 'username': usernameCtrl.text.trim(),
-                'assignedAcademicYear': selectedYear,
                 'email': emailCtrl.text.trim(),
                 'phone': phoneCtrl.text.trim(),
                 'active': true,
               };
+              if (selectedYear != null) {
+                data['assignedAcademicYear'] = selectedYear;
+              } else {
+                data['assignedAcademicYear'] = null; // Send null explicitly if unassigned
+              }
               if (passwordCtrl.text.isNotEmpty) {
                 data['password'] = passwordCtrl.text;
+              }
+
+              if (selectedYear != null && data['active'] == true) {
+                final existingAdmin = _yearAdmins.firstWhere(
+                  (a) => a['assignedAcademicYear'] == selectedYear && a['id'] != admin?['id'] && a['active'] == true,
+                  orElse: () => null,
+                );
+                if (existingAdmin != null) {
+                  final confirm = await showDialog<bool>(
+                    context: context,
+                    builder: (ctx) => AlertDialog(
+                      title: const Text('Replace Assignment?'),
+                      content: Text('${existingAdmin['username']} is already assigned to this year. Do you want to replace them?'),
+                      actions: [
+                        TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+                        ElevatedButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Replace')),
+                      ],
+                    ),
+                  );
+                  if (confirm != true) return;
+                }
               }
 
               Navigator.pop(context);
@@ -228,9 +254,14 @@ class _SuperAdminManagementTabState extends State<SuperAdminManagementTab> {
                     itemCount: _yearAdmins.length,
                     itemBuilder: (context, index) {
                       final admin = _yearAdmins[index];
-                      String yearStr = admin['assignedAcademicYear'] ?? 'Unknown Year';
-                      String cleanYear = yearStr.replaceAll('_', ' ').toLowerCase();
-                      cleanYear = cleanYear.split(' ').map((str) => str[0].toUpperCase() + str.substring(1)).join(' ');
+                      String cleanYear;
+                      if (admin['assignedAcademicYear'] == null) {
+                        cleanYear = 'Not Assigned';
+                      } else {
+                        String yearStr = admin['assignedAcademicYear'];
+                        cleanYear = yearStr.replaceAll('_', ' ').toLowerCase();
+                        cleanYear = cleanYear.split(' ').map((str) => str[0].toUpperCase() + str.substring(1)).join(' ');
+                      }
 
                       return Card(
                         elevation: 4,
@@ -253,10 +284,16 @@ class _SuperAdminManagementTabState extends State<SuperAdminManagementTab> {
                           trailing: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              IconButton(
-                                icon: const Icon(Icons.edit, color: Colors.blue),
-                                onPressed: () => _showAdminDialog(admin: admin),
-                              ),
+                              if (admin['assignedAcademicYear'] == null)
+                                TextButton(
+                                  onPressed: () => _showAdminDialog(admin: admin),
+                                  child: const Text('Assign Year'),
+                                )
+                              else
+                                IconButton(
+                                  icon: const Icon(Icons.edit, color: Colors.blue),
+                                  onPressed: () => _showAdminDialog(admin: admin),
+                                ),
                               IconButton(
                                 icon: const Icon(Icons.delete, color: Colors.red),
                                 onPressed: () => _deleteYearAdmin(admin['id']),
