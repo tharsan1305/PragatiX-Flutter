@@ -56,7 +56,7 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
     setState(() => _isSearching = true);
     
     try {
-      final response = await GroupActivityService(context.read<AuthProvider>().token!).searchStudents(query.trim(), 0, 50);
+      final response = await GroupActivityService(context.read<AuthProvider>()).searchStudents(query.trim(), 0, 50);
       
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -91,7 +91,7 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
     }
 
     try {
-      final response = await GroupActivityService(context.read<AuthProvider>().token!).createTeam({
+      final response = await GroupActivityService(context.read<AuthProvider>()).createTeam({
         'name': _nameController.text.trim(),
         'size': int.parse(_sizeController.text.trim()),
         'captainStudentId': _selectedCaptain['regNo'],

@@ -33,7 +33,7 @@ class _ActivityExecutionPageState extends State<ActivityExecutionPage> {
   @override
   void initState() {
     super.initState();
-    _service = ActivityService(context.read<AuthProvider>().token!);
+    _service = ActivityService(context.read<AuthProvider>());
     _loadData();
   }
 

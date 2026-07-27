@@ -47,8 +47,8 @@ class _GroupActivityExecutionPageState extends State<GroupActivityExecutionPage>
   @override
   void initState() {
     super.initState();
-    _activityService = ActivityService(context.read<AuthProvider>().token!);
-    _groupService = GroupActivityService(context.read<AuthProvider>().token!);
+    _activityService = ActivityService(context.read<AuthProvider>());
+    _groupService = GroupActivityService(context.read<AuthProvider>());
     _loadGroupsForScope();
   }
 
