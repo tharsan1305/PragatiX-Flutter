@@ -2,11 +2,14 @@ import 'dart:convert';
 import 'package:spdms_app/core/utils/api_client.dart' as http;
 import 'package:spdms_app/features/activity/utils/constants.dart';
 import 'package:spdms_app/core/config/api_config.dart';
+import 'package:spdms_app/features/auth/providers/auth_provider.dart';
 
 class ActivityCompletionService {
-  final String token;
+  final AuthProvider authProvider;
 
-  ActivityCompletionService(this.token);
+  ActivityCompletionService(this.authProvider);
+
+  String get token => authProvider.token ?? '';
 
   Map<String, String> get _authHeaders => {
         'Authorization': 'Bearer $token',

@@ -3,11 +3,14 @@ import 'dart:convert';
 import 'package:spdms_app/core/utils/api_client.dart' as http;
 import 'package:spdms_app/core/config/api_config.dart';
 import 'package:spdms_app/features/team/models/team.dart';
+import 'package:spdms_app/features/auth/providers/auth_provider.dart';
 
 class GroupActivityService {
-  final String token;
+  final AuthProvider authProvider;
 
-  GroupActivityService(this.token);
+  GroupActivityService(this.authProvider);
+
+  String get token => authProvider.token ?? '';
 
   Future<List<Team>> getTeamsForAssignment(int assignmentId) async {
     final response = await http.get(

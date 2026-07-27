@@ -46,10 +46,10 @@ void setupLocator() {
   // 2. Services
   getIt.registerLazySingleton(() => AuthService());
   getIt.registerLazySingleton(() => AdminService(getIt<AuthProvider>()));
-  getIt.registerLazySingleton(() => ActivityService(getIt<AuthProvider>().token ?? ''));
-  getIt.registerLazySingleton(() => ActivityCompletionService(getIt<AuthProvider>().token ?? ''));
+  getIt.registerLazySingleton(() => ActivityService(getIt<AuthProvider>()));
+  getIt.registerLazySingleton(() => ActivityCompletionService(getIt<AuthProvider>()));
   getIt.registerLazySingleton(() => CaptainService(getIt<AuthProvider>()));
-  getIt.registerLazySingleton(() => GroupActivityService(getIt<AuthProvider>().token ?? ''));
+  getIt.registerLazySingleton(() => GroupActivityService(getIt<AuthProvider>()));
   getIt.registerLazySingleton(() => StudentService(getIt<AuthProvider>()));
   getIt.registerLazySingleton(() => TeacherService(getIt<AuthProvider>()));
   getIt.registerLazySingleton(() => LeaderboardService(getIt<AuthProvider>()));

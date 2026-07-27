@@ -110,13 +110,16 @@ class _ActivityDetailsScreenState extends State<ActivityDetailsScreen> {
 
     final bool allowStudentRequest = activity['allowStudentRequest'] == true;
     final int activityId = activity['activityId'] ?? activity['id'] ?? 0;
+    
+    // Use fields provided directly by backend
+    final bool buttonEnabled = activity['buttonEnabled'] == true;
+    final String buttonText = activity['buttonText'] ?? 'Request Completion';
+    final String requestStatus = activity['requestStatus'] ?? '';
+    final bool categoryCapReached = activity['categoryCapReached'] == true;
 
     return Consumer<ActivityCompletionProvider>(
       builder: (context, provider, _) {
         final existingRequest = provider.getMyRequestForActivity(activityId);
-        final bool hasPendingRequest = existingRequest != null && existingRequest.status == 'PENDING';
-        final bool hasApprovedRequest = existingRequest != null && existingRequest.status == 'APPROVED';
-        final bool hasRejectedRequest = existingRequest != null && existingRequest.status == 'REJECTED';
         
         return Scaffold(
           backgroundColor: Colors.white,
@@ -275,7 +278,7 @@ class _ActivityDetailsScreenState extends State<ActivityDetailsScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              if (isCompleted || hasApprovedRequest)
+              if (!buttonEnabled && (buttonText == 'Already Completed' || buttonText == 'Completed'))
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(color: Colors.green.shade50, borderRadius: BorderRadius.circular(8)),
@@ -287,20 +290,20 @@ class _ActivityDetailsScreenState extends State<ActivityDetailsScreen> {
                     ],
                   ),
                 )
-              else if (hasPendingRequest)
+              else if (!buttonEnabled && buttonText == 'Category Cap Reached')
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(color: Colors.amber.shade50, borderRadius: BorderRadius.circular(8)),
                   child: const Row(
                     children: [
-                      Icon(Icons.access_time, color: Colors.amber),
+                      Icon(Icons.block, color: Colors.amber),
                       SizedBox(width: 8),
-                      Expanded(child: Text('Your request is pending approval.', style: TextStyle(color: Colors.amber))),
+                      Expanded(child: Text('Category Cap Reached', style: TextStyle(color: Colors.amber, fontWeight: FontWeight.bold))),
                     ],
                   ),
                 )
               else ...[
-                if (hasRejectedRequest)
+                if (requestStatus == 'REJECTED' && existingRequest != null)
                   Container(
                     margin: const EdgeInsets.only(bottom: 12),
                     padding: const EdgeInsets.all(12),
@@ -318,13 +321,16 @@ class _ActivityDetailsScreenState extends State<ActivityDetailsScreen> {
                   height: 50,
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFEA4335),
+                      backgroundColor: !buttonEnabled ? Colors.grey : (requestStatus == 'REJECTED' ? Colors.red : const Color(0xFFEA4335)),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),
-                    onPressed: _isSubmitting ? null : () => _showRequestCompletionDialog(activityId),
+                    onPressed: (!buttonEnabled || _isSubmitting) ? null : () => _showRequestCompletionDialog(activityId),
                     child: _isSubmitting 
                         ? const CircularProgressIndicator(color: Colors.white) 
-                        : Text(hasRejectedRequest ? 'Request Again' : 'Request Completion', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
+                        : Text(
+                            buttonText,
+                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+                          ),
                   ),
                 ),
               ],

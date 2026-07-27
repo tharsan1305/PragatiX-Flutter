@@ -235,6 +235,19 @@ class _TeacherActivityRequestsTabState extends State<TeacherActivityRequestsTab>
           if (provider.isLoading && provider.inbox.isEmpty) {
             return const Center(child: CircularProgressIndicator());
           }
+          if (provider.error != null) {
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Text(
+                  'Error loading requests:\n${provider.error}',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(color: Colors.red, fontSize: 16),
+                ),
+              ),
+            );
+          }
+          
           final pending = provider.inbox.where((r) => r.status == 'PENDING').toList();
           final approved = provider.inbox.where((r) => r.status == 'APPROVED').toList();
           final rejected = provider.inbox.where((r) => r.status == 'REJECTED').toList();
