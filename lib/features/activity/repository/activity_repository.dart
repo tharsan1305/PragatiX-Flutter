@@ -23,15 +23,15 @@ class ActivityRepository {
         .toList();
   }
 
-    Future<List<ActivityModel>> getActivities({int? stageId, String? subgroupName}) async {
-    final raw = await _service.fetchActivities(stageId: stageId, subgroupName: subgroupName);
+  Future<List<ActivityModel>> getActivities({int? stageId, String? subgroupName, String? academicYear}) async {
+    final raw = await _service.fetchActivities(stageId: stageId, subgroupName: subgroupName, academicYear: academicYear);
     return raw
         .map((e) => ActivityModel.fromJson(e as Map<String, dynamic>))
         .toList();
   }
 
-  Future<List<GroupedActivityModel>> getGroupedActivities({String? subgroupName}) async {
-    final raw = await _service.fetchGroupedActivities(subgroupName: subgroupName);
+  Future<List<GroupedActivityModel>> getGroupedActivities({String? subgroupName, String? academicYear}) async {
+    final raw = await _service.fetchGroupedActivities(subgroupName: subgroupName, academicYear: academicYear);
     return raw
         .map((e) => GroupedActivityModel.fromJson(e as Map<String, dynamic>))
         .toList();

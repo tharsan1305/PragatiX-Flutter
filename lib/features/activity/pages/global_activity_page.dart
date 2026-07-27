@@ -7,6 +7,7 @@ import 'assign_staff_page.dart';
 import '../../../core/utils/error_handler.dart';
 import '../../../core/di/service_locator.dart';
 import 'package:spdms_app/core/theme/app_colors.dart';
+import 'package:spdms_app/features/auth/providers/auth_provider.dart';
 
 class GlobalActivityPage extends StatefulWidget {
   const GlobalActivityPage({Key? key}) : super(key: key);
@@ -123,6 +124,13 @@ class _GlobalActivityPageState extends State<GlobalActivityPage> with SingleTick
     );
   }
 
+  String? _selectedYear;
+
+  bool get _isSuperAdmin {
+    final roles = getIt<AuthProvider>().roles;
+    return roles.contains('ROLE_SUPER_ADMIN');
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -130,6 +138,33 @@ class _GlobalActivityPageState extends State<GlobalActivityPage> with SingleTick
         title: const Text('Activity Management'),
         backgroundColor: AppColors.adminPrimary,
         foregroundColor: Colors.white,
+        actions: [
+          if (_isSuperAdmin)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              child: DropdownButton<String>(
+                value: _selectedYear,
+                hint: const Text('Select Year', style: TextStyle(color: Colors.white70)),
+                dropdownColor: AppColors.adminPrimary,
+                style: const TextStyle(color: Colors.white),
+                icon: const Icon(Icons.arrow_drop_down, color: Colors.white),
+                underline: Container(),
+                items: const [
+                  DropdownMenuItem(value: null, child: Text('All Years')),
+                  DropdownMenuItem(value: 'FIRST_YEAR', child: Text('1st Year')),
+                  DropdownMenuItem(value: 'SECOND_YEAR', child: Text('2nd Year')),
+                  DropdownMenuItem(value: 'THIRD_YEAR', child: Text('3rd Year')),
+                  DropdownMenuItem(value: 'FOURTH_YEAR', child: Text('4th Year')),
+                ],
+                onChanged: (val) {
+                  setState(() {
+                    _selectedYear = val;
+                  });
+                  _provider.loadActivities(academicYear: val);
+                },
+              ),
+            ),
+        ],
         bottom: TabBar(
           controller: _tabController,
           labelColor: Colors.white,

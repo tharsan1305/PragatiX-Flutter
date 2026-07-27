@@ -26,12 +26,17 @@ class ActivityService {
         'Authorization': 'Bearer $token',
       };
 
-  Future<List<dynamic>> fetchActivities({int? stageId, String? subgroupName}) async {
+  Future<List<dynamic>> fetchActivities({int? stageId, String? subgroupName, String? academicYear}) async {
     String url = stageId != null
         ? '${ActivityConstants.baseUrl}/stages/$stageId/activities'
         : '${ActivityConstants.baseUrl}/activities';
-    if (subgroupName != null) {
-      url += '?subgroup=$subgroupName';
+    
+    List<String> queryParams = [];
+    if (subgroupName != null) queryParams.add('subgroup=$subgroupName');
+    if (academicYear != null) queryParams.add('academicYear=$academicYear');
+    
+    if (queryParams.isNotEmpty) {
+      url += '?${queryParams.join('&')}';
     }
     try {
       final response = await http.get(
@@ -57,10 +62,15 @@ class ActivityService {
     }
   }
 
-  Future<List<dynamic>> fetchGroupedActivities({String? subgroupName}) async {
+  Future<List<dynamic>> fetchGroupedActivities({String? subgroupName, String? academicYear}) async {
     String url = '${ActivityConstants.baseUrl}/activities/grouped';
-    if (subgroupName != null && subgroupName.isNotEmpty) {
-      url += '?subgroup=$subgroupName';
+    
+    List<String> queryParams = [];
+    if (subgroupName != null && subgroupName.isNotEmpty) queryParams.add('subgroup=$subgroupName');
+    if (academicYear != null) queryParams.add('academicYear=$academicYear');
+    
+    if (queryParams.isNotEmpty) {
+      url += '?${queryParams.join('&')}';
     }
     try {
       final response = await http.get(

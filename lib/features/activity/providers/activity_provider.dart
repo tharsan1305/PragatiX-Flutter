@@ -60,12 +60,12 @@ class ActivityProvider extends ChangeNotifier {
   }
 
   // ── Load activities ───────────────────────────────────────────────────────
-  Future<void> loadActivities({int? stageId, String? subgroupName}) async {
+  Future<void> loadActivities({int? stageId, String? subgroupName, String? academicYear}) async {
     isLoadingActivities = true;
     error = null;
     _safeNotify();
     try {
-      activities = await _repository.getActivities(stageId: stageId, subgroupName: subgroupName);
+      activities = await _repository.getActivities(stageId: stageId, subgroupName: subgroupName, academicYear: academicYear);
     } catch (e) {
       error = e.toString().replaceAll('Exception: ', '');
       activities = [];
