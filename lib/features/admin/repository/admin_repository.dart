@@ -216,8 +216,12 @@ class AdminRepository {
     throw Exception('Failed to load stats');
   }
 
-  Future<List<dynamic>> getStages() async {
-    final response = await _adminService.get('/api/v1/admin/stages');
+  Future<List<dynamic>> getStages({String? academicYear}) async {
+    String url = '/api/v1/admin/stages';
+    if (academicYear != null) {
+      url += '?academicYear=$academicYear';
+    }
+    final response = await _adminService.get(url);
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
       if (data['success'] == true) {

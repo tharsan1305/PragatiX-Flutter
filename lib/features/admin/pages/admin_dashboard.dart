@@ -21,10 +21,9 @@ class _AdminDashboardState extends State<AdminDashboard> {
 
   @override
   void initState() {
-    super.initState();
     _tabs = [
       const OverviewTab(),
-      const ActivityTab(),
+      const AdminActivityManagementPage(),
       const AdminAttendanceTab(),
       const TeamGroupManagementTab(),
       const AdminBadgeRequestsPage(),

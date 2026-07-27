@@ -7,7 +7,7 @@ import '../../../helpers/mocks.dart';
 import '../../../helpers/test_wrapper.dart';
 
 void main() {
-  group('ActivityTab Widget Tests', () {
+  group('AdminActivityManagementPage Widget Tests', () {
     late MockAdminRepository mockAdminRepo;
     late MockAuthProvider mockAuthProvider;
 
@@ -28,7 +28,7 @@ void main() {
         await tester.pumpWidget(
           TestWrapper(
             mockAuthProvider: mockAuthProvider,
-            child: const ActivityTab(),
+            child: const AdminActivityManagementPage(),
           ),
         );
         expect(find.byType(CircularProgressIndicator), findsOneWidget);
@@ -53,7 +53,7 @@ void main() {
         await tester.pumpWidget(
           TestWrapper(
             mockAuthProvider: mockAuthProvider,
-            child: const ActivityTab(),
+            child: const AdminActivityManagementPage(),
           ),
         );
         

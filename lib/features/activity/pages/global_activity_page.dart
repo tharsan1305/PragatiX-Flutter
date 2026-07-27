@@ -10,7 +10,8 @@ import 'package:spdms_app/core/theme/app_colors.dart';
 import 'package:spdms_app/features/auth/providers/auth_provider.dart';
 
 class GlobalActivityPage extends StatefulWidget {
-  const GlobalActivityPage({Key? key}) : super(key: key);
+  final String? selectedYear;
+  const GlobalActivityPage({Key? key, this.selectedYear}) : super(key: key);
 
   @override
   State<GlobalActivityPage> createState() => _GlobalActivityPageState();
@@ -23,13 +24,14 @@ class _GlobalActivityPageState extends State<GlobalActivityPage> with SingleTick
   @override
   void initState() {
     super.initState();
+    _selectedYear = widget.selectedYear;
     _provider = getIt<ActivityProvider>();
     _tabController = TabController(length: 2, vsync: this);
     _tabController.addListener(() {
       setState(() {});
     });
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _provider.loadActivities();
+      _provider.loadActivities(academicYear: _selectedYear);
       if (_provider.departments.isEmpty || _provider.allTeachers.isEmpty) {
         _provider.loadDependencies();
       }
@@ -139,7 +141,7 @@ class _GlobalActivityPageState extends State<GlobalActivityPage> with SingleTick
         backgroundColor: AppColors.adminPrimary,
         foregroundColor: Colors.white,
         actions: [
-          if (_isSuperAdmin)
+          if (_isSuperAdmin && false) // Hide the dropdown as we now use YearSelectionPage
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
               child: DropdownButton<String>(

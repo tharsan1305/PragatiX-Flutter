@@ -13,14 +13,15 @@ import 'package:spdms_app/features/activity/pages/global_activity_page.dart' as 
 // Tapping a stage navigates to StageDetailsPage → Subgroup → ActivityListPage.
 // ─────────────────────────────────────────────────────────────────────────────
 
-class ActivityTab extends StatefulWidget {
-  const ActivityTab({super.key, });
+class AdminActivityManagementPage extends StatefulWidget {
+  final String? selectedYear;
+  const AdminActivityManagementPage({super.key, this.selectedYear});
 
   @override
-  State<ActivityTab> createState() => _ActivityTabState();
+  State<AdminActivityManagementPage> createState() => _AdminActivityManagementPageState();
 }
 
-class _ActivityTabState extends State<ActivityTab> {
+class _AdminActivityManagementPageState extends State<AdminActivityManagementPage> {
   List<dynamic> _stagesList = [];
   List<dynamic> _teachersList = [];
   bool _isLoading = true;
@@ -52,7 +53,7 @@ class _ActivityTabState extends State<ActivityTab> {
 
   Future<void> _fetchStages() async {
     try {
-      final stages = await getIt<AdminRepository>().getStages();
+      final stages = await getIt<AdminRepository>().getStages(academicYear: widget.selectedYear);
       if (!mounted) return;
       setState(() {
         _stagesList = stages;
@@ -139,7 +140,7 @@ class _ActivityTabState extends State<ActivityTab> {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (_) => const spdms_app.GlobalActivityPage(),
+                                  builder: (_) => spdms_app.GlobalActivityPage(selectedYear: widget.selectedYear),
                                 ),
                               ).then((value) {
                                 setState(() => _isLoading = true);
@@ -155,7 +156,7 @@ class _ActivityTabState extends State<ActivityTab> {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (_) => const CreateStagePage(),
+                                  builder: (_) => CreateStagePage(assignedAcademicYear: widget.selectedYear),
                                 ),
                               ).then((value) {
                                 if (value == true) {
@@ -200,11 +201,11 @@ class _ActivityTabState extends State<ActivityTab> {
                                 context,
                                 MaterialPageRoute(
                                   builder: (_) => StageDetailsPage(
-                                    
                                     stageId: stage['id'] as int,
                                     stageName: name,
                                     stageDescription: desc,
                                     teachersList: _teachersList,
+                                    selectedYear: widget.selectedYear,
                                   ),
                                 ),
                               ).then((_) {

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:spdms_app/features/admin/pages/overview_tab.dart';
 import 'package:spdms_app/features/admin/pages/activity_tab.dart';
+import 'package:spdms_app/features/activity/pages/year_selection_page.dart';
 import 'package:spdms_app/features/admin/pages/profile_tab.dart';
 import 'package:spdms_app/features/team/pages/team_group_management_tab.dart';
 import 'package:spdms_app/features/attendance/pages/admin_attendance_tab.dart';
@@ -25,7 +26,7 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
     super.initState();
     _tabs = [
       const OverviewTab(),
-      const ActivityTab(),
+      const YearSelectionPage(),
       const AdminAttendanceTab(),
       const TeamGroupManagementTab(),
       const AdminBadgeRequestsPage(),

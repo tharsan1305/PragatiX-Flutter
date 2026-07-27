@@ -8,7 +8,8 @@ import 'package:spdms_app/core/config/api_config.dart';
 import 'package:spdms_app/core/di/service_locator.dart';
 
 class CreateStagePage extends StatefulWidget {
-  const CreateStagePage({super.key, });
+  final String? assignedAcademicYear;
+  const CreateStagePage({super.key, this.assignedAcademicYear});
 
   @override
   State<CreateStagePage> createState() => _CreateStagePageState();
@@ -62,6 +63,7 @@ class _CreateStagePageState extends State<CreateStagePage> {
           'mustThreshold': int.tryParse(_mustThresholdCtrl.text.trim()) ?? 0,
           'individualThreshold': int.tryParse(_indThresholdCtrl.text.trim()) ?? 0,
           'groupThreshold': int.tryParse(_grpThresholdCtrl.text.trim()) ?? 0,
+          if (widget.assignedAcademicYear != null) 'assignedAcademicYear': widget.assignedAcademicYear,
         }),
       );
 
