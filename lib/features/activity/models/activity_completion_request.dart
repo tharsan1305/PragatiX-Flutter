@@ -52,8 +52,12 @@ class ActivityCompletionRequest {
       proofUrl: json['proofUrl']?.toString(),
       reason: json['reason']?.toString(),
       status: json['status']?.toString() ?? 'PENDING',
-      requestedDate: json['requestedDate'] != null ? DateTime.parse(json['requestedDate'].toString()) : null,
-      approvedDate: json['approvedDate'] != null ? DateTime.parse(json['approvedDate'].toString()) : null,
+      requestedDate: json['requestedDate'] != null
+          ? DateTime.parse(json['requestedDate'].toString())
+          : null,
+      approvedDate: json['approvedDate'] != null
+          ? DateTime.parse(json['approvedDate'].toString())
+          : null,
       approvedBy: json['approvedBy']?.toString(),
       rejectedReason: json['rejectedReason']?.toString(),
     );

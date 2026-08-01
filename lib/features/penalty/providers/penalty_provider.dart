@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:spdms_app/features/penalty/models/penalty_request.dart';
-import 'package:spdms_app/features/penalty/services/penalty_service.dart';
+import 'package:pragatix/features/penalty/models/penalty_request.dart';
+import 'package:pragatix/features/penalty/services/penalty_service.dart';
 
 class PenaltyProvider with ChangeNotifier {
   final PenaltyService _penaltyService;

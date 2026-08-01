@@ -1,14 +1,13 @@
-import 'package:spdms_app/features/auth/providers/auth_provider.dart';
+import 'package:pragatix/features/auth/providers/auth_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter/material.dart';
-import 'package:spdms_app/features/activity/services/activity_proxy_service.dart';
+import 'package:pragatix/features/activity/services/activity_proxy_service.dart';
 import 'dart:convert';
-import 'package:spdms_app/core/config/api_config.dart';
-import 'package:spdms_app/features/team/models/team.dart';
-import 'package:spdms_app/core/di/service_locator.dart';
+import 'package:pragatix/core/config/api_config.dart';
+import 'package:pragatix/features/team/models/team.dart';
+import 'package:pragatix/core/di/service_locator.dart';
 
-import 'package:spdms_app/features/team/widgets/team_member_card.dart';
-
+import 'package:pragatix/features/team/widgets/team_member_card.dart';
 
 class GroupDetailsPage extends StatefulWidget {
   final Team team;
@@ -16,7 +15,7 @@ class GroupDetailsPage extends StatefulWidget {
 
   const GroupDetailsPage({
     super.key,
-    
+
     required this.team,
     required this.xpPerMember,
   });
@@ -30,7 +29,7 @@ class _GroupDetailsPageState extends State<GroupDetailsPage> {
   bool _isLoading = false;
 
   // Theme constants
-  static const Color _primary = Color(0xFF1E3A8A); 
+  static const Color _primary = Color(0xFF1E3A8A);
   static const Color _dark = Color(0xFF0F172A);
   static const Color _bg = Color(0xFFF8FAFC);
 
@@ -45,7 +44,9 @@ class _GroupDetailsPageState extends State<GroupDetailsPage> {
     try {
       final response = await getIt<ActivityProxyService>().get(
         Uri.parse('${ApiConfig.baseUrl}/api/v1/teams'),
-        headers: {'Authorization': 'Bearer ${context.read<AuthProvider>().token!}'},
+        headers: {
+          'Authorization': 'Bearer ${context.read<AuthProvider>().token!}',
+        },
       );
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -72,14 +73,21 @@ class _GroupDetailsPageState extends State<GroupDetailsPage> {
   Future<void> _addMember(String regNo) async {
     try {
       final response = await getIt<ActivityProxyService>().post(
-        Uri.parse('${ApiConfig.baseUrl}/api/v1/teams/${_team.id}/add-member?regNo=$regNo'),
-        headers: {'Authorization': 'Bearer ${context.read<AuthProvider>().token!}'},
+        Uri.parse(
+          '${ApiConfig.baseUrl}/api/v1/teams/${_team.id}/add-member?regNo=$regNo',
+        ),
+        headers: {
+          'Authorization': 'Bearer ${context.read<AuthProvider>().token!}',
+        },
       );
       final data = jsonDecode(response.body);
       if (response.statusCode == 200 && data['success'] == true) {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Member added successfully!'), backgroundColor: Colors.green),
+          const SnackBar(
+            content: Text('Member added successfully!'),
+            backgroundColor: Colors.green,
+          ),
         );
         await _refreshTeam();
       } else {
@@ -93,14 +101,21 @@ class _GroupDetailsPageState extends State<GroupDetailsPage> {
   Future<void> _removeMember(String regNo) async {
     try {
       final response = await getIt<ActivityProxyService>().post(
-        Uri.parse('${ApiConfig.baseUrl}/api/v1/teams/${_team.id}/remove-member?regNo=$regNo'),
-        headers: {'Authorization': 'Bearer ${context.read<AuthProvider>().token!}'},
+        Uri.parse(
+          '${ApiConfig.baseUrl}/api/v1/teams/${_team.id}/remove-member?regNo=$regNo',
+        ),
+        headers: {
+          'Authorization': 'Bearer ${context.read<AuthProvider>().token!}',
+        },
       );
       final data = jsonDecode(response.body);
       if (response.statusCode == 200 && data['success'] == true) {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Member removed successfully!'), backgroundColor: Colors.green),
+          const SnackBar(
+            content: Text('Member removed successfully!'),
+            backgroundColor: Colors.green,
+          ),
         );
         await _refreshTeam();
       } else {
@@ -114,7 +129,9 @@ class _GroupDetailsPageState extends State<GroupDetailsPage> {
   Future<void> _awardXp(String remarks) async {
     try {
       final response = await getIt<ActivityProxyService>().post(
-        Uri.parse('${ApiConfig.baseUrl}/api/v1/group-activities/teams/${_team.id}/award-xp'),
+        Uri.parse(
+          '${ApiConfig.baseUrl}/api/v1/group-activities/teams/${_team.id}/award-xp',
+        ),
         headers: {
           'Authorization': 'Bearer ${context.read<AuthProvider>().token!}',
           'Content-Type': 'application/json',
@@ -130,7 +147,10 @@ class _GroupDetailsPageState extends State<GroupDetailsPage> {
       if (response.statusCode == 200 && data['success'] == true) {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('XP awarded to group successfully!'), backgroundColor: Colors.green),
+          const SnackBar(
+            content: Text('XP awarded to group successfully!'),
+            backgroundColor: Colors.green,
+          ),
         );
         await _refreshTeam();
         if (mounted) Navigator.pop(context, true); // Close and return to list
@@ -156,7 +176,10 @@ class _GroupDetailsPageState extends State<GroupDetailsPage> {
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
           ElevatedButton(
             onPressed: () {
               final id = ctrl.text.trim();
@@ -182,7 +205,10 @@ class _GroupDetailsPageState extends State<GroupDetailsPage> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Award ${widget.xpPerMember} XP to every member of this group?', style: const TextStyle(fontWeight: FontWeight.bold)),
+            Text(
+              'Award ${widget.xpPerMember} XP to every member of this group?',
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
             const SizedBox(height: 16),
             TextField(
               controller: ctrl,
@@ -194,9 +220,15 @@ class _GroupDetailsPageState extends State<GroupDetailsPage> {
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.green,
+              foregroundColor: Colors.white,
+            ),
             onPressed: () {
               Navigator.pop(ctx);
               _awardXp(ctrl.text.trim());
@@ -210,9 +242,9 @@ class _GroupDetailsPageState extends State<GroupDetailsPage> {
 
   void _showError(String msg) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(msg), backgroundColor: Colors.red),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(msg), backgroundColor: Colors.red));
   }
 
   @override
@@ -235,27 +267,48 @@ class _GroupDetailsPageState extends State<GroupDetailsPage> {
                 children: [
                   _buildHeaderCard(),
                   const SizedBox(height: 24),
-                  const Text('Captain', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: _dark)),
+                  const Text(
+                    'Captain',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18,
+                      color: _dark,
+                    ),
+                  ),
                   const SizedBox(height: 8),
                   if (_team.captainId != null)
-                    ...members.where((m) => m['regNo'] == _team.captainId).map((m) => TeamMemberCard(
-                          member: m,
-                          captainId: _team.captainId,
-                          canManage: true,
-                          isCaptainRoleSection: true,
-                          onRemove: () {},
-                        ))
+                    ...members
+                        .where((m) => m['regNo'] == _team.captainId)
+                        .map(
+                          (m) => TeamMemberCard(
+                            member: m,
+                            captainId: _team.captainId,
+                            canManage: true,
+                            isCaptainRoleSection: true,
+                            onRemove: () {},
+                          ),
+                        )
                   else
                     const Padding(
                       padding: EdgeInsets.all(16.0),
-                      child: Text('No captain assigned.', style: TextStyle(color: Colors.grey)),
+                      child: Text(
+                        'No captain assigned.',
+                        style: TextStyle(color: Colors.grey),
+                      ),
                     ),
 
                   const SizedBox(height: 24),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text('Members (${members.length}/${_team.size})', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: _dark)),
+                      Text(
+                        'Members (${members.length}/${_team.size})',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 18,
+                          color: _dark,
+                        ),
+                      ),
                       if (members.length < _team.size)
                         TextButton.icon(
                           onPressed: _showAddMemberDialog,
@@ -265,52 +318,82 @@ class _GroupDetailsPageState extends State<GroupDetailsPage> {
                     ],
                   ),
                   const SizedBox(height: 8),
-                  if (members.where((m) => m['regNo'] != _team.captainId).isEmpty)
+                  if (members
+                      .where((m) => m['regNo'] != _team.captainId)
+                      .isEmpty)
                     const Padding(
                       padding: EdgeInsets.all(16.0),
-                      child: Center(child: Text('No additional members found.', style: TextStyle(color: Colors.grey))),
+                      child: Center(
+                        child: Text(
+                          'No additional members found.',
+                          style: TextStyle(color: Colors.grey),
+                        ),
+                      ),
                     )
                   else
-                    ...members.where((m) => m['regNo'] != _team.captainId).map((m) => TeamMemberCard(
-                          member: m,
-                          captainId: _team.captainId,
-                          canManage: true,
-                          isCaptainRoleSection: false,
-                          onRemove: () {
-                            showDialog(
-                              context: context,
-                              builder: (ctx) => AlertDialog(
-                                title: const Text('Remove Member'),
-                                content: Text("Are you sure you want to remove ${m['fullName']} from the group?"),
-                                actions: [
-                                  TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
-                                  TextButton(
-                                    onPressed: () {
-                                      Navigator.pop(ctx);
-                                      _removeMember(m['regNo']);
-                                    },
-                                    child: const Text('Remove', style: TextStyle(color: Colors.red)),
+                    ...members
+                        .where((m) => m['regNo'] != _team.captainId)
+                        .map(
+                          (m) => TeamMemberCard(
+                            member: m,
+                            captainId: _team.captainId,
+                            canManage: true,
+                            isCaptainRoleSection: false,
+                            onRemove: () {
+                              showDialog(
+                                context: context,
+                                builder: (ctx) => AlertDialog(
+                                  title: const Text('Remove Member'),
+                                  content: Text(
+                                    "Are you sure you want to remove ${m['fullName']} from the group?",
                                   ),
-                                ],
-                              ),
-                            );
-                          },
-                        )),
-                  
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () => Navigator.pop(ctx),
+                                      child: const Text('Cancel'),
+                                    ),
+                                    TextButton(
+                                      onPressed: () {
+                                        Navigator.pop(ctx);
+                                        _removeMember(m['regNo']);
+                                      },
+                                      child: const Text(
+                                        'Remove',
+                                        style: TextStyle(color: Colors.red),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+
                   const SizedBox(height: 32),
                   SizedBox(
                     width: double.infinity,
                     height: 50,
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: _team.isAwarded == true ? Colors.grey : Colors.green,
+                        backgroundColor: _team.isAwarded == true
+                            ? Colors.grey
+                            : Colors.green,
                         foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                       ),
-                      onPressed: _team.isAwarded == true ? null : _showAwardXpDialog,
+                      onPressed: _team.isAwarded == true
+                          ? null
+                          : _showAwardXpDialog,
                       child: Text(
-                        _team.isAwarded == true ? 'XP Already Awarded' : 'Award XP to Group',
-                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                        _team.isAwarded == true
+                            ? 'XP Already Awarded'
+                            : 'Award XP to Group',
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                   ),
@@ -330,12 +413,26 @@ class _GroupDetailsPageState extends State<GroupDetailsPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(_team.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 22, color: _primary)),
+            Text(
+              _team.name,
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 22,
+                color: _primary,
+              ),
+            ),
             const SizedBox(height: 12),
             Row(
               children: [
-                Expanded(child: _buildInfoItem('Captain', _team.captainName ?? 'None')),
-                Expanded(child: _buildInfoItem('Status', _team.isAwarded == true ? 'Completed' : 'Pending')),
+                Expanded(
+                  child: _buildInfoItem('Captain', _team.captainName ?? 'None'),
+                ),
+                Expanded(
+                  child: _buildInfoItem(
+                    'Status',
+                    _team.isAwarded == true ? 'Completed' : 'Pending',
+                  ),
+                ),
               ],
             ),
           ],
@@ -350,10 +447,15 @@ class _GroupDetailsPageState extends State<GroupDetailsPage> {
       children: [
         Text(label, style: const TextStyle(color: Colors.grey, fontSize: 12)),
         const SizedBox(height: 4),
-        Text(value, style: const TextStyle(fontWeight: FontWeight.w600, color: _dark, fontSize: 14)),
+        Text(
+          value,
+          style: const TextStyle(
+            fontWeight: FontWeight.w600,
+            color: _dark,
+            fontSize: 14,
+          ),
+        ),
       ],
     );
   }
-
-
 }

@@ -1,13 +1,13 @@
-import 'package:spdms_app/features/auth/providers/auth_provider.dart';
+import 'package:pragatix/features/auth/providers/auth_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter/material.dart';
 
-import 'package:spdms_app/features/team/models/team.dart';
-import 'package:spdms_app/features/activity/services/group_activity_service.dart';
-import 'package:spdms_app/features/activity/models/execution_student_model.dart';
-import 'package:spdms_app/features/activity/services/activity_service.dart';
-import 'package:spdms_app/features/activity/pages/create_group_page.dart';
-import 'package:spdms_app/features/activity/pages/group_details_page.dart';
+import 'package:pragatix/features/team/models/team.dart';
+import 'package:pragatix/features/activity/services/group_activity_service.dart';
+import 'package:pragatix/features/activity/models/execution_student_model.dart';
+import 'package:pragatix/features/activity/services/activity_service.dart';
+import 'package:pragatix/features/activity/pages/create_group_page.dart';
+import 'package:pragatix/features/activity/pages/group_details_page.dart';
 
 class GroupActivityExecutionPage extends StatefulWidget {
   final int activityId;
@@ -17,7 +17,7 @@ class GroupActivityExecutionPage extends StatefulWidget {
 
   const GroupActivityExecutionPage({
     super.key,
-    
+
     required this.activityId,
     required this.selectedYear,
     required this.selectedDept,
@@ -25,10 +25,12 @@ class GroupActivityExecutionPage extends StatefulWidget {
   });
 
   @override
-  State<GroupActivityExecutionPage> createState() => _GroupActivityExecutionPageState();
+  State<GroupActivityExecutionPage> createState() =>
+      _GroupActivityExecutionPageState();
 }
 
-class _GroupActivityExecutionPageState extends State<GroupActivityExecutionPage> {
+class _GroupActivityExecutionPageState
+    extends State<GroupActivityExecutionPage> {
   late final ActivityService _activityService;
   late final GroupActivityService _groupService;
 
@@ -67,8 +69,12 @@ class _GroupActivityExecutionPageState extends State<GroupActivityExecutionPage>
         if (yearNo == 4) yearParam = 'IV';
       }
 
-      final int? deptId = widget.selectedDept != null ? widget.selectedDept['id'] : null;
-      final int? secId = widget.selectedSection != null ? widget.selectedSection['id'] : null;
+      final int? deptId = widget.selectedDept != null
+          ? widget.selectedDept['id']
+          : null;
+      final int? secId = widget.selectedSection != null
+          ? widget.selectedSection['id']
+          : null;
 
       // 1. Fetch the activity details and get the specific assignment for this scope
       final actData = await _activityService.fetchExecutionStudents(
@@ -80,7 +86,9 @@ class _GroupActivityExecutionPageState extends State<GroupActivityExecutionPage>
       final model = MyActivityStudentsResponseModel.fromJson(actData);
 
       // 2. Fetch the groups for this specific assignment
-      final teams = await _groupService.getTeamsForAssignment(model.assignment.id);
+      final teams = await _groupService.getTeamsForAssignment(
+        model.assignment.id,
+      );
 
       setState(() {
         _data = model;
@@ -96,24 +104,31 @@ class _GroupActivityExecutionPageState extends State<GroupActivityExecutionPage>
   }
 
   Future<void> _deleteTeam(Team team) async {
-    final bool confirm = await showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Delete Group?'),
-        content: const Text('Are you sure you want to delete this group?\n\nThis action will permanently remove the group and its member mappings.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
+    final bool confirm =
+        await showDialog(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: const Text('Delete Group?'),
+            content: const Text(
+              'Are you sure you want to delete this group?\n\nThis action will permanently remove the group and its member mappings.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                onPressed: () => Navigator.pop(ctx, true),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.red,
+                  foregroundColor: Colors.white,
+                ),
+                child: const Text('Delete'),
+              ),
+            ],
           ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
-            child: const Text('Delete'),
-          ),
-        ],
-      ),
-    ) ?? false;
+        ) ??
+        false;
 
     if (!confirm) return;
 
@@ -121,16 +136,20 @@ class _GroupActivityExecutionPageState extends State<GroupActivityExecutionPage>
     try {
       await _groupService.deleteTeam(team.id);
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Group deleted successfully')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Group deleted successfully')),
+      );
       _loadGroupsForScope();
     } catch (e) {
       setState(() => _isLoadingGroups = false);
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(e.toString().replaceAll('Exception: ', '')),
-        backgroundColor: Colors.red,
-        duration: const Duration(seconds: 4),
-      ));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e.toString().replaceAll('Exception: ', '')),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 4),
+        ),
+      );
     }
   }
 
@@ -149,11 +168,15 @@ class _GroupActivityExecutionPageState extends State<GroupActivityExecutionPage>
       context,
       MaterialPageRoute(
         builder: (_) => CreateGroupPage(
-          
           assignmentId: _data!.assignment.id,
           preselectedYear: yearParam,
-          preselectedDept: widget.selectedDept != null ? (widget.selectedDept['name'] ?? widget.selectedDept['departmentName']) : null,
-          preselectedSection: widget.selectedSection != null ? widget.selectedSection['sectionName'] : null,
+          preselectedDept: widget.selectedDept != null
+              ? (widget.selectedDept['name'] ??
+                    widget.selectedDept['departmentName'])
+              : null,
+          preselectedSection: widget.selectedSection != null
+              ? widget.selectedSection['sectionName']
+              : null,
         ),
       ),
     );
@@ -169,11 +192,8 @@ class _GroupActivityExecutionPageState extends State<GroupActivityExecutionPage>
     final result = await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => GroupDetailsPage(
-          
-          team: team,
-          xpPerMember: _data!.activity.awardXp,
-        ),
+        builder: (_) =>
+            GroupDetailsPage(team: team, xpPerMember: _data!.activity.awardXp),
       ),
     );
 
@@ -195,8 +215,8 @@ class _GroupActivityExecutionPageState extends State<GroupActivityExecutionPage>
       body: _isLoadingGroups
           ? const Center(child: CircularProgressIndicator())
           : _errorMessage != null
-              ? _buildErrorView()
-              : _buildGroupsListStep(),
+          ? _buildErrorView()
+          : _buildGroupsListStep(),
       floatingActionButton: null,
     );
   }
@@ -211,7 +231,11 @@ class _GroupActivityExecutionPageState extends State<GroupActivityExecutionPage>
           Text(
             _errorMessage!,
             textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: _dark),
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: _dark,
+            ),
           ),
           const SizedBox(height: 24),
           ElevatedButton(
@@ -226,28 +250,39 @@ class _GroupActivityExecutionPageState extends State<GroupActivityExecutionPage>
   Widget _buildGroupsListStep() {
     return CustomScrollView(
       slivers: [
-        SliverToBoxAdapter(
-          child: _buildActivityHeaderCard(),
-        ),
+        SliverToBoxAdapter(child: _buildActivityHeaderCard()),
         SliverToBoxAdapter(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+            padding: const EdgeInsets.symmetric(
+              horizontal: 16.0,
+              vertical: 8.0,
+            ),
             child: Row(
               children: [
                 const Text(
                   'Existing Groups',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: _dark),
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18,
+                    color: _dark,
+                  ),
                 ),
                 const Spacer(),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.grey.shade200,
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
                     '${_teams.length} Teams',
-                    style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey.shade700),
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.grey.shade700,
+                    ),
                   ),
                 ),
               ],
@@ -255,20 +290,14 @@ class _GroupActivityExecutionPageState extends State<GroupActivityExecutionPage>
           ),
         ),
         if (_teams.isEmpty)
-          SliverFillRemaining(
-            hasScrollBody: false,
-            child: _buildEmptyState(),
-          )
+          SliverFillRemaining(hasScrollBody: false, child: _buildEmptyState())
         else
           SliverPadding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             sliver: SliverList(
-              delegate: SliverChildBuilderDelegate(
-                (ctx, index) {
-                  return _buildTeamCard(_teams[index]);
-                },
-                childCount: _teams.length,
-              ),
+              delegate: SliverChildBuilderDelegate((ctx, index) {
+                return _buildTeamCard(_teams[index]);
+              }, childCount: _teams.length),
             ),
           ),
         const SliverToBoxAdapter(
@@ -297,7 +326,11 @@ class _GroupActivityExecutionPageState extends State<GroupActivityExecutionPage>
           children: [
             Text(
               act.name,
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: _dark),
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 18,
+                color: _dark,
+              ),
             ),
             const Divider(height: 24),
             LayoutBuilder(
@@ -307,15 +340,45 @@ class _GroupActivityExecutionPageState extends State<GroupActivityExecutionPage>
                   spacing: 16,
                   runSpacing: 16,
                   children: [
-                    _buildDetailItem('Category', act.xpCategory.isNotEmpty ? act.xpCategory : 'N/A', itemWidth),
-                    _buildDetailItem('Award XP', act.awardEnabled ? '+${act.awardXp} XP' : 'Disabled', itemWidth),
-                    _buildDetailItem('Penalty', act.penaltyEnabled ? '-${act.penaltyXp} XP' : 'Disabled', itemWidth),
-                    _buildDetailItem('Frequency', act.frequency.isNotEmpty ? act.frequency : 'N/A', itemWidth),
+                    _buildDetailItem(
+                      'Category',
+                      act.xpCategory.isNotEmpty ? act.xpCategory : 'N/A',
+                      itemWidth,
+                    ),
+                    _buildDetailItem(
+                      'Award XP',
+                      act.awardEnabled ? '+${act.awardXp} XP' : 'Disabled',
+                      itemWidth,
+                    ),
+                    _buildDetailItem(
+                      'Penalty',
+                      act.penaltyEnabled ? '-${act.penaltyXp} XP' : 'Disabled',
+                      itemWidth,
+                    ),
+                    _buildDetailItem(
+                      'Frequency',
+                      act.frequency.isNotEmpty ? act.frequency : 'N/A',
+                      itemWidth,
+                    ),
                     _buildDetailItem('Cap', act.cap.toString(), itemWidth),
-                    _buildDetailItem('Evidence', act.evidence.isNotEmpty ? act.evidence.join(', ') : 'None', itemWidth),
+                    _buildDetailItem(
+                      'Evidence',
+                      act.evidence.isNotEmpty
+                          ? act.evidence.join(', ')
+                          : 'None',
+                      itemWidth,
+                    ),
                     _buildDetailItem('Activity Type', act.type, itemWidth),
-                    _buildDetailItem('Assigned Faculty', assign.assignedFacultyName, itemWidth),
-                    _buildDetailItem('Assignment Mode', assign.assignmentMode, itemWidth),
+                    _buildDetailItem(
+                      'Assigned Faculty',
+                      assign.assignedFacultyName,
+                      itemWidth,
+                    ),
+                    _buildDetailItem(
+                      'Assignment Mode',
+                      assign.assignmentMode,
+                      itemWidth,
+                    ),
                   ],
                 );
               },
@@ -334,7 +397,14 @@ class _GroupActivityExecutionPageState extends State<GroupActivityExecutionPage>
         children: [
           Text(label, style: const TextStyle(fontSize: 12, color: Colors.grey)),
           const SizedBox(height: 2),
-          Text(value, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: _dark)),
+          Text(
+            value,
+            style: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: _dark,
+            ),
+          ),
         ],
       ),
     );
@@ -342,7 +412,7 @@ class _GroupActivityExecutionPageState extends State<GroupActivityExecutionPage>
 
   Widget _buildTeamCard(Team team) {
     final int memberCount = team.members?.length ?? 0;
-    
+
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       shape: RoundedRectangleBorder(
@@ -363,7 +433,11 @@ class _GroupActivityExecutionPageState extends State<GroupActivityExecutionPage>
                 Expanded(
                   child: Text(
                     team.name,
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: _dark),
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                      color: _dark,
+                    ),
                   ),
                 ),
                 if (team.canDelete)
@@ -377,14 +451,26 @@ class _GroupActivityExecutionPageState extends State<GroupActivityExecutionPage>
             const Divider(height: 24),
             Row(
               children: [
-                Expanded(child: _buildInfoItem('Captain', team.captainName ?? 'None')),
-                Expanded(child: _buildInfoItem('Members', '$memberCount / ${team.size}')),
+                Expanded(
+                  child: _buildInfoItem('Captain', team.captainName ?? 'None'),
+                ),
+                Expanded(
+                  child: _buildInfoItem(
+                    'Members',
+                    '$memberCount / ${team.size}',
+                  ),
+                ),
               ],
             ),
             const SizedBox(height: 12),
             Row(
               children: [
-                Expanded(child: _buildInfoItem('Faculty', _data!.assignment.assignedFacultyName)),
+                Expanded(
+                  child: _buildInfoItem(
+                    'Faculty',
+                    _data!.assignment.assignedFacultyName,
+                  ),
+                ),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -395,15 +481,22 @@ class _GroupActivityExecutionPageState extends State<GroupActivityExecutionPage>
                       ),
                       const SizedBox(height: 2),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
                         decoration: BoxDecoration(
-                          color: team.isAwarded == true ? Colors.green.shade50 : Colors.orange.shade50,
+                          color: team.isAwarded == true
+                              ? Colors.green.shade50
+                              : Colors.orange.shade50,
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Text(
                           team.isAwarded == true ? 'Completed' : 'Active',
                           style: TextStyle(
-                            color: team.isAwarded == true ? Colors.green.shade700 : Colors.orange.shade700,
+                            color: team.isAwarded == true
+                                ? Colors.green.shade700
+                                : Colors.orange.shade700,
                             fontSize: 12,
                             fontWeight: FontWeight.bold,
                           ),
@@ -422,7 +515,9 @@ class _GroupActivityExecutionPageState extends State<GroupActivityExecutionPage>
                 style: OutlinedButton.styleFrom(
                   foregroundColor: _accent,
                   side: const BorderSide(color: _accent),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
                 ),
                 child: const Text('Open'),
               ),
@@ -437,14 +532,15 @@ class _GroupActivityExecutionPageState extends State<GroupActivityExecutionPage>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: const TextStyle(color: Colors.grey, fontSize: 12),
-        ),
+        Text(label, style: const TextStyle(color: Colors.grey, fontSize: 12)),
         const SizedBox(height: 2),
         Text(
           value,
-          style: const TextStyle(fontWeight: FontWeight.w600, color: _dark, fontSize: 13),
+          style: const TextStyle(
+            fontWeight: FontWeight.w600,
+            color: _dark,
+            fontSize: 13,
+          ),
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
         ),
@@ -453,9 +549,15 @@ class _GroupActivityExecutionPageState extends State<GroupActivityExecutionPage>
   }
 
   Widget _buildEmptyState() {
-    final String yearName = widget.selectedYear != null ? widget.selectedYear['yearName'] : '';
-    final String deptName = widget.selectedDept != null ? (widget.selectedDept['name'] ?? widget.selectedDept['departmentName']) : '';
-    final String secName = widget.selectedSection != null ? widget.selectedSection['sectionName'] : '';
+    final String yearName = widget.selectedYear != null
+        ? widget.selectedYear['yearName']
+        : '';
+    final String deptName = widget.selectedDept != null
+        ? (widget.selectedDept['name'] ?? widget.selectedDept['departmentName'])
+        : '';
+    final String secName = widget.selectedSection != null
+        ? widget.selectedSection['sectionName']
+        : '';
     String scopeString = '$yearName / $deptName';
     if (widget.selectedSection != null) scopeString += ' / $secName';
 
@@ -467,7 +569,11 @@ class _GroupActivityExecutionPageState extends State<GroupActivityExecutionPage>
           const SizedBox(height: 16),
           Text(
             'No Groups Created Yet',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.grey.shade600),
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: Colors.grey.shade600,
+            ),
           ),
           const SizedBox(height: 8),
           Padding(

@@ -1,21 +1,17 @@
-import 'package:spdms_app/features/auth/providers/auth_provider.dart';
+import 'package:pragatix/features/auth/providers/auth_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter/material.dart';
-import 'package:spdms_app/features/activity/services/activity_proxy_service.dart';
+import 'package:pragatix/features/activity/services/activity_proxy_service.dart';
 import 'dart:convert';
-import 'package:spdms_app/core/config/api_config.dart';
+import 'package:pragatix/core/config/api_config.dart';
 
-import 'package:spdms_app/features/activity/pages/group_activity_dept_page.dart';
-import 'package:spdms_app/core/di/service_locator.dart';
+import 'package:pragatix/features/activity/pages/group_activity_dept_page.dart';
+import 'package:pragatix/core/di/service_locator.dart';
 
 class GroupActivityYearPage extends StatefulWidget {
   final int activityId;
 
-  const GroupActivityYearPage({
-    super.key,
-    
-    required this.activityId,
-  });
+  const GroupActivityYearPage({super.key, required this.activityId});
 
   @override
   State<GroupActivityYearPage> createState() => _GroupActivityYearPageState();
@@ -60,8 +56,12 @@ class _GroupActivityYearPageState extends State<GroupActivityYearPage> {
     });
     try {
       final response = await getIt<ActivityProxyService>().get(
-        Uri.parse('${ApiConfig.baseUrl}/api/v1/my-activities/${widget.activityId}/years'),
-        headers: {'Authorization': 'Bearer ${context.read<AuthProvider>().token!}'},
+        Uri.parse(
+          '${ApiConfig.baseUrl}/api/v1/my-activities/${widget.activityId}/years',
+        ),
+        headers: {
+          'Authorization': 'Bearer ${context.read<AuthProvider>().token!}',
+        },
       );
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -70,7 +70,9 @@ class _GroupActivityYearPageState extends State<GroupActivityYearPage> {
           setState(() {
             _availableYearsList = _fixedYears.where((fy) {
               final aliases = _getYearAliases(fy);
-              return yrs.any((y) => aliases.contains(y.toString().toLowerCase().trim()));
+              return yrs.any(
+                (y) => aliases.contains(y.toString().toLowerCase().trim()),
+              );
             }).toList();
           });
         }
@@ -93,7 +95,6 @@ class _GroupActivityYearPageState extends State<GroupActivityYearPage> {
       context,
       MaterialPageRoute(
         builder: (_) => GroupActivityDeptPage(
-          
           activityId: widget.activityId,
           selectedYear: year,
         ),
@@ -114,42 +115,57 @@ class _GroupActivityYearPageState extends State<GroupActivityYearPage> {
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _errorMessage != null
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(Icons.error_outline, size: 48, color: Colors.red),
-                      const SizedBox(height: 16),
-                      Text(_errorMessage!, style: const TextStyle(color: Colors.red)),
-                      const SizedBox(height: 16),
-                      ElevatedButton(
-                        onPressed: _fetchYearsForEvent,
-                        child: const Text('Retry'),
-                      )
-                    ],
+          ? Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.error_outline, size: 48, color: Colors.red),
+                  const SizedBox(height: 16),
+                  Text(
+                    _errorMessage!,
+                    style: const TextStyle(color: Colors.red),
                   ),
-                )
-              : ListView.builder(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: _availableYearsList.length,
-                  itemBuilder: (context, index) {
-                    final year = _availableYearsList[index];
-                    return Card(
-                      margin: const EdgeInsets.only(bottom: 12),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      elevation: 1,
-                      child: ListTile(
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                        title: Text(
-                          year['yearName'],
-                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: _dark),
-                        ),
-                        trailing: const Icon(Icons.chevron_right, color: Colors.grey),
-                        onTap: () => _navigateToNext(year),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: _fetchYearsForEvent,
+                    child: const Text('Retry'),
+                  ),
+                ],
+              ),
+            )
+          : ListView.builder(
+              padding: const EdgeInsets.all(16),
+              itemCount: _availableYearsList.length,
+              itemBuilder: (context, index) {
+                final year = _availableYearsList[index];
+                return Card(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  elevation: 1,
+                  child: ListTile(
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 12,
+                    ),
+                    title: Text(
+                      year['yearName'],
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: _dark,
                       ),
-                    );
-                  },
-                ),
+                    ),
+                    trailing: const Icon(
+                      Icons.chevron_right,
+                      color: Colors.grey,
+                    ),
+                    onTap: () => _navigateToNext(year),
+                  ),
+                );
+              },
+            ),
     );
   }
 }

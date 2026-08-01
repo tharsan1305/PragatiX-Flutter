@@ -4,6 +4,8 @@ class Team {
   final int size;
   final String? captainId;
   final String? captainName;
+  final String? viceCaptainId;
+  final String? viceCaptainName;
   final int? assignmentId;
   final String? activityName;
   final bool? isAwarded;
@@ -14,7 +16,8 @@ class Team {
   final String? semesterName;
   final String? sectionName;
   final int currentStage;
-  final List<dynamic>? members; // Will refine based on StudentResponse if needed
+  final List<dynamic>?
+  members; // Will refine based on StudentResponse if needed
 
   Team({
     required this.id,
@@ -22,6 +25,8 @@ class Team {
     required this.size,
     this.captainId,
     this.captainName,
+    this.viceCaptainId,
+    this.viceCaptainName,
     this.assignmentId,
     this.activityName,
     this.isAwarded,
@@ -42,6 +47,8 @@ class Team {
       size: json['teamCapacity'] ?? json['size'] ?? 0,
       captainId: json['captainId'],
       captainName: json['captainName'],
+      viceCaptainId: json['viceCaptainId'],
+      viceCaptainName: json['viceCaptainName'],
       assignmentId: json['assignmentId'],
       activityName: json['assignmentName'] ?? json['activityName'],
       isAwarded: json['isAwarded'],
@@ -52,9 +59,11 @@ class Team {
       semesterName: json['semesterName'],
       sectionName: json['sectionName'],
       currentStage: json['currentStage'] ?? 1,
-      members: json['teamMembers'] != null 
-          ? List<dynamic>.from(json['teamMembers']) 
-          : (json['members'] != null ? List<dynamic>.from(json['members']) : null),
+      members: json['teamMembers'] != null
+          ? List<dynamic>.from(json['teamMembers'])
+          : (json['members'] != null
+                ? List<dynamic>.from(json['members'])
+                : null),
     );
   }
 
@@ -65,6 +74,8 @@ class Team {
       'size': size,
       'captainId': captainId,
       'captainName': captainName,
+      'viceCaptainId': viceCaptainId,
+      'viceCaptainName': viceCaptainName,
       'assignmentId': assignmentId,
       'activityName': activityName,
       'isAwarded': isAwarded,

@@ -24,7 +24,7 @@ class ActivityModel {
   final int penaltyXp;
   final String awardType;
   // ── Refactored Award Rules ─────────────────────────────────────────────────
-  final int cap;             // max awards per frequency window
+  final int cap; // max awards per frequency window
   final String awardFrequency; // One Time | Daily | Weekly | Monthly | Manual
   final List<String> awardDays; // working days (Weekly only)
   final String xpType;
@@ -33,7 +33,6 @@ class ActivityModel {
   final List<Map<String, dynamic>> mappedStages;
   final bool allowStudentRequest;
 
-  // Backward-compat aliases
   String get frequency => awardFrequency;
   String get resetPeriod => awardFrequency;
   int get maximumAwards => cap;
@@ -69,7 +68,6 @@ class ActivityModel {
     this.mappedStages = const [],
     this.allowStudentRequest = false,
   });
-
   factory ActivityModel.fromJson(Map<String, dynamic> json) {
     final raw = json['evidence'];
     final List<String> evidenceList;
@@ -84,12 +82,15 @@ class ActivityModel {
     final rawSummary = json['assignmentSummary'];
     final List<Map<String, dynamic>> summaryList;
     if (rawSummary is List) {
-      summaryList = rawSummary.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+      summaryList = rawSummary
+          .map((e) => Map<String, dynamic>.from(e as Map))
+          .toList();
     } else {
       summaryList = [];
     }
 
-    final parsedAwardXp = (json['awardXp'] as num?)?.toInt() ??
+    final parsedAwardXp =
+        (json['awardXp'] as num?)?.toInt() ??
         (json['xp'] != null ? int.tryParse(json['xp'].toString()) ?? 0 : 0);
     bool parsedAwardEnabled = true;
     bool parsedPenaltyEnabled = false;
@@ -98,19 +99,23 @@ class ActivityModel {
     if (json.containsKey('awardEnabled')) {
       parsedAwardEnabled = json['awardEnabled'] as bool? ?? true;
     } else {
-      if (json['xpType']?.toString().toLowerCase() == 'penalty' || json['xpType']?.toString().toLowerCase() == 'discipline') {
+      if (json['xpType']?.toString().toLowerCase() == 'penalty' ||
+          json['xpType']?.toString().toLowerCase() == 'discipline') {
         parsedAwardEnabled = false;
       }
     }
     if (json.containsKey('penaltyEnabled')) {
       parsedPenaltyEnabled = json['penaltyEnabled'] as bool? ?? false;
     } else {
-      if (json['xpType']?.toString().toLowerCase() == 'penalty' || json['xpType']?.toString().toLowerCase() == 'discipline' || json['xpType']?.toString().toLowerCase() == 'mixed') {
+      if (json['xpType']?.toString().toLowerCase() == 'penalty' ||
+          json['xpType']?.toString().toLowerCase() == 'discipline' ||
+          json['xpType']?.toString().toLowerCase() == 'mixed') {
         parsedPenaltyEnabled = true;
         parsedPenaltyXp = parsedAwardXp;
       }
     }
-    if (!json.containsKey('awardEnabled') && !json.containsKey('penaltyEnabled')) {
+    if (!json.containsKey('awardEnabled') &&
+        !json.containsKey('penaltyEnabled')) {
       final pX = (json['passXp'] as num?)?.toInt() ?? 0;
       final fX = (json['failXp'] as num?)?.toInt() ?? 0;
       if (pX > 0 || fX > 0) {
@@ -121,20 +126,21 @@ class ActivityModel {
     }
 
     // Award Frequency — support both new and legacy field names
-    final parsedFrequency = (json['awardFrequency'] as String?)?.isNotEmpty == true
+    final parsedFrequency =
+        (json['awardFrequency'] as String?)?.isNotEmpty == true
         ? json['awardFrequency'] as String
         : (json['resetPeriod'] as String?)?.isNotEmpty == true
-            ? json['resetPeriod'] as String
-            : (json['frequency'] as String?)?.isNotEmpty == true
-                ? json['frequency'] as String
-                : 'One Time';
+        ? json['resetPeriod'] as String
+        : (json['frequency'] as String?)?.isNotEmpty == true
+        ? json['frequency'] as String
+        : 'One Time';
 
     // Cap — support both new and legacy field names
     final parsedCap = (json['cap'] is num)
         ? (json['cap'] as num).toInt()
         : (json['maximumAwards'] is num)
-            ? (json['maximumAwards'] as num).toInt()
-            : int.tryParse(json['cap']?.toString() ?? '1') ?? 1;
+        ? (json['maximumAwards'] as num).toInt()
+        : int.tryParse(json['cap']?.toString() ?? '1') ?? 1;
 
     // Award Days
     final rawDays = json['awardDays'];
@@ -150,22 +156,31 @@ class ActivityModel {
     final rawMappedStages = json['mappedStages'];
     final List<Map<String, dynamic>> mappedStagesList;
     if (rawMappedStages is List) {
-      mappedStagesList = rawMappedStages.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+      mappedStagesList = rawMappedStages
+          .map((e) => Map<String, dynamic>.from(e as Map))
+          .toList();
     } else {
       mappedStagesList = [];
     }
 
     return ActivityModel(
       id: (json['id'] as num).toInt(),
-      name: json['name']?.toString() ?? json['activityName']?.toString() ?? 'Unnamed',
-      description: json['description']?.toString() ?? json['activityDescription']?.toString() ?? '',
+      name:
+          json['name']?.toString() ??
+          json['activityName']?.toString() ??
+          'Unnamed',
+      description:
+          json['description']?.toString() ??
+          json['activityDescription']?.toString() ??
+          '',
       ownerDepartment: json['ownerDepartment']?.toString() ?? 'General',
       departmentId: json['departmentId']?.toString() ?? '',
       teacherId: json['teacherId']?.toString() ?? '',
       ownerSubrole: json['ownerSubrole']?.toString() ?? 'Any',
       evidence: evidenceList,
       xp: parsedAwardXp.toString(),
-      type: json['type']?.toString() ?? json['modeType']?.toString() ?? 'General',
+      type:
+          json['type']?.toString() ?? json['modeType']?.toString() ?? 'General',
       justification: json['justification']?.toString() ?? '',
       assignmentSummary: summaryList,
       xpCategory: json['xpCategory']?.toString() ?? 'General',
@@ -176,46 +191,45 @@ class ActivityModel {
       penaltyEnabled: parsedPenaltyEnabled,
       penaltyXp: parsedPenaltyXp,
       awardType: json['awardType']?.toString() ?? 'Fixed XP',
-      cap: (json['maximumAwards'] as num?)?.toInt() ?? (json['maxPoints'] as num?)?.toInt() ?? 1,
-      awardFrequency: json['awardFrequency']?.toString() ?? json['resetPeriod']?.toString() ?? 'One Time',
-      awardDays: (json['awardDays']?.toString().split(',') ?? []).where((e) => e.isNotEmpty).toList(),
+      cap: parsedCap,
+      awardFrequency: parsedFrequency,
+      awardDays: parsedDays,
       xpType: json['xpType']?.toString() ?? 'Reward',
       assignmentMode: json['assignmentMode']?.toString() ?? 'MANUAL',
-      subgroup: json['subgroup']?.toString(),
+      subgroup: json['subgroup'] is Map ? json['subgroup']['name']?.toString() : json['subgroup']?.toString(),
       mappedStages: mappedStagesList,
       allowStudentRequest: json['allowStudentRequest'] as bool? ?? false,
     );
   }
 
   Map<String, dynamic> toJson() => {
-        'name': name,
-        'description': description,
-        'ownerDepartment': ownerDepartment,
-        'departmentId': departmentId,
-        'teacherId': teacherId,
-        'ownerSubrole': ownerSubrole,
-        'evidence': evidence.join(', '),
-        'xp': awardXp.toString(),
-        'type': type,
-        'justification': justification,
-        'assignmentSummary': assignmentSummary,
-        'xpCategory': xpCategory,
-        'displayOrder': displayOrder,
-        'status': status,
-        'awardXp': awardXp,
-        'awardEnabled': awardEnabled,
-        'penaltyEnabled': penaltyEnabled,
-        'penaltyXp': penaltyXp,
-        'awardType': awardType,
-        'cap': cap,
-        'awardFrequency': awardFrequency,
-        'awardDays': awardDays,
-        'xpType': xpType,
-        'assignmentMode': assignmentMode,
-        'subgroup': subgroup,
-        'allowStudentRequest': allowStudentRequest,
-      };
-
+    'name': name,
+    'description': description,
+    'ownerDepartment': ownerDepartment,
+    'departmentId': departmentId,
+    'teacherId': teacherId,
+    'ownerSubrole': ownerSubrole,
+    'evidence': evidence.join(', '),
+    'xp': awardXp.toString(),
+    'type': type,
+    'justification': justification,
+    'assignmentSummary': assignmentSummary,
+    'xpCategory': xpCategory,
+    'displayOrder': displayOrder,
+    'status': status,
+    'awardXp': awardXp,
+    'awardEnabled': awardEnabled,
+    'penaltyEnabled': penaltyEnabled,
+    'penaltyXp': penaltyXp,
+    'awardType': awardType,
+    'cap': cap,
+    'awardFrequency': awardFrequency,
+    'awardDays': awardDays,
+    'xpType': xpType,
+    'assignmentMode': assignmentMode,
+    'subgroup': subgroup,
+    'allowStudentRequest': allowStudentRequest,
+  };
   ActivityModel copyWith({
     int? id,
     String? name,

@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:spdms_app/features/captain/pages/dashboard_tab.dart';
+import 'package:pragatix/features/captain/pages/dashboard_tab.dart';
 import '../../../helpers/test_wrapper.dart';
 
 void main() {

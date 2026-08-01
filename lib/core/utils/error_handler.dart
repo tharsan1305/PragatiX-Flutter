@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:spdms_app/core/exceptions/api_exception.dart';
+import 'package:pragatix/core/exceptions/api_exception.dart';
 
 class ErrorHandler {
   static void showSnackBar(BuildContext context, dynamic error) {
@@ -19,12 +19,16 @@ class ErrorHandler {
         // For 400, 409, 422, etc., display the backend message verbatim
         message = error.message;
       }
-    } else if (error is SocketException || error is TimeoutException || error.toString().contains("SocketException") || error.toString().contains("TimeoutException") || error.toString().contains("Connection refused")) {
+    } else if (error is SocketException ||
+        error is TimeoutException ||
+        error.toString().contains("SocketException") ||
+        error.toString().contains("TimeoutException") ||
+        error.toString().contains("Connection refused")) {
       message = "Network Error: Please check your internet connection.";
     } else {
       message = error.toString().replaceAll("Exception: ", "");
     }
-    
+
     // Check if widget tree is still mounted before showing snackbar
     if (ScaffoldMessenger.maybeOf(context) != null) {
       ScaffoldMessenger.of(context).showSnackBar(

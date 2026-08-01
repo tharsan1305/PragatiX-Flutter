@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:spdms_app/features/activity/providers/activity_provider.dart';
-import 'package:spdms_app/features/activity/widgets/activity_form.dart';
-import 'package:spdms_app/features/activity/widgets/sticky_bottom_buttons.dart';
+import 'package:pragatix/features/activity/providers/activity_provider.dart';
+import 'package:pragatix/features/activity/widgets/activity_form.dart';
+import 'package:pragatix/features/activity/widgets/sticky_bottom_buttons.dart';
+import 'package:pragatix/features/auth/providers/auth_provider.dart';
+import 'package:provider/provider.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Create Activity Page – full-screen form for new activities.
@@ -69,6 +71,7 @@ class _CreateActivityPageState extends State<CreateActivityPage>
     body['stageId'] = widget.stageId;
     body['subgroupId'] = widget.subgroupId;
     body['subgroup'] = widget.subgroupName;
+    body['isMandatory'] = (widget.subgroupName?.toLowerCase().contains('must') == true);
 
     final ok = await widget.provider.createActivity(body);
 
@@ -86,8 +89,7 @@ class _CreateActivityPageState extends State<CreateActivityPage>
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content:
-              Text(widget.provider.error ?? 'Failed to create activity.'),
+          content: Text(widget.provider.error ?? 'Failed to create activity.'),
           backgroundColor: Colors.redAccent,
           behavior: SnackBarBehavior.floating,
         ),
@@ -108,8 +110,11 @@ class _CreateActivityPageState extends State<CreateActivityPage>
               expandedHeight: 110,
               backgroundColor: _dark,
               leading: IconButton(
-                icon: const Icon(Icons.arrow_back_ios_new_rounded,
-                    color: Colors.white, size: 20),
+                icon: const Icon(
+                  Icons.arrow_back_ios_new_rounded,
+                  color: Colors.white,
+                  size: 20,
+                ),
                 onPressed: () => Navigator.pop(context),
               ),
               flexibleSpace: FlexibleSpaceBar(
@@ -139,13 +144,18 @@ class _CreateActivityPageState extends State<CreateActivityPage>
               if (widget.provider.isLoadingDependencies) {
                 return const Center(child: CircularProgressIndicator());
               }
-              return ActivityForm(
-                key: _formKey,
-                allTeachers: widget.provider.allTeachers,
-                sections: widget.provider.sections,
-                
-                provider: widget.provider,
-                isCc: widget.isCc,
+              return Column(
+                children: [
+                  Expanded(
+                    child: ActivityForm(
+                      key: _formKey,
+                      allTeachers: widget.provider.allTeachers,
+                      sections: widget.provider.sections,
+                      provider: widget.provider,
+                      isCc: widget.isCc,
+                    ),
+                  ),
+                ],
               );
             },
           ),

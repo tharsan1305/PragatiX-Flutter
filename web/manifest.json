@@ -1,6 +1,6 @@
 {
-    "name": "spdms_app",
-    "short_name": "spdms_app",
+    "name": "pragatix",
+    "short_name": "pragatix",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

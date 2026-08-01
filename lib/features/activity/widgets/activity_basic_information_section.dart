@@ -10,6 +10,9 @@ class ActivityBasicInformationSection extends StatelessWidget {
   final bool submitted;
   final ValueChanged<String?> onXpCategoryChanged;
   final ValueChanged<String?> onStatusChanged;
+  final bool isEdit;
+  final String? selectedSubgroup;
+  final ValueChanged<String?>? onSubgroupChanged;
 
   const ActivityBasicInformationSection({
     super.key,
@@ -21,6 +24,9 @@ class ActivityBasicInformationSection extends StatelessWidget {
     required this.submitted,
     required this.onXpCategoryChanged,
     required this.onStatusChanged,
+    this.isEdit = false,
+    this.selectedSubgroup,
+    this.onSubgroupChanged,
   });
 
   static const Color _primary = Color(0xFFEA4335);
@@ -28,8 +34,16 @@ class ActivityBasicInformationSection extends StatelessWidget {
   static const Color _surface = Color(0xFFF8FAFC);
 
   static const List<String> _xpCategories = [
-    'Academic', 'Skill', 'Communication', 'Leadership', 'Discipline',
-    'Placement', 'Innovation', 'Community', 'Sports', 'Cultural',
+    'Academic',
+    'Skill',
+    'Communication',
+    'Leadership',
+    'Discipline',
+    'Placement',
+    'Innovation',
+    'Community',
+    'Sports',
+    'Cultural',
   ];
 
   InputDecoration _deco(String label, IconData icon, {bool alignHint = false}) {
@@ -77,7 +91,9 @@ class ActivityBasicInformationSection extends StatelessWidget {
         const SizedBox(height: 16),
         InputDecorator(
           decoration: _deco('XP Category', Icons.category_rounded).copyWith(
-            errorText: (submitted && selectedXpCategory == null) ? 'XP Category is required' : null,
+            errorText: (submitted && selectedXpCategory == null)
+                ? 'XP Category is required'
+                : null,
           ),
           child: DropdownButton<String>(
             dropdownColor: Colors.white,
@@ -85,22 +101,65 @@ class ActivityBasicInformationSection extends StatelessWidget {
             isExpanded: true,
             underline: const SizedBox.shrink(),
             icon: const Icon(Icons.expand_more_rounded, color: _primary),
-            hint: const Text('Select XP Category', style: TextStyle(fontSize: 14)),
+            hint: const Text(
+              'Select XP Category',
+              style: TextStyle(fontSize: 14),
+            ),
             items: _xpCategories.map((c) {
               return DropdownMenuItem<String>(
                 value: c,
-                child: Text(c, style: const TextStyle(fontSize: 14, color: _dark)),
+                child: Text(
+                  c,
+                  style: const TextStyle(fontSize: 14, color: _dark),
+                ),
               );
             }).toList(),
             onChanged: onXpCategoryChanged,
           ),
         ),
+        if (isEdit) ...[
+          const SizedBox(height: 16),
+          InputDecorator(
+            decoration: _deco('Subgroup', Icons.group_work_rounded).copyWith(
+              errorText: (submitted && selectedSubgroup == null)
+                  ? 'Subgroup is required'
+                  : null,
+            ),
+            child: DropdownButton<String>(
+              dropdownColor: Colors.white,
+              value: ['Must', 'Individual', 'Group'].contains(selectedSubgroup)
+                  ? selectedSubgroup
+                  : null,
+              isExpanded: true,
+              underline: const SizedBox.shrink(),
+              icon: const Icon(Icons.expand_more_rounded, color: _primary),
+              hint: const Text(
+                'Select Subgroup',
+                style: TextStyle(fontSize: 14),
+              ),
+              items: ['Must', 'Individual', 'Group'].map((s) {
+                return DropdownMenuItem<String>(
+                  value: s,
+                  child: Text(
+                    s,
+                    style: const TextStyle(fontSize: 14, color: _dark),
+                  ),
+                );
+              }).toList(),
+              onChanged: onSubgroupChanged,
+            ),
+          ),
+        ],
         const SizedBox(height: 16),
         TextFormField(
           controller: descCtrl,
           maxLines: 3,
           style: const TextStyle(color: _dark, fontSize: 15),
-          decoration: _deco('Description', Icons.notes_rounded, alignHint: true),
+          decoration: _deco(
+            'Description',
+            Icons.notes_rounded,
+            alignHint: true,
+          ),
           validator: ActivityValidators.validateDescription,
         ),
         const SizedBox(height: 16),
@@ -110,7 +169,8 @@ class ActivityBasicInformationSection extends StatelessWidget {
           style: const TextStyle(color: _dark, fontSize: 15),
           decoration: _deco('Display Order', Icons.sort_rounded),
           validator: (val) {
-            if (val == null || val.trim().isEmpty) return 'Display order is required';
+            if (val == null || val.trim().isEmpty)
+              return 'Display order is required';
             if (int.tryParse(val) == null) return 'Must be a valid integer';
             return null;
           },
@@ -125,8 +185,20 @@ class ActivityBasicInformationSection extends StatelessWidget {
             underline: const SizedBox.shrink(),
             icon: const Icon(Icons.expand_more_rounded, color: _primary),
             items: const [
-              DropdownMenuItem<String>(value: 'ACTIVE', child: Text('Active', style: TextStyle(fontSize: 14, color: _dark))),
-              DropdownMenuItem<String>(value: 'INACTIVE', child: Text('Inactive', style: TextStyle(fontSize: 14, color: _dark))),
+              DropdownMenuItem<String>(
+                value: 'ACTIVE',
+                child: Text(
+                  'Active',
+                  style: TextStyle(fontSize: 14, color: _dark),
+                ),
+              ),
+              DropdownMenuItem<String>(
+                value: 'INACTIVE',
+                child: Text(
+                  'Inactive',
+                  style: TextStyle(fontSize: 14, color: _dark),
+                ),
+              ),
             ],
             onChanged: onStatusChanged,
           ),

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:spdms_app/features/student/widgets/student_activity_card.dart';
-import 'package:spdms_app/features/student/screens/activity_details_screen.dart';
-import 'package:spdms_app/core/utils/string_utils.dart';
+import 'package:pragatix/features/student/widgets/student_activity_card.dart';
+import 'package:pragatix/features/student/screens/activity_details_screen.dart';
+import 'package:pragatix/core/utils/string_utils.dart';
 
 class StageDetailsScreen extends StatelessWidget {
   final Map<String, dynamic> stage;
@@ -13,11 +13,14 @@ class StageDetailsScreen extends StatelessWidget {
     final String name = stage['name'] ?? 'Stage Details';
     final String description = stage['description'] ?? '';
     final int expectedXp = stage['expectedXp'] ?? 0;
-    final int currentXp = (stage['studentMustXp'] ?? 0) + (stage['studentIndividualXp'] ?? 0) + (stage['studentGroupXp'] ?? 0);
+    final int currentXp =
+        (stage['studentMustXp'] ?? 0) +
+        (stage['studentIndividualXp'] ?? 0) +
+        (stage['studentGroupXp'] ?? 0);
     final double percentage = (stage['overallPercentage'] ?? 0.0) / 100.0;
-    
+
     final List subgroups = stage['subgroups'] ?? [];
-    
+
     // Filter out subgroups with no activities
     final String stageStatus = stage['stageStatus'] ?? 'LOCKED';
     final bool isCompleted = stageStatus == 'COMPLETED';
@@ -81,7 +84,11 @@ class StageDetailsScreen extends StatelessWidget {
                           Text(
                             stageStatus,
                             style: TextStyle(
-                              color: isCompleted ? Colors.greenAccent : (isActive ? Colors.amberAccent : Colors.grey.shade300),
+                              color: isCompleted
+                                  ? Colors.greenAccent
+                                  : (isActive
+                                        ? Colors.amberAccent
+                                        : Colors.grey.shade300),
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
                             ),
@@ -89,7 +96,10 @@ class StageDetailsScreen extends StatelessWidget {
                         ],
                       ),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
                         decoration: BoxDecoration(
                           color: Colors.white.withOpacity(0.2),
                           borderRadius: BorderRadius.circular(20),
@@ -108,7 +118,10 @@ class StageDetailsScreen extends StatelessWidget {
                   if (description.isNotEmpty) ...[
                     Text(
                       description,
-                      style: TextStyle(color: Colors.white.withOpacity(0.9), fontSize: 14),
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.9),
+                        fontSize: 14,
+                      ),
                     ),
                     const SizedBox(height: 16),
                   ],
@@ -124,27 +137,36 @@ class StageDetailsScreen extends StatelessWidget {
                   LinearProgressIndicator(
                     value: percentage,
                     backgroundColor: Colors.white.withOpacity(0.2),
-                    valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
+                    valueColor: const AlwaysStoppedAnimation<Color>(
+                      Colors.white,
+                    ),
                     minHeight: 6,
                     borderRadius: BorderRadius.circular(3),
                   ),
                 ],
               ),
             ),
-            
+
             const SizedBox(height: 24),
-            
+
             if (validSubgroups.isEmpty)
               Center(
                 child: Padding(
                   padding: const EdgeInsets.all(32.0),
                   child: Column(
                     children: [
-                      Icon(Icons.inbox_rounded, size: 64, color: Colors.grey.shade300),
+                      Icon(
+                        Icons.inbox_rounded,
+                        size: 64,
+                        color: Colors.grey.shade300,
+                      ),
                       const SizedBox(height: 16),
                       Text(
                         'No activities available for this stage yet.',
-                        style: TextStyle(color: Colors.grey.shade600, fontSize: 16),
+                        style: TextStyle(
+                          color: Colors.grey.shade600,
+                          fontSize: 16,
+                        ),
                       ),
                     ],
                   ),
@@ -155,20 +177,20 @@ class StageDetailsScreen extends StatelessWidget {
                 final String rawSubName = subgroup['name'] ?? 'Category';
                 final String subName = StringUtils.toTitleCase(rawSubName);
                 final List activities = subgroup['activities'] ?? [];
-                
+
                 int completedCount = 0;
                 int categoryXp = 0;
-                
+
                 for (var act in activities) {
                   if (act['status'] == 'COMPLETED') {
                     completedCount++;
                   }
                   categoryXp += (act['awardedXp'] as num?)?.toInt() ?? 0;
                 }
-                
+
                 final int threshold = subgroup['threshold'] ?? 0;
                 final bool isPassed = categoryXp >= threshold && threshold > 0;
-                
+
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -185,15 +207,22 @@ class StageDetailsScreen extends StatelessWidget {
                           ),
                         ),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 4,
+                          ),
                           decoration: BoxDecoration(
-                            color: isPassed ? Colors.green.shade50 : Colors.blue.shade50,
+                            color: isPassed
+                                ? Colors.green.shade50
+                                : Colors.blue.shade50,
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Text(
                             '$categoryXp / $threshold XP',
                             style: TextStyle(
-                              color: isPassed ? Colors.green.shade700 : Colors.blue.shade700,
+                              color: isPassed
+                                  ? Colors.green.shade700
+                                  : Colors.blue.shade700,
                               fontWeight: FontWeight.bold,
                               fontSize: 12,
                             ),
@@ -211,16 +240,25 @@ class StageDetailsScreen extends StatelessWidget {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (context) => ActivityDetailsScreen(activity: activity),
+                                builder: (context) =>
+                                    ActivityDetailsScreen(activity: activity),
                               ),
                             );
                           } else if (isCompleted) {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('This stage is already completed. Activities are read-only.')),
+                              const SnackBar(
+                                content: Text(
+                                  'This stage is already completed. Activities are read-only.',
+                                ),
+                              ),
                             );
                           } else {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('This stage is currently locked.')),
+                              const SnackBar(
+                                content: Text(
+                                  'This stage is currently locked.',
+                                ),
+                              ),
                             );
                           }
                         },
@@ -250,10 +288,7 @@ class _StatColumn extends StatelessWidget {
       children: [
         Text(
           label,
-          style: TextStyle(
-            color: Colors.white.withOpacity(0.8),
-            fontSize: 12,
-          ),
+          style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 12),
         ),
         const SizedBox(height: 4),
         Text(

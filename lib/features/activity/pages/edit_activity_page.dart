@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:spdms_app/features/activity/models/activity_model.dart';
-import 'package:spdms_app/features/activity/providers/activity_provider.dart';
-import 'package:spdms_app/features/activity/widgets/activity_form.dart';
-import 'package:spdms_app/features/activity/widgets/sticky_bottom_buttons.dart';
+import 'package:pragatix/features/activity/models/activity_model.dart';
+import 'package:pragatix/features/activity/providers/activity_provider.dart';
+import 'package:pragatix/features/activity/widgets/activity_form.dart';
+import 'package:pragatix/features/activity/widgets/sticky_bottom_buttons.dart';
+import 'package:pragatix/features/auth/providers/auth_provider.dart';
+import 'package:provider/provider.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Edit Activity Page – reuses ActivityForm with pre-filled data.
@@ -37,6 +39,7 @@ class _EditActivityPageState extends State<EditActivityPage>
   @override
   void initState() {
     super.initState();
+
     _fadeCtrl = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 380),
@@ -63,10 +66,7 @@ class _EditActivityPageState extends State<EditActivityPage>
       return;
     }
 
-    final ok = await widget.provider.updateActivity(
-      widget.activity.id,
-      body,
-    );
+    final ok = await widget.provider.updateActivity(widget.activity.id, body);
 
     if (!mounted) return;
 
@@ -103,8 +103,11 @@ class _EditActivityPageState extends State<EditActivityPage>
               expandedHeight: 110,
               backgroundColor: _dark,
               leading: IconButton(
-                icon: const Icon(Icons.arrow_back_ios_new_rounded,
-                    color: Colors.white, size: 20),
+                icon: const Icon(
+                  Icons.arrow_back_ios_new_rounded,
+                  color: Colors.white,
+                  size: 20,
+                ),
                 onPressed: () => Navigator.pop(context),
               ),
               flexibleSpace: FlexibleSpaceBar(
@@ -147,14 +150,19 @@ class _EditActivityPageState extends State<EditActivityPage>
               if (widget.provider.isLoadingDependencies) {
                 return const Center(child: CircularProgressIndicator());
               }
-              return ActivityForm(
-                key: _formKey,
-                allTeachers: widget.provider.allTeachers,
-                sections: widget.provider.sections,
-                
-                provider: widget.provider,
-                initialData: widget.activity,
-                isCc: widget.isCc,
+              return Column(
+                children: [
+                  Expanded(
+                    child: ActivityForm(
+                      key: _formKey,
+                      allTeachers: widget.provider.allTeachers,
+                      sections: widget.provider.sections,
+                      provider: widget.provider,
+                      initialData: widget.activity,
+                      isCc: widget.isCc,
+                    ),
+                  ),
+                ],
               );
             },
           ),

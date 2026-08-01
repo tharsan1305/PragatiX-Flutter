@@ -1,4 +1,4 @@
-import 'package:spdms_app/core/config/api_config.dart';
+import 'package:pragatix/core/config/api_config.dart';
 // ─────────────────────────────────────────────────────────────────────────────
 // Activity module – shared constants.
 // No Flutter imports here; this file is import-free (pure Dart).
@@ -36,10 +36,5 @@ class ActivityConstants {
     '0 (Pass) / −40 (Fail)',
   ];
 
-  static const List<String> capOptions = [
-    '20/wk',
-    '25/wk',
-    '50/wk',
-    'No Cap',
-  ];
+  static const List<String> capOptions = ['20/wk', '25/wk', '50/wk', 'No Cap'];
 }

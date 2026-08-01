@@ -27,17 +27,10 @@ class SharedInfoTile extends StatelessWidget {
 class SharedInfoCard extends StatelessWidget {
   final List<SharedInfoTile> tiles;
 
-  const SharedInfoCard({
-    super.key,
-    required this.tiles,
-  });
+  const SharedInfoCard({super.key, required this.tiles});
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      child: Column(
-        children: tiles,
-      ),
-    );
+    return Card(child: Column(children: tiles));
   }
 }

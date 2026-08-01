@@ -1,4 +1,4 @@
-package com.example.spdms_app
+package com.example.pragatix
 
 import io.flutter.embedding.android.FlutterActivity
 

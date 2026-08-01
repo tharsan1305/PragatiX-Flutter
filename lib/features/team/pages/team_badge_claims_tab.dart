@@ -1,7 +1,7 @@
-import 'package:spdms_app/features/auth/providers/auth_provider.dart';
+import 'package:pragatix/features/auth/providers/auth_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:spdms_app/features/badge/providers/badge_provider.dart';
+import 'package:pragatix/features/badge/providers/badge_provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class TeamBadgeClaimsTab extends StatefulWidget {
@@ -20,7 +20,10 @@ class _TeamBadgeClaimsTabState extends State<TeamBadgeClaimsTab> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<BadgeProvider>(context, listen: false).fetchTeacherPendingClaims(context.read<AuthProvider>().token!);
+      Provider.of<BadgeProvider>(
+        context,
+        listen: false,
+      ).fetchTeacherPendingClaims(context.read<AuthProvider>().token!);
     });
   }
 
@@ -31,16 +34,16 @@ class _TeamBadgeClaimsTabState extends State<TeamBadgeClaimsTab> {
         await launchUrl(uri, mode: LaunchMode.externalApplication);
       } else {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Unable to open link.')),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('Unable to open link.')));
         }
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Unable to open link.')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Unable to open link.')));
       }
     }
   }
@@ -52,9 +55,7 @@ class _TeamBadgeClaimsTabState extends State<TeamBadgeClaimsTab> {
     if (badgeProvider.isLoading) {
       return Scaffold(
         backgroundColor: bgColor,
-        body: Center(
-          child: CircularProgressIndicator(color: primaryColor),
-        ),
+        body: Center(child: CircularProgressIndicator(color: primaryColor)),
       );
     }
 
@@ -66,18 +67,31 @@ class _TeamBadgeClaimsTabState extends State<TeamBadgeClaimsTab> {
           ? Center(
               child: RefreshIndicator(
                 onRefresh: () async {
-                  await Provider.of<BadgeProvider>(context, listen: false).fetchTeacherPendingClaims(context.read<AuthProvider>().token!);
+                  await Provider.of<BadgeProvider>(
+                    context,
+                    listen: false,
+                  ).fetchTeacherPendingClaims(
+                    context.read<AuthProvider>().token!,
+                  );
                 },
                 child: SingleChildScrollView(
                   physics: const AlwaysScrollableScrollPhysics(),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.done_all_rounded, size: 80, color: Colors.grey.shade400),
+                      Icon(
+                        Icons.done_all_rounded,
+                        size: 80,
+                        color: Colors.grey.shade400,
+                      ),
                       const SizedBox(height: 16),
                       Text(
                         'No pending claims',
-                        style: TextStyle(color: Colors.grey.shade500, fontSize: 18, fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                          color: Colors.grey.shade500,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ],
                   ),
@@ -86,7 +100,12 @@ class _TeamBadgeClaimsTabState extends State<TeamBadgeClaimsTab> {
             )
           : RefreshIndicator(
               onRefresh: () async {
-                await Provider.of<BadgeProvider>(context, listen: false).fetchTeacherPendingClaims(context.read<AuthProvider>().token!);
+                await Provider.of<BadgeProvider>(
+                  context,
+                  listen: false,
+                ).fetchTeacherPendingClaims(
+                  context.read<AuthProvider>().token!,
+                );
               },
               child: ListView.builder(
                 padding: const EdgeInsets.all(16),
@@ -94,141 +113,212 @@ class _TeamBadgeClaimsTabState extends State<TeamBadgeClaimsTab> {
                 itemBuilder: (context, index) {
                   final claim = claims[index];
                   final id = claim['id'];
-                final studentName = claim['studentName'] ?? 'Unknown Student';
-                final regNo = claim['regNo'] ?? 'ID N/A';
-                final badgeName = claim['badgeName'] ?? 'Unknown Badge';
-                final evidenceUrl = claim['evidenceUrl'];
-                final tier = claim['tier'] ?? 'Tier';
+                  final studentName = claim['studentName'] ?? 'Unknown Student';
+                  final regNo = claim['regNo'] ?? 'ID N/A';
+                  final badgeName = claim['badgeName'] ?? 'Unknown Badge';
+                  final evidenceUrl = claim['evidenceUrl'];
+                  final tier = claim['tier'] ?? 'Tier';
 
-                return Card(
-                  elevation: 2,
-                  margin: const EdgeInsets.only(bottom: 16),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            CircleAvatar(
-                              backgroundColor: primaryColor.withValues(alpha: 0.1),
-                              child: Icon(Icons.person, color: primaryColor),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    studentName,
-                                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: textColor),
-                                  ),
-                                  Text(
-                                    regNo,
-                                    style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: Colors.amber.withValues(alpha: 0.2),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Text(
-                                'PENDING',
-                                style: TextStyle(color: Colors.amber.shade800, fontWeight: FontWeight.bold, fontSize: 12),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const Divider(height: 24),
-                        Text(
-                          'Requested Badge:',
-                          style: TextStyle(fontSize: 12, color: Colors.grey.shade500, fontWeight: FontWeight.bold),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          '$badgeName ($tier)',
-                          style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: textColor),
-                        ),
-                        const SizedBox(height: 12),
-                        if (evidenceUrl != null && evidenceUrl.toString().isNotEmpty)
+                  return Card(
+                    elevation: 2,
+                    margin: const EdgeInsets.only(bottom: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
                           Row(
                             children: [
-                              const Icon(
-                                Icons.link,
-                                color: Colors.blue,
-                                size: 16,
+                              CircleAvatar(
+                                backgroundColor: primaryColor.withValues(
+                                  alpha: 0.1,
+                                ),
+                                child: Icon(Icons.person, color: primaryColor),
                               ),
-                              const SizedBox(width: 6),
+                              const SizedBox(width: 12),
                               Expanded(
-                                child: InkWell(
-                                  onTap: () => openUrl(evidenceUrl.toString()),
-                                  child: Text(
-                                    evidenceUrl.toString(),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: const TextStyle(
-                                      color: Colors.blue,
-                                      decoration: TextDecoration.underline,
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      studentName,
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                        color: textColor,
+                                      ),
                                     ),
+                                    Text(
+                                      regNo,
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        color: Colors.grey.shade600,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 4,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.amber.withValues(alpha: 0.2),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Text(
+                                  'PENDING',
+                                  style: TextStyle(
+                                    color: Colors.amber.shade800,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 12,
                                   ),
                                 ),
                               ),
                             ],
                           ),
-                        const SizedBox(height: 16),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.end,
-                          children: [
-                            TextButton(
-                              onPressed: () {
-                                badgeProvider.rejectClaim(context.read<AuthProvider>().token!, id).then((response) {
-                                  if (context.mounted) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text(response['message'] ?? (response['success'] ? 'Claim rejected' : 'Failed to reject')),
-                                        backgroundColor: response['success'] ? Colors.green : Colors.red,
-                                      ),
-                                    );
-                                  }
-                                });
-                              },
-                              style: TextButton.styleFrom(foregroundColor: Colors.red),
-                              child: const Text('Reject', style: TextStyle(fontWeight: FontWeight.bold)),
+                          const Divider(height: 24),
+                          Text(
+                            'Requested Badge:',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey.shade500,
+                              fontWeight: FontWeight.bold,
                             ),
-                            const SizedBox(width: 12),
-                            ElevatedButton(
-                              onPressed: () {
-                                badgeProvider.approveClaim(context.read<AuthProvider>().token!, id).then((response) {
-                                  if (context.mounted) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text(response['message'] ?? (response['success'] ? 'Claim approved' : 'Failed to approve')),
-                                        backgroundColor: response['success'] ? Colors.green : Colors.red,
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            '$badgeName ($tier)',
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.bold,
+                              color: textColor,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          if (evidenceUrl != null &&
+                              evidenceUrl.toString().isNotEmpty)
+                            Row(
+                              children: [
+                                const Icon(
+                                  Icons.link,
+                                  color: Colors.blue,
+                                  size: 16,
+                                ),
+                                const SizedBox(width: 6),
+                                Expanded(
+                                  child: InkWell(
+                                    onTap: () =>
+                                        openUrl(evidenceUrl.toString()),
+                                    child: Text(
+                                      evidenceUrl.toString(),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(
+                                        color: Colors.blue,
+                                        decoration: TextDecoration.underline,
                                       ),
-                                    );
-                                  }
-                                });
-                              },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.green,
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          const SizedBox(height: 16),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            children: [
+                              TextButton(
+                                onPressed: () {
+                                  badgeProvider
+                                      .rejectClaim(
+                                        context.read<AuthProvider>().token!,
+                                        id,
+                                      )
+                                      .then((response) {
+                                        if (context.mounted) {
+                                          ScaffoldMessenger.of(
+                                            context,
+                                          ).showSnackBar(
+                                            SnackBar(
+                                              content: Text(
+                                                response['message'] ??
+                                                    (response['success']
+                                                        ? 'Claim rejected'
+                                                        : 'Failed to reject'),
+                                              ),
+                                              backgroundColor:
+                                                  response['success']
+                                                  ? Colors.green
+                                                  : Colors.red,
+                                            ),
+                                          );
+                                        }
+                                      });
+                                },
+                                style: TextButton.styleFrom(
+                                  foregroundColor: Colors.red,
+                                ),
+                                child: const Text(
+                                  'Reject',
+                                  style: TextStyle(fontWeight: FontWeight.bold),
+                                ),
                               ),
-                              child: const Text('Approve', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                            ),
-                          ],
-                        ),
-                      ],
+                              const SizedBox(width: 12),
+                              ElevatedButton(
+                                onPressed: () {
+                                  badgeProvider
+                                      .approveClaim(
+                                        context.read<AuthProvider>().token!,
+                                        id,
+                                      )
+                                      .then((response) {
+                                        if (context.mounted) {
+                                          ScaffoldMessenger.of(
+                                            context,
+                                          ).showSnackBar(
+                                            SnackBar(
+                                              content: Text(
+                                                response['message'] ??
+                                                    (response['success']
+                                                        ? 'Claim approved'
+                                                        : 'Failed to approve'),
+                                              ),
+                                              backgroundColor:
+                                                  response['success']
+                                                  ? Colors.green
+                                                  : Colors.red,
+                                            ),
+                                          );
+                                        }
+                                      });
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.green,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                ),
+                                child: const Text(
+                                  'Approve',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                );
-              },
+                  );
+                },
+              ),
             ),
-          ),
     );
   }
 }

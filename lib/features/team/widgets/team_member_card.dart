@@ -20,21 +20,31 @@ class TeamMemberCard extends StatelessWidget {
 
   String _getStageName(int level) {
     switch (level) {
-      case 1: return 'Explorer';
-      case 2: return 'Builder';
-      case 3: return 'Innovator';
-      case 4: return 'Specialist';
-      case 5: return 'Leader';
-      case 6: return 'Mentor';
-      case 7: return 'Architect';
-      case 8: return 'Industry Ready';
-      default: return 'Explorer';
+      case 1:
+        return 'Explorer';
+      case 2:
+        return 'Builder';
+      case 3:
+        return 'Innovator';
+      case 4:
+        return 'Specialist';
+      case 5:
+        return 'Leader';
+      case 6:
+        return 'Mentor';
+      case 7:
+        return 'Architect';
+      case 8:
+        return 'Industry Ready';
+      default:
+        return 'Explorer';
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final bool isCaptain = member['regNo'] == captainId || member['teamRole'] == 'CAPTAIN';
+    final bool isCaptain =
+        member['regNo'] == captainId || member['teamRole'] == 'CAPTAIN';
     final bool isViceCaptain = member['teamRole'] == 'VICE_CAPTAIN';
 
     Color avatarBgColor = Colors.indigo.shade50;
@@ -67,11 +77,7 @@ class TeamMemberCard extends StatelessWidget {
             CircleAvatar(
               radius: 20,
               backgroundColor: avatarBgColor,
-              child: Icon(
-                avatarIcon,
-                size: 20,
-                color: avatarIconColor,
-              ),
+              child: Icon(avatarIcon, size: 20, color: avatarIconColor),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -84,35 +90,65 @@ class TeamMemberCard extends StatelessWidget {
                       Expanded(
                         child: Text(
                           member['fullName'] ?? 'Student',
-                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                          ),
                         ),
                       ),
                       if (isCaptain)
                         const Chip(
-                          label: Text('CAPTAIN', style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Colors.white)),
+                          label: Text(
+                            'CAPTAIN',
+                            style: TextStyle(
+                              fontSize: 9,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
                           backgroundColor: Colors.amber,
                           padding: EdgeInsets.zero,
-                          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          materialTapTargetSize:
+                              MaterialTapTargetSize.shrinkWrap,
                         )
                       else if (isViceCaptain)
                         const Chip(
-                          label: Text('VICE CAPTAIN', style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Colors.white)),
+                          label: Text(
+                            'VICE CAPTAIN',
+                            style: TextStyle(
+                              fontSize: 9,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
                           backgroundColor: Colors.blueGrey,
                           padding: EdgeInsets.zero,
-                          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          materialTapTargetSize:
+                              MaterialTapTargetSize.shrinkWrap,
                         ),
                       if (canManage && !isCaptainRoleSection)
-                        if (!isCaptain || (isCaptain && onChangeCaptainRequest == null))
+                        if (!isCaptain ||
+                            (isCaptain && onChangeCaptainRequest == null))
                           IconButton(
-                            icon: const Icon(Icons.person_remove, color: Colors.red, size: 18),
-                            tooltip: isCaptain ? 'Remove Captain' : 'Remove Member',
+                            icon: const Icon(
+                              Icons.person_remove,
+                              color: Colors.red,
+                              size: 18,
+                            ),
+                            tooltip: isCaptain
+                                ? 'Remove Captain'
+                                : 'Remove Member',
                             constraints: const BoxConstraints(),
                             padding: EdgeInsets.zero,
                             onPressed: onRemove,
                           )
                         else if (isCaptain && onChangeCaptainRequest != null)
                           IconButton(
-                            icon: const Icon(Icons.person_remove, color: Colors.grey, size: 18),
+                            icon: const Icon(
+                              Icons.person_remove,
+                              color: Colors.grey,
+                              size: 18,
+                            ),
                             tooltip: 'Change Captain First',
                             constraints: const BoxConstraints(),
                             padding: EdgeInsets.zero,
@@ -122,25 +158,44 @@ class TeamMemberCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    "${member["regNo"] ?? ''} • ${member["department"] ?? ''} ${member["year"] ?? ''} ${member["section"] ?? ''}".trim(),
+                    "${member["regNo"] ?? ''} • ${member["department"] ?? ''} ${member["year"] ?? ''} ${member["section"] ?? ''}"
+                        .trim(),
                     style: TextStyle(color: Colors.grey.shade600, fontSize: 11),
                   ),
                   const SizedBox(height: 6),
                   Row(
                     children: [
-                      const Icon(Icons.bolt_rounded, color: Colors.amber, size: 14),
+                      const Icon(
+                        Icons.bolt_rounded,
+                        color: Colors.amber,
+                        size: 14,
+                      ),
                       const SizedBox(width: 4),
-                      Text("${member["currentXp"] ?? 0} XP", style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.amber, fontSize: 12)),
+                      Text(
+                        "${member["currentXp"] ?? 0} XP",
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.amber,
+                          fontSize: 12,
+                        ),
+                      ),
                       const SizedBox(width: 12),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
                         decoration: BoxDecoration(
                           color: Colors.indigo.shade50,
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: Text(
                           "Stage : Level ${member['currentStage'] ?? 1} - ${_getStageName(member['currentStage'] ?? 1)}",
-                          style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Colors.indigo.shade700),
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.indigo.shade700,
+                          ),
                         ),
                       ),
                     ],

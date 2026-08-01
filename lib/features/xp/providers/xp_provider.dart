@@ -1,8 +1,8 @@
-import 'package:spdms_app/core/config/api_config.dart';
+import 'package:pragatix/core/config/api_config.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:spdms_app/core/utils/api_client.dart' as http;
-import 'package:spdms_app/core/utils/string_utils.dart';
+import 'package:pragatix/core/utils/api_client.dart' as http;
+import 'package:pragatix/core/utils/string_utils.dart';
 
 class XpProvider extends ChangeNotifier {
   Map<String, int> _xpByCategory = {};
@@ -64,7 +64,9 @@ class XpProvider extends ChangeNotifier {
 
     try {
       final response = await http.get(
-        Uri.parse('${ApiConfig.baseUrl}/api/v1/xp/$regNo/history?page=0&size=50'),
+        Uri.parse(
+          '${ApiConfig.baseUrl}/api/v1/xp/$regNo/history?page=0&size=50',
+        ),
         headers: {'Authorization': 'Bearer $token'},
       );
 
@@ -145,8 +147,8 @@ class XpProvider extends ChangeNotifier {
         final data = jsonDecode(response.body);
         final bool success = data['success'] == true;
         if (success) {
-           await fetchHistory(regNo, token); // Reload history
-           await fetchSummary(regNo, token); // Reload summary
+          await fetchHistory(regNo, token); // Reload history
+          await fetchSummary(regNo, token); // Reload summary
         }
         return success;
       }
@@ -180,20 +182,24 @@ class XpProvider extends ChangeNotifier {
             for (var sub in fetchedSubgroups) {
               final int threshold = sub['threshold'] ?? 0;
               final List<dynamic> activitiesList = sub['activities'] ?? [];
-              
+
               int earnedXP = 0;
               int completedCount = 0;
 
               for (var act in activitiesList) {
                 earnedXP += (act['earnedXP'] as num?)?.toInt() ?? 0;
-                
+
                 if (act['status'] == 'COMPLETED') {
                   completedCount++;
-                  
+
                   if (act['completedDate'] != null) {
-                     if (stageCompletedDate == null || (act['completedDate'] as String).compareTo(stageCompletedDate) > 0) {
-                        stageCompletedDate = act['completedDate'];
-                     }
+                    if (stageCompletedDate == null ||
+                        (act['completedDate'] as String).compareTo(
+                              stageCompletedDate,
+                            ) >
+                            0) {
+                      stageCompletedDate = act['completedDate'];
+                    }
                   }
                 }
               }
@@ -211,7 +217,7 @@ class XpProvider extends ChangeNotifier {
                 'activities': activitiesList,
               });
             }
-            
+
             if (substages.isEmpty) allSubgroupsCompleted = false;
 
             mapped.add({
@@ -228,8 +234,10 @@ class XpProvider extends ChangeNotifier {
           }
 
           mapped.sort((a, b) {
-            final num aOrder = num.tryParse(a['displayOrder']?.toString() ?? '0') ?? 0;
-            final num bOrder = num.tryParse(b['displayOrder']?.toString() ?? '0') ?? 0;
+            final num aOrder =
+                num.tryParse(a['displayOrder']?.toString() ?? '0') ?? 0;
+            final num bOrder =
+                num.tryParse(b['displayOrder']?.toString() ?? '0') ?? 0;
             return aOrder.compareTo(bOrder);
           });
 

@@ -45,10 +45,14 @@ class PenaltyRequest {
       penaltyXP: json['penaltyXP'] ?? 0,
       reason: json['reason'],
       submittedBy: json['submittedBy'],
-      submittedTime: json['submittedTime'] != null ? DateTime.parse(json['submittedTime']) : null,
+      submittedTime: json['submittedTime'] != null
+          ? DateTime.parse(json['submittedTime'])
+          : null,
       status: json['status'] ?? 'PENDING',
       approvedBy: json['approvedBy'],
-      approvalTime: json['approvalTime'] != null ? DateTime.parse(json['approvalTime']) : null,
+      approvalTime: json['approvalTime'] != null
+          ? DateTime.parse(json['approvalTime'])
+          : null,
       rejectedReason: json['rejectedReason'],
     );
   }

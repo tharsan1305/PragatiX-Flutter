@@ -5,8 +5,6 @@ class ActivitiesTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Center(
-      child: Text('Activities Tab'),
-    );
+    return const Center(child: Text('Activities Tab'));
   }
 }

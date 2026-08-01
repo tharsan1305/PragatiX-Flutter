@@ -1,17 +1,16 @@
 import 'package:flutter/material.dart';
-import 'package:spdms_app/core/utils/error_handler.dart';
-import 'package:spdms_app/features/auth/providers/auth_provider.dart';
+import 'package:pragatix/core/utils/error_handler.dart';
+import 'package:pragatix/features/auth/providers/auth_provider.dart';
 import 'package:provider/provider.dart';
-import 'package:spdms_app/core/config/api_config.dart';
+import 'package:pragatix/core/config/api_config.dart';
 import 'package:flutter/material.dart';
 import 'dart:convert';
-import 'package:spdms_app/features/captain/services/captain_proxy_service.dart';
-import 'package:spdms_app/core/di/service_locator.dart';
-import 'package:spdms_app/features/team/pages/student_team_details_page.dart';
-
+import 'package:pragatix/features/captain/services/captain_proxy_service.dart';
+import 'package:pragatix/core/di/service_locator.dart';
+import 'package:pragatix/features/team/pages/student_team_details_page.dart';
 
 class StudentGroupTab extends StatefulWidget {
-  const StudentGroupTab({super.key, });
+  const StudentGroupTab({super.key});
 
   @override
   State<StudentGroupTab> createState() => _StudentGroupTabState();
@@ -67,9 +66,7 @@ class _StudentGroupTabState extends State<StudentGroupTab> {
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     final hasGroup = _groupData != null;
@@ -86,7 +83,11 @@ class _StudentGroupTabState extends State<StudentGroupTab> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(Icons.group_off_rounded, size: 80, color: Colors.grey),
+                const Icon(
+                  Icons.group_off_rounded,
+                  size: 80,
+                  color: Colors.grey,
+                ),
                 const SizedBox(height: 16),
                 const Text(
                   "No Team Assigned",
@@ -103,8 +104,11 @@ class _StudentGroupTabState extends State<StudentGroupTab> {
                   onPressed: _fetchMyGroup,
                   icon: const Icon(Icons.refresh),
                   label: const Text('Refresh'),
-                  style: ElevatedButton.styleFrom(backgroundColor: Colors.amber, foregroundColor: Colors.black),
-                )
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.amber,
+                    foregroundColor: Colors.black,
+                  ),
+                ),
               ],
             ),
           ),
@@ -115,4 +119,4 @@ class _StudentGroupTabState extends State<StudentGroupTab> {
     // Return StudentTeamDetailsPage configured for read-only leaderboard view
     return const StudentTeamDetailsPage();
   }
-}
+}

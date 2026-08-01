@@ -27,7 +27,12 @@ class ActivityFrequencySection extends StatelessWidget {
   static const Color _surface = Color(0xFFF8FAFC);
 
   static const List<String> _workingDays = [
-    'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday',
+    'Monday',
+    'Tuesday',
+    'Wednesday',
+    'Thursday',
+    'Friday',
+    'Saturday',
   ];
 
   InputDecoration _deco(String label, IconData icon) {
@@ -62,32 +67,50 @@ class ActivityFrequencySection extends StatelessWidget {
 
   String _frequencyHint(String freq) {
     switch (freq) {
-      case 'One Time': return 'XP is awarded only once to the student. No repetition allowed.';
-      case 'Daily': return 'XP can be awarded once per day (resets at midnight).';
-      case 'Weekly': return 'XP can be awarded on selected days. Cap resets every Monday.';
-      case 'Monthly': return 'Cap resets at the start of each calendar month.';
-      case 'Per Assignment': return 'XP is awarded for every assignment submission. No cap limit.';
-      case 'Every Period': return 'XP can be awarded or penalized up to 8 times per day for each student.';
-      case 'Manual': return 'XP is awarded manually by admin reset. Cap is fixed at 1.';
-      default: return '';
+      case 'One Time':
+        return 'XP is awarded only once to the student. No repetition allowed.';
+      case 'Daily':
+        return 'XP can be awarded once per day (resets at midnight).';
+      case 'Weekly':
+        return 'XP can be awarded on selected days. Cap resets every Monday.';
+      case 'Monthly':
+        return 'Cap resets at the start of each calendar month.';
+      case 'Per Assignment':
+        return 'XP is awarded for every assignment submission. No cap limit.';
+      case 'Every Period':
+        return 'XP can be awarded or penalized up to 8 times per day for each student.';
+      case 'Manual':
+        return 'XP is awarded manually by admin reset. Cap is fixed at 1.';
+      default:
+        return '';
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final bool isWeekly = selectedAwardFrequency == 'Weekly';
-    final bool isOneTimeOrManual = selectedAwardFrequency == 'One Time' || selectedAwardFrequency == 'Manual';
+    final bool isOneTimeOrManual =
+        selectedAwardFrequency == 'One Time' ||
+        selectedAwardFrequency == 'Manual';
     final bool isEveryPeriod = selectedAwardFrequency == 'Every Period';
     final bool isPerAssignment = selectedAwardFrequency == 'Per Assignment';
 
-    final bool isCustom = customFrequencies.any((f) => f['name'] == selectedAwardFrequency);
+    final bool isCustom = customFrequencies.any(
+      (f) => f['name'] == selectedAwardFrequency,
+    );
     bool isCustomUnlimited = false;
     if (isCustom) {
-      final cf = customFrequencies.firstWhere((f) => f['name'] == selectedAwardFrequency);
+      final cf = customFrequencies.firstWhere(
+        (f) => f['name'] == selectedAwardFrequency,
+      );
       isCustomUnlimited = cf['capType'] == 'UNLIMITED';
     }
 
-    final bool isCapDisabled = isOneTimeOrManual || isEveryPeriod || isPerAssignment || (isCustom && isCustomUnlimited);
+    final bool isCapDisabled =
+        isOneTimeOrManual ||
+        isEveryPeriod ||
+        isPerAssignment ||
+        (isCustom && isCustomUnlimited);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -100,16 +123,25 @@ class ActivityFrequencySection extends StatelessWidget {
             isExpanded: true,
             underline: const SizedBox.shrink(),
             icon: const Icon(Icons.expand_more_rounded, color: _primary),
-            items: {
-              'One Time', 'Daily', 'Weekly', 'Monthly', 'Per Assignment', 'Every Period',
-              ...customFrequencies.map((f) => f['name'] as String),
-              'Manual'
-            }.toList().map((f) {
-              return DropdownMenuItem<String>(
-                value: f,
-                child: Text(f, style: const TextStyle(fontSize: 14, color: _dark)),
-              );
-            }).toList(),
+            items:
+                {
+                  'One Time',
+                  'Daily',
+                  'Weekly',
+                  'Monthly',
+                  'Per Assignment',
+                  'Every Period',
+                  ...customFrequencies.map((f) => f['name'] as String),
+                  'Manual',
+                }.toList().map((f) {
+                  return DropdownMenuItem<String>(
+                    value: f,
+                    child: Text(
+                      f,
+                      style: const TextStyle(fontSize: 14, color: _dark),
+                    ),
+                  );
+                }).toList(),
             onChanged: (val) {
               if (val == 'Manual') {
                 onShowCustomFrequencyDialog();
@@ -122,7 +154,11 @@ class ActivityFrequencySection extends StatelessWidget {
         const SizedBox(height: 6),
         Text(
           _frequencyHint(selectedAwardFrequency),
-          style: TextStyle(fontSize: 11, color: Colors.grey.shade600, fontStyle: FontStyle.italic),
+          style: TextStyle(
+            fontSize: 11,
+            color: Colors.grey.shade600,
+            fontStyle: FontStyle.italic,
+          ),
         ),
         const SizedBox(height: 16),
         if (isWeekly) ...[
@@ -131,7 +167,9 @@ class ActivityFrequencySection extends StatelessWidget {
               color: _surface,
               borderRadius: BorderRadius.circular(14),
               border: Border.all(
-                color: (submitted && selectedAwardDays.isEmpty) ? Colors.red : Colors.grey.shade300,
+                color: (submitted && selectedAwardDays.isEmpty)
+                    ? Colors.red
+                    : Colors.grey.shade300,
                 width: (submitted && selectedAwardDays.isEmpty) ? 2 : 1,
               ),
             ),
@@ -141,11 +179,19 @@ class ActivityFrequencySection extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    const Icon(Icons.calendar_today_rounded, color: _primary, size: 18),
+                    const Icon(
+                      Icons.calendar_today_rounded,
+                      color: _primary,
+                      size: 18,
+                    ),
                     const SizedBox(width: 8),
                     const Text(
                       'Award Days',
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: _dark),
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                        color: _dark,
+                      ),
                     ),
                     const Spacer(),
                     TextButton(
@@ -154,7 +200,10 @@ class ActivityFrequencySection extends StatelessWidget {
                     ),
                     TextButton(
                       onPressed: () => onDaysChanged({}),
-                      child: const Text('None', style: TextStyle(fontSize: 12, color: Colors.red)),
+                      child: const Text(
+                        'None',
+                        style: TextStyle(fontSize: 12, color: Colors.red),
+                      ),
                     ),
                   ],
                 ),
@@ -165,11 +214,14 @@ class ActivityFrequencySection extends StatelessWidget {
                   children: _workingDays.map((day) {
                     final selected = selectedAwardDays.contains(day);
                     return FilterChip(
-                      label: Text(day.substring(0, 3), style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: selected ? Colors.white : _dark,
-                      )),
+                      label: Text(
+                        day.substring(0, 3),
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: selected ? Colors.white : _dark,
+                        ),
+                      ),
                       selected: selected,
                       selectedColor: _primary,
                       checkmarkColor: Colors.white,
@@ -191,7 +243,10 @@ class ActivityFrequencySection extends StatelessWidget {
                     padding: const EdgeInsets.only(top: 6),
                     child: Text(
                       'At least one Award Day is required for Weekly frequency.',
-                      style: TextStyle(color: Theme.of(context).colorScheme.error, fontSize: 12),
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.error,
+                        fontSize: 12,
+                      ),
                     ),
                   ),
               ],
@@ -210,14 +265,19 @@ class ActivityFrequencySection extends StatelessWidget {
               decoration: _deco(
                 isEveryPeriod
                     ? 'Cap (fixed at 8)'
-                    : (isPerAssignment ? 'Cap (Unlimited)' : (isOneTimeOrManual ? 'Cap (fixed at 1)' : 'Cap (max awards per frequency window)')),
+                    : (isPerAssignment
+                          ? 'Cap (Unlimited)'
+                          : (isOneTimeOrManual
+                                ? 'Cap (fixed at 1)'
+                                : 'Cap (max awards per frequency window)')),
                 Icons.bar_chart_rounded,
               ),
               validator: (val) {
                 if (isCapDisabled) return null;
                 if (val == null || val.trim().isEmpty) return 'Cap is required';
                 final parsed = int.tryParse(val);
-                if (parsed == null || parsed <= 0) return 'Must be an integer greater than zero';
+                if (parsed == null || parsed <= 0)
+                  return 'Must be an integer greater than zero';
                 return null;
               },
             ),

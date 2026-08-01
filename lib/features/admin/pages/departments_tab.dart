@@ -1,9 +1,9 @@
-import 'package:spdms_app/features/auth/providers/auth_provider.dart';
+import 'package:pragatix/features/auth/providers/auth_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter/material.dart';
-import 'package:spdms_app/core/utils/error_handler.dart';
-import 'package:spdms_app/features/admin/repository/admin_repository.dart';
-import 'package:spdms_app/core/di/service_locator.dart';
+import 'package:pragatix/core/utils/error_handler.dart';
+import 'package:pragatix/features/admin/repository/admin_repository.dart';
+import 'package:pragatix/core/di/service_locator.dart';
 
 Future<List<dynamic>> _apiGetDepartments(String token) async {
   try {
@@ -15,7 +15,7 @@ Future<List<dynamic>> _apiGetDepartments(String token) async {
 }
 
 class DepartmentsTab extends StatefulWidget {
-  const DepartmentsTab({super.key, });
+  const DepartmentsTab({super.key});
 
   @override
   State<DepartmentsTab> createState() => _DepartmentsTabState();
@@ -39,7 +39,9 @@ class _DepartmentsTabState extends State<DepartmentsTab> {
 
   Future<void> _fetchDepartments() async {
     try {
-      final list = await _apiGetDepartments(context.read<AuthProvider>().token!);
+      final list = await _apiGetDepartments(
+        context.read<AuthProvider>().token!,
+      );
       if (!context.mounted) return;
       setState(() {
         departments = list;
@@ -61,7 +63,8 @@ class _DepartmentsTabState extends State<DepartmentsTab> {
         filteredDepartments = departments.where((dept) {
           final name = (dept['name'] ?? '').toString().toLowerCase();
           final code = (dept['code'] ?? '').toString().toLowerCase();
-          return name.contains(query.toLowerCase()) || code.contains(query.toLowerCase());
+          return name.contains(query.toLowerCase()) ||
+              code.contains(query.toLowerCase());
         }).toList();
       }
     });
@@ -73,7 +76,10 @@ class _DepartmentsTabState extends State<DepartmentsTab> {
 
     if (name.isEmpty || code.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Name and Code are required'), backgroundColor: Colors.red),
+        const SnackBar(
+          content: Text('Name and Code are required'),
+          backgroundColor: Colors.red,
+        ),
       );
       return;
     }
@@ -83,7 +89,10 @@ class _DepartmentsTabState extends State<DepartmentsTab> {
       if (!context.mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Department added successfully!'), backgroundColor: Colors.green),
+        const SnackBar(
+          content: Text('Department added successfully!'),
+          backgroundColor: Colors.green,
+        ),
       );
       nameController.clear();
       codeController.clear();
@@ -93,7 +102,10 @@ class _DepartmentsTabState extends State<DepartmentsTab> {
     } catch (e) {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Department added locally (Offline mode)'), backgroundColor: Colors.orange),
+        const SnackBar(
+          content: Text('Department added locally (Offline mode)'),
+          backgroundColor: Colors.orange,
+        ),
       );
       setState(() {
         departments.add({
@@ -115,7 +127,10 @@ class _DepartmentsTabState extends State<DepartmentsTab> {
 
     if (name.isEmpty || code.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Name and Code are required'), backgroundColor: Colors.red),
+        const SnackBar(
+          content: Text('Name and Code are required'),
+          backgroundColor: Colors.red,
+        ),
       );
       return;
     }
@@ -125,7 +140,10 @@ class _DepartmentsTabState extends State<DepartmentsTab> {
       if (!context.mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Department updated successfully!'), backgroundColor: Colors.green),
+        const SnackBar(
+          content: Text('Department updated successfully!'),
+          backgroundColor: Colors.green,
+        ),
       );
       nameController.clear();
       codeController.clear();
@@ -135,7 +153,10 @@ class _DepartmentsTabState extends State<DepartmentsTab> {
     } catch (e) {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Updated locally (Offline mode)'), backgroundColor: Colors.orange),
+        const SnackBar(
+          content: Text('Updated locally (Offline mode)'),
+          backgroundColor: Colors.orange,
+        ),
       );
       setState(() {
         final idx = departments.indexWhere((d) => d['id'] == id);
@@ -157,7 +178,10 @@ class _DepartmentsTabState extends State<DepartmentsTab> {
       if (!context.mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Department deleted successfully'), backgroundColor: Colors.green),
+        const SnackBar(
+          content: Text('Department deleted successfully'),
+          backgroundColor: Colors.green,
+        ),
       );
       setState(() => isLoading = true);
       _fetchDepartments();
@@ -174,8 +198,13 @@ class _DepartmentsTabState extends State<DepartmentsTab> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: const Text('Add New Department', style: TextStyle(fontWeight: FontWeight.bold)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: const Text(
+            'Add New Department',
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -209,10 +238,12 @@ class _DepartmentsTabState extends State<DepartmentsTab> {
               onPressed: _addDepartment,
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF1E293B),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
               ),
               child: const Text('Add', style: TextStyle(color: Colors.white)),
-            )
+            ),
           ],
         );
       },
@@ -233,7 +264,8 @@ class _DepartmentsTabState extends State<DepartmentsTab> {
         Future<void> fetchDeptSections(StateSetter dialogSetState) async {
           dialogSetState(() => loadingSections = true);
           try {
-            final sections = await getIt<AdminRepository>().getDepartmentSections(dept['id']);
+            final sections = await getIt<AdminRepository>()
+                .getDepartmentSections(dept['id']);
             dialogSetState(() {
               deptSections = sections;
               loadingSections = false;
@@ -249,25 +281,37 @@ class _DepartmentsTabState extends State<DepartmentsTab> {
           final secName = sectionNameController.text.trim().toUpperCase();
           if (secName.isEmpty) return;
           try {
-            await getIt<AdminRepository>().addDepartmentSection(dept['id'], secName);
+            await getIt<AdminRepository>().addDepartmentSection(
+              dept['id'],
+              secName,
+            );
             sectionNameController.clear();
             fetchDeptSections(dialogSetState);
           } catch (e) {
             if (!mounted) return;
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(e.toString().replaceAll('Exception: ', '')), backgroundColor: Colors.red),
+              SnackBar(
+                content: Text(e.toString().replaceAll('Exception: ', '')),
+                backgroundColor: Colors.red,
+              ),
             );
           }
         }
 
-        Future<void> deleteSection(int sectionId, StateSetter dialogSetState) async {
+        Future<void> deleteSection(
+          int sectionId,
+          StateSetter dialogSetState,
+        ) async {
           try {
             await getIt<AdminRepository>().deleteDepartmentSection(sectionId);
             fetchDeptSections(dialogSetState);
           } catch (e) {
             if (!mounted) return;
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(e.toString().replaceAll('Exception: ', '')), backgroundColor: Colors.red),
+              SnackBar(
+                content: Text(e.toString().replaceAll('Exception: ', '')),
+                backgroundColor: Colors.red,
+              ),
             );
           }
         }
@@ -279,8 +323,13 @@ class _DepartmentsTabState extends State<DepartmentsTab> {
             }
 
             return AlertDialog(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-              title: Text("Edit Department: ${dept["code"]}", style: const TextStyle(fontWeight: FontWeight.bold)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              title: Text(
+                "Edit Department: ${dept["code"]}",
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
               content: SizedBox(
                 width: 400,
                 child: SingleChildScrollView(
@@ -288,7 +337,14 @@ class _DepartmentsTabState extends State<DepartmentsTab> {
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('DEPARTMENT DETAILS', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.blueGrey)),
+                      const Text(
+                        'DEPARTMENT DETAILS',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.blueGrey,
+                        ),
+                      ),
                       const SizedBox(height: 8),
                       TextField(
                         controller: nameController,
@@ -310,7 +366,14 @@ class _DepartmentsTabState extends State<DepartmentsTab> {
                       const SizedBox(height: 24),
                       const Divider(),
                       const SizedBox(height: 8),
-                      const Text('SECTIONS MANAGEMENT', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.blueGrey)),
+                      const Text(
+                        'SECTIONS MANAGEMENT',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.blueGrey,
+                        ),
+                      ),
                       const SizedBox(height: 12),
                       Row(
                         children: [
@@ -328,7 +391,10 @@ class _DepartmentsTabState extends State<DepartmentsTab> {
                             onPressed: () => addSection(dialogSetState),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: const Color(0xFF1E293B),
-                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 16,
+                              ),
                             ),
                             child: const Icon(Icons.add, color: Colors.white),
                           ),
@@ -338,25 +404,45 @@ class _DepartmentsTabState extends State<DepartmentsTab> {
                       loadingSections
                           ? const Center(child: CircularProgressIndicator())
                           : (deptSections.isEmpty
-                              ? const Padding(
-                                  padding: EdgeInsets.symmetric(vertical: 8.0),
-                                  child: Text('No sections created yet.', style: TextStyle(color: Colors.grey, fontStyle: FontStyle.italic)),
-                                )
-                              : ListView.builder(
-                                  shrinkWrap: true,
-                                  physics: const NeverScrollableScrollPhysics(),
-                                  itemCount: deptSections.length,
-                                  itemBuilder: (context, idx) {
-                                    final sec = deptSections[idx];
-                                    return ListTile(
-                                      title: Text("Section ${sec["sectionName"] ?? sec["name"] ?? ''}", style: const TextStyle(fontWeight: FontWeight.bold)),
-                                      trailing: IconButton(
-                                        icon: const Icon(Icons.delete_outline, color: Colors.red),
-                                        onPressed: () => deleteSection(sec['id'], dialogSetState),
+                                ? const Padding(
+                                    padding: EdgeInsets.symmetric(
+                                      vertical: 8.0,
+                                    ),
+                                    child: Text(
+                                      'No sections created yet.',
+                                      style: TextStyle(
+                                        color: Colors.grey,
+                                        fontStyle: FontStyle.italic,
                                       ),
-                                    );
-                                  },
-                                )),
+                                    ),
+                                  )
+                                : ListView.builder(
+                                    shrinkWrap: true,
+                                    physics:
+                                        const NeverScrollableScrollPhysics(),
+                                    itemCount: deptSections.length,
+                                    itemBuilder: (context, idx) {
+                                      final sec = deptSections[idx];
+                                      return ListTile(
+                                        title: Text(
+                                          "Section ${sec["sectionName"] ?? sec["name"] ?? ''}",
+                                          style: const TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                        trailing: IconButton(
+                                          icon: const Icon(
+                                            Icons.delete_outline,
+                                            color: Colors.red,
+                                          ),
+                                          onPressed: () => deleteSection(
+                                            sec['id'],
+                                            dialogSetState,
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  )),
                     ],
                   ),
                 ),
@@ -366,7 +452,10 @@ class _DepartmentsTabState extends State<DepartmentsTab> {
                   onPressed: () {
                     Navigator.pop(context);
                   },
-                  child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+                  child: const Text(
+                    'Cancel',
+                    style: TextStyle(color: Colors.grey),
+                  ),
                 ),
                 ElevatedButton(
                   onPressed: () {
@@ -374,10 +463,15 @@ class _DepartmentsTabState extends State<DepartmentsTab> {
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF1E293B),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
                   ),
-                  child: const Text('Save', style: TextStyle(color: Colors.white)),
-                )
+                  child: const Text(
+                    'Save',
+                    style: TextStyle(color: Colors.white),
+                  ),
+                ),
               ],
             );
           },
@@ -391,7 +485,10 @@ class _DepartmentsTabState extends State<DepartmentsTab> {
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
-        title: const Text('Academic Departments', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+        title: const Text(
+          'Academic Departments',
+          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+        ),
         backgroundColor: const Color(0xFF1E293B),
         elevation: 0,
       ),
@@ -407,10 +504,16 @@ class _DepartmentsTabState extends State<DepartmentsTab> {
                       onChanged: _filterDepartments,
                       decoration: InputDecoration(
                         hintText: 'Search departments...',
-                        prefixIcon: const Icon(Icons.search, color: Colors.grey),
+                        prefixIcon: const Icon(
+                          Icons.search,
+                          color: Colors.grey,
+                        ),
                         suffixIcon: searchController.text.isNotEmpty
                             ? IconButton(
-                                icon: const Icon(Icons.clear, color: Colors.grey),
+                                icon: const Icon(
+                                  Icons.clear,
+                                  color: Colors.grey,
+                                ),
                                 onPressed: () {
                                   searchController.clear();
                                   _filterDepartments('');
@@ -423,7 +526,10 @@ class _DepartmentsTabState extends State<DepartmentsTab> {
                           borderRadius: BorderRadius.circular(12),
                           borderSide: BorderSide.none,
                         ),
-                        contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 16),
+                        contentPadding: const EdgeInsets.symmetric(
+                          vertical: 0,
+                          horizontal: 16,
+                        ),
                       ),
                     ),
                   ),
@@ -435,7 +541,8 @@ class _DepartmentsTabState extends State<DepartmentsTab> {
                         ? ListView(
                             children: [
                               Container(
-                                height: MediaQuery.of(context).size.height * 0.6,
+                                height:
+                                    MediaQuery.of(context).size.height * 0.6,
                                 alignment: Alignment.center,
                                 padding: const EdgeInsets.all(24.0),
                                 child: Column(
@@ -479,14 +586,19 @@ class _DepartmentsTabState extends State<DepartmentsTab> {
                           )
                         : ListView.builder(
                             itemCount: filteredDepartments.length,
-                            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16.0,
+                            ),
                             itemBuilder: (context, index) {
                               final dept = filteredDepartments[index];
                               return Card(
                                 elevation: 0,
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(12),
-                                  side: BorderSide(color: Colors.grey.shade200, width: 1),
+                                  side: BorderSide(
+                                    color: Colors.grey.shade200,
+                                    width: 1,
+                                  ),
                                 ),
                                 margin: const EdgeInsets.only(bottom: 12),
                                 color: Colors.white,
@@ -497,15 +609,22 @@ class _DepartmentsTabState extends State<DepartmentsTab> {
                                       Container(
                                         padding: const EdgeInsets.all(10),
                                         decoration: BoxDecoration(
-                                          color: const Color(0xFF1E293B).withValues(alpha: 0.08),
+                                          color: const Color(
+                                            0xFF1E293B,
+                                          ).withValues(alpha: 0.08),
                                           shape: BoxShape.circle,
                                         ),
-                                        child: const Icon(Icons.account_balance, color: Color(0xFF1E293B), size: 24),
+                                        child: const Icon(
+                                          Icons.account_balance,
+                                          color: Color(0xFF1E293B),
+                                          size: 24,
+                                        ),
                                       ),
                                       const SizedBox(width: 16),
                                       Expanded(
                                         child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
                                           children: [
                                             Text(
                                               dept['name'] ?? '',
@@ -531,31 +650,70 @@ class _DepartmentsTabState extends State<DepartmentsTab> {
                                         mainAxisSize: MainAxisSize.min,
                                         children: [
                                           IconButton(
-                                            icon: const Icon(Icons.edit_outlined, color: Colors.blue, size: 22),
-                                            onPressed: () => _showEditDeptDialog(dept),
+                                            icon: const Icon(
+                                              Icons.edit_outlined,
+                                              color: Colors.blue,
+                                              size: 22,
+                                            ),
+                                            onPressed: () =>
+                                                _showEditDeptDialog(dept),
                                             tooltip: 'Edit Department',
                                           ),
                                           IconButton(
-                                            icon: const Icon(Icons.delete_outline, color: Colors.red, size: 22),
+                                            icon: const Icon(
+                                              Icons.delete_outline,
+                                              color: Colors.red,
+                                              size: 22,
+                                            ),
                                             tooltip: 'Delete Department',
                                             onPressed: () {
                                               showDialog(
                                                 context: context,
                                                 builder: (context) => AlertDialog(
-                                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                                                  title: const Text('Delete Department', style: TextStyle(fontWeight: FontWeight.bold)),
-                                                  content: Text("Are you sure you want to delete department ${dept["code"]}?"),
+                                                  shape: RoundedRectangleBorder(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          16,
+                                                        ),
+                                                  ),
+                                                  title: const Text(
+                                                    'Delete Department',
+                                                    style: TextStyle(
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                    ),
+                                                  ),
+                                                  content: Text(
+                                                    "Are you sure you want to delete department ${dept["code"]}?",
+                                                  ),
                                                   actions: [
                                                     TextButton(
-                                                      onPressed: () => Navigator.pop(context),
-                                                      child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+                                                      onPressed: () =>
+                                                          Navigator.pop(
+                                                            context,
+                                                          ),
+                                                      child: const Text(
+                                                        'Cancel',
+                                                        style: TextStyle(
+                                                          color: Colors.grey,
+                                                        ),
+                                                      ),
                                                     ),
                                                     TextButton(
                                                       onPressed: () {
                                                         Navigator.pop(context);
-                                                        _deleteDepartment(dept['id']);
+                                                        _deleteDepartment(
+                                                          dept['id'],
+                                                        );
                                                       },
-                                                      child: const Text('Delete', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+                                                      child: const Text(
+                                                        'Delete',
+                                                        style: TextStyle(
+                                                          color: Colors.red,
+                                                          fontWeight:
+                                                              FontWeight.bold,
+                                                        ),
+                                                      ),
                                                     ),
                                                   ],
                                                 ),

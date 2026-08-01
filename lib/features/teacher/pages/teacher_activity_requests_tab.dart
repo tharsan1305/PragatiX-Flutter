@@ -1,17 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:spdms_app/features/activity/providers/activity_completion_provider.dart';
-import 'package:spdms_app/features/activity/models/activity_completion_request.dart';
+import 'package:pragatix/features/activity/providers/activity_completion_provider.dart';
+import 'package:pragatix/features/activity/models/activity_completion_request.dart';
 import 'package:intl/intl.dart';
 
 class TeacherActivityRequestsTab extends StatefulWidget {
   const TeacherActivityRequestsTab({Key? key}) : super(key: key);
 
   @override
-  State<TeacherActivityRequestsTab> createState() => _TeacherActivityRequestsTabState();
+  State<TeacherActivityRequestsTab> createState() =>
+      _TeacherActivityRequestsTabState();
 }
 
-class _TeacherActivityRequestsTabState extends State<TeacherActivityRequestsTab> with SingleTickerProviderStateMixin {
+class _TeacherActivityRequestsTabState extends State<TeacherActivityRequestsTab>
+    with SingleTickerProviderStateMixin {
   late TabController _tabController;
   final TextEditingController _reasonCtrl = TextEditingController();
 
@@ -54,11 +56,15 @@ class _TeacherActivityRequestsTabState extends State<TeacherActivityRequestsTab>
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () async {
               Navigator.pop(ctx);
-              final success = await context.read<ActivityCompletionProvider>().rejectRequest(requestId, _reasonCtrl.text.trim());
+              final success = await context
+                  .read<ActivityCompletionProvider>()
+                  .rejectRequest(requestId, _reasonCtrl.text.trim());
               if (mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    content: Text(success ? 'Request rejected' : 'Failed to reject request'),
+                    content: Text(
+                      success ? 'Request rejected' : 'Failed to reject request',
+                    ),
                     backgroundColor: success ? Colors.green : Colors.red,
                   ),
                 );
@@ -72,18 +78,27 @@ class _TeacherActivityRequestsTabState extends State<TeacherActivityRequestsTab>
   }
 
   void _approveRequest(int requestId) async {
-    final success = await context.read<ActivityCompletionProvider>().approveRequest(requestId);
+    final success = await context
+        .read<ActivityCompletionProvider>()
+        .approveRequest(requestId);
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(success ? 'Request approved successfully!' : 'Failed to approve request'),
+          content: Text(
+            success
+                ? 'Request approved successfully!'
+                : 'Failed to approve request',
+          ),
           backgroundColor: success ? Colors.green : Colors.red,
         ),
       );
     }
   }
 
-  Widget _buildList(List<ActivityCompletionRequest> requests, {required bool isPending}) {
+  Widget _buildList(
+    List<ActivityCompletionRequest> requests, {
+    required bool isPending,
+  }) {
     if (requests.isEmpty) {
       return Center(
         child: Column(
@@ -91,7 +106,10 @@ class _TeacherActivityRequestsTabState extends State<TeacherActivityRequestsTab>
           children: [
             Icon(Icons.inbox_outlined, size: 64, color: Colors.grey.shade300),
             const SizedBox(height: 16),
-            Text('No requests found', style: TextStyle(color: Colors.grey.shade500, fontSize: 16)),
+            Text(
+              'No requests found',
+              style: TextStyle(color: Colors.grey.shade500, fontSize: 16),
+            ),
           ],
         ),
       );
@@ -107,7 +125,9 @@ class _TeacherActivityRequestsTabState extends State<TeacherActivityRequestsTab>
           final req = requests[index];
           return Card(
             elevation: 2,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
@@ -121,7 +141,10 @@ class _TeacherActivityRequestsTabState extends State<TeacherActivityRequestsTab>
                           color: const Color(0xFF11998e).withOpacity(0.1),
                           shape: BoxShape.circle,
                         ),
-                        child: const Icon(Icons.assignment_turned_in, color: Color(0xFF11998e)),
+                        child: const Icon(
+                          Icons.assignment_turned_in,
+                          color: Color(0xFF11998e),
+                        ),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
@@ -130,18 +153,42 @@ class _TeacherActivityRequestsTabState extends State<TeacherActivityRequestsTab>
                           children: [
                             Text(
                               req.activityName ?? 'Unknown Activity',
-                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF1E293B)),
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                                color: Color(0xFF1E293B),
+                              ),
                             ),
                             if (req.teamId != null)
-                              Text('Team: ${req.teamName}', style: const TextStyle(color: Colors.blue, fontWeight: FontWeight.bold, fontSize: 13))
+                              Text(
+                                'Team: ${req.teamName}',
+                                style: const TextStyle(
+                                  color: Colors.blue,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 13,
+                                ),
+                              )
                             else
-                              Text('${req.studentName} (${req.regNo})', style: TextStyle(color: Colors.grey.shade600, fontSize: 13)),
+                              Text(
+                                '${req.studentName} (${req.regNo})',
+                                style: TextStyle(
+                                  color: Colors.grey.shade600,
+                                  fontSize: 13,
+                                ),
+                              ),
                           ],
                         ),
                       ),
                       Text(
-                        req.requestedDate != null ? DateFormat('MMM d, yyyy').format(req.requestedDate!) : '',
-                        style: TextStyle(color: Colors.grey.shade500, fontSize: 12),
+                        req.requestedDate != null
+                            ? DateFormat(
+                                'MMM d, yyyy',
+                              ).format(req.requestedDate!)
+                            : '',
+                        style: TextStyle(
+                          color: Colors.grey.shade500,
+                          fontSize: 12,
+                        ),
                       ),
                     ],
                   ),
@@ -150,19 +197,40 @@ class _TeacherActivityRequestsTabState extends State<TeacherActivityRequestsTab>
                     Container(
                       width: double.infinity,
                       padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(color: Colors.grey.shade50, borderRadius: BorderRadius.circular(8)),
-                      child: Text('"${req.reason}"', style: TextStyle(color: Colors.grey.shade700, fontStyle: FontStyle.italic)),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade50,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        '"${req.reason}"',
+                        style: TextStyle(
+                          color: Colors.grey.shade700,
+                          fontStyle: FontStyle.italic,
+                        ),
+                      ),
                     ),
                     const SizedBox(height: 12),
                   ],
                   if (req.proofUrl != null && req.proofUrl!.isNotEmpty) ...[
                     InkWell(
-                      onTap: () { /* Open URL in a real app */ },
+                      onTap: () {
+                        /* Open URL in a real app */
+                      },
                       child: Row(
                         children: [
                           const Icon(Icons.link, color: Colors.blue, size: 16),
                           const SizedBox(width: 4),
-                          Expanded(child: Text(req.proofUrl!, style: const TextStyle(color: Colors.blue, decoration: TextDecoration.underline), maxLines: 1, overflow: TextOverflow.ellipsis)),
+                          Expanded(
+                            child: Text(
+                              req.proofUrl!,
+                              style: const TextStyle(
+                                color: Colors.blue,
+                                decoration: TextDecoration.underline,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
                         ],
                       ),
                     ),
@@ -174,8 +242,11 @@ class _TeacherActivityRequestsTabState extends State<TeacherActivityRequestsTab>
                         Expanded(
                           child: OutlinedButton(
                             style: OutlinedButton.styleFrom(
-                              foregroundColor: Colors.red, side: const BorderSide(color: Colors.red),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                              foregroundColor: Colors.red,
+                              side: const BorderSide(color: Colors.red),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
                             ),
                             onPressed: () => _showRejectDialog(req.id),
                             child: const Text('Reject'),
@@ -186,10 +257,15 @@ class _TeacherActivityRequestsTabState extends State<TeacherActivityRequestsTab>
                           child: ElevatedButton(
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.green,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
                             ),
                             onPressed: () => _approveRequest(req.id),
-                            child: const Text('Approve', style: TextStyle(color: Colors.white)),
+                            child: const Text(
+                              'Approve',
+                              style: TextStyle(color: Colors.white),
+                            ),
                           ),
                         ),
                       ],
@@ -198,8 +274,14 @@ class _TeacherActivityRequestsTabState extends State<TeacherActivityRequestsTab>
                     Container(
                       width: double.infinity,
                       padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(color: Colors.red.shade50, borderRadius: BorderRadius.circular(8)),
-                      child: Text('Rejected: ${req.rejectedReason ?? "No reason"}', style: const TextStyle(color: Colors.red)),
+                      decoration: BoxDecoration(
+                        color: Colors.red.shade50,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        'Rejected: ${req.rejectedReason ?? "No reason"}',
+                        style: const TextStyle(color: Colors.red),
+                      ),
                     ),
                 ],
               ),
@@ -213,9 +295,15 @@ class _TeacherActivityRequestsTabState extends State<TeacherActivityRequestsTab>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
-        title: const Text('Activity Requests', style: TextStyle(color: Color(0xFF1E293B), fontWeight: FontWeight.bold)),
+        title: const Text(
+          'Activity Requests',
+          style: TextStyle(
+            color: Color(0xFF1E293B),
+            fontWeight: FontWeight.bold,
+          ),
+        ),
         backgroundColor: Colors.white,
         elevation: 0,
         bottom: TabBar(
@@ -247,10 +335,16 @@ class _TeacherActivityRequestsTabState extends State<TeacherActivityRequestsTab>
               ),
             );
           }
-          
-          final pending = provider.inbox.where((r) => r.status == 'PENDING').toList();
-          final approved = provider.inbox.where((r) => r.status == 'APPROVED').toList();
-          final rejected = provider.inbox.where((r) => r.status == 'REJECTED').toList();
+
+          final pending = provider.inbox
+              .where((r) => r.status == 'PENDING')
+              .toList();
+          final approved = provider.inbox
+              .where((r) => r.status == 'APPROVED')
+              .toList();
+          final rejected = provider.inbox
+              .where((r) => r.status == 'REJECTED')
+              .toList();
 
           return TabBarView(
             controller: _tabController,

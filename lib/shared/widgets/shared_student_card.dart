@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:spdms_app/core/theme/app_colors.dart';
+import 'package:pragatix/core/theme/app_colors.dart';
 
 class SharedStudentCard extends StatelessWidget {
   final String name;
@@ -30,18 +30,17 @@ class SharedStudentCard extends StatelessWidget {
           backgroundColor: themeColor.withValues(alpha: 0.1),
           child: Icon(Icons.person, color: themeColor),
         ),
-        title: Text(
-          name,
-          style: const TextStyle(fontWeight: FontWeight.bold),
-        ),
+        title: Text(name, style: const TextStyle(fontWeight: FontWeight.bold)),
         subtitle: Text(subtitle),
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             if (score != null)
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
                   color: AppColors.warning.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),

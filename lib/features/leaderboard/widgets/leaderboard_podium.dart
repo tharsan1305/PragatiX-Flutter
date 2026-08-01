@@ -63,7 +63,7 @@ class LeaderboardPodium extends StatelessWidget {
     final bool isCurrentUser = student['regNo'] == currentUserId;
     final String name = student['fullName'] ?? 'Unknown';
     final int score = student['score'] ?? 0;
-    
+
     // Extract initials for avatar placeholder
     String initials = '';
     if (name.isNotEmpty) {
@@ -79,18 +79,19 @@ class LeaderboardPodium extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.end,
         children: [
-          Text(
-            label,
-            style: const TextStyle(fontSize: 28),
-          ),
+          Text(label, style: const TextStyle(fontSize: 28)),
           const SizedBox(height: 8),
           CircleAvatar(
             radius: rank == 1 ? 32 : 24,
-            backgroundColor: isCurrentUser ? Colors.blue.shade100 : color.withValues(alpha: 0.2),
+            backgroundColor: isCurrentUser
+                ? Colors.blue.shade100
+                : color.withValues(alpha: 0.2),
             child: Text(
               initials,
               style: TextStyle(
-                color: isCurrentUser ? Colors.blue.shade900 : color.withValues(alpha: 0.8),
+                color: isCurrentUser
+                    ? Colors.blue.shade900
+                    : color.withValues(alpha: 0.8),
                 fontWeight: FontWeight.bold,
                 fontSize: rank == 1 ? 22 : 16,
               ),
@@ -127,9 +128,7 @@ class LeaderboardPodium extends StatelessWidget {
                 topLeft: Radius.circular(8),
                 topRight: Radius.circular(8),
               ),
-              border: Border(
-                top: BorderSide(color: color, width: 4),
-              ),
+              border: Border(top: BorderSide(color: color, width: 4)),
             ),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,

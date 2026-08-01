@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:spdms_app/core/utils/error_handler.dart';
-import 'package:spdms_app/features/admin/repository/admin_repository.dart';
+import 'package:pragatix/core/utils/error_handler.dart';
+import 'package:pragatix/features/admin/repository/admin_repository.dart';
 import 'package:intl/intl.dart';
-import 'package:spdms_app/features/activity/pages/stage_details_page.dart';
-import 'package:spdms_app/features/activity/pages/create_stage_page.dart';
-import 'package:spdms_app/features/activity/pages/edit_stage_page.dart';
-import 'package:spdms_app/core/di/service_locator.dart';
-import 'package:spdms_app/features/activity/pages/global_activity_page.dart' as spdms_app;
+import 'package:pragatix/features/activity/pages/stage_details_page.dart';
+import 'package:pragatix/features/activity/pages/create_stage_page.dart';
+import 'package:pragatix/features/activity/pages/edit_stage_page.dart';
+import 'package:pragatix/core/di/service_locator.dart';
+import 'package:pragatix/features/activity/pages/global_activity_page.dart'
+    as pragatix;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Activity Tab – Stage list with create / edit / delete.
@@ -18,10 +19,12 @@ class AdminActivityManagementPage extends StatefulWidget {
   const AdminActivityManagementPage({super.key, this.selectedYear});
 
   @override
-  State<AdminActivityManagementPage> createState() => _AdminActivityManagementPageState();
+  State<AdminActivityManagementPage> createState() =>
+      _AdminActivityManagementPageState();
 }
 
-class _AdminActivityManagementPageState extends State<AdminActivityManagementPage> {
+class _AdminActivityManagementPageState
+    extends State<AdminActivityManagementPage> {
   List<dynamic> _stagesList = [];
   List<dynamic> _teachersList = [];
   bool _isLoading = true;
@@ -53,7 +56,9 @@ class _AdminActivityManagementPageState extends State<AdminActivityManagementPag
 
   Future<void> _fetchStages() async {
     try {
-      final stages = await getIt<AdminRepository>().getStages(academicYear: widget.selectedYear);
+      final stages = await getIt<AdminRepository>().getStages(
+        academicYear: widget.selectedYear,
+      );
       if (!mounted) return;
       setState(() {
         _stagesList = stages;
@@ -76,8 +81,9 @@ class _AdminActivityManagementPageState extends State<AdminActivityManagementPag
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-            content: Text('Stage deleted successfully'),
-            backgroundColor: Colors.green),
+          content: Text('Stage deleted successfully'),
+          backgroundColor: Colors.green,
+        ),
       );
       setState(() => _isLoading = true);
       _fetchStages();
@@ -87,17 +93,17 @@ class _AdminActivityManagementPageState extends State<AdminActivityManagementPag
     }
   }
 
-
-
   // ── Build ─────────────────────────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
-        title: const Text('Activity & Thresholds',
-            style: TextStyle(
-                fontWeight: FontWeight.bold, color: Colors.white)),
+        title: const Text(
+          'Activity & Thresholds',
+          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+        ),
         backgroundColor: _dark,
         elevation: 0,
         actions: [
@@ -140,23 +146,36 @@ class _AdminActivityManagementPageState extends State<AdminActivityManagementPag
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (_) => spdms_app.GlobalActivityPage(selectedYear: widget.selectedYear),
+                                  builder: (_) => pragatix.GlobalActivityPage(
+                                    selectedYear: widget.selectedYear,
+                                  ),
                                 ),
                               ).then((value) {
                                 setState(() => _isLoading = true);
                                 _fetchStages();
                               });
                             },
-                            icon: const Icon(Icons.list_alt, color: Colors.white, size: 18),
-                            label: const Text('All Activities', style: TextStyle(color: Colors.white)),
-                            style: ElevatedButton.styleFrom(backgroundColor: Colors.blue),
+                            icon: const Icon(
+                              Icons.list_alt,
+                              color: Colors.white,
+                              size: 18,
+                            ),
+                            label: const Text(
+                              'All Activities',
+                              style: TextStyle(color: Colors.white),
+                            ),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.blue,
+                            ),
                           ),
                           ElevatedButton.icon(
                             onPressed: () {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (_) => CreateStagePage(assignedAcademicYear: widget.selectedYear),
+                                  builder: (_) => CreateStagePage(
+                                    academicYear: widget.selectedYear,
+                                  ),
                                 ),
                               ).then((value) {
                                 if (value == true) {
@@ -165,9 +184,18 @@ class _AdminActivityManagementPageState extends State<AdminActivityManagementPag
                                 }
                               });
                             },
-                            icon: const Icon(Icons.add, color: Colors.white, size: 18),
-                            label: const Text('Add Stage', style: TextStyle(color: Colors.white)),
-                            style: ElevatedButton.styleFrom(backgroundColor: _primary),
+                            icon: const Icon(
+                              Icons.add,
+                              color: Colors.white,
+                              size: 18,
+                            ),
+                            label: const Text(
+                              'Add Stage',
+                              style: TextStyle(color: Colors.white),
+                            ),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: _primary,
+                            ),
                           ),
                         ],
                       ),
@@ -181,9 +209,10 @@ class _AdminActivityManagementPageState extends State<AdminActivityManagementPag
                         final stage =
                             _stagesList[index] as Map<String, dynamic>;
                         final name = stage['name'] as String? ?? '';
-                        final desc = stage['description'] as String? ??
-                            'No description';
-                        final String statusStr = stage['status'] as String? ?? 'UPCOMING';
+                        final desc =
+                            stage['description'] as String? ?? 'No description';
+                        final String statusStr =
+                            stage['status'] as String? ?? 'UPCOMING';
                         final displayOrder = stage['displayOrder'] ?? 0;
                         final expectedXp = stage['expectedXp'] ?? 0;
                         final mThresh = stage['mustThreshold'] ?? 0;
@@ -193,7 +222,8 @@ class _AdminActivityManagementPageState extends State<AdminActivityManagementPag
                         return Card(
                           elevation: 3,
                           shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16)),
+                            borderRadius: BorderRadius.circular(16),
+                          ),
                           margin: const EdgeInsets.only(bottom: 20),
                           child: InkWell(
                             onTap: () {
@@ -227,19 +257,31 @@ class _AdminActivityManagementPageState extends State<AdminActivityManagementPag
                                       children: [
                                         Row(
                                           children: [
-                                            Text(name,
-                                                style: const TextStyle(
-                                                    fontSize: 20,
-                                                    fontWeight: FontWeight.bold,
-                                                    color: _dark)),
+                                            Text(
+                                              name,
+                                              style: const TextStyle(
+                                                fontSize: 20,
+                                                fontWeight: FontWeight.bold,
+                                                color: _dark,
+                                              ),
+                                            ),
                                             const SizedBox(width: 12),
                                             Container(
-                                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                    horizontal: 8,
+                                                    vertical: 4,
+                                                  ),
                                               decoration: BoxDecoration(
-                                                color: statusStr == 'ACTIVE' ? Colors.green.shade50 : Colors.grey.shade100,
-                                                borderRadius: BorderRadius.circular(4),
+                                                color: statusStr == 'ACTIVE'
+                                                    ? Colors.green.shade50
+                                                    : Colors.grey.shade100,
+                                                borderRadius:
+                                                    BorderRadius.circular(4),
                                                 border: Border.all(
-                                                  color: statusStr == 'ACTIVE' ? Colors.green.shade300 : Colors.grey.shade400,
+                                                  color: statusStr == 'ACTIVE'
+                                                      ? Colors.green.shade300
+                                                      : Colors.grey.shade400,
                                                   width: 1,
                                                 ),
                                               ),
@@ -248,91 +290,133 @@ class _AdminActivityManagementPageState extends State<AdminActivityManagementPag
                                                 style: TextStyle(
                                                   fontSize: 10,
                                                   fontWeight: FontWeight.bold,
-                                                  color: statusStr == 'ACTIVE' ? Colors.green.shade800 : (statusStr == 'UPCOMING' ? Colors.blue.shade800 : Colors.grey.shade700),
+                                                  color: statusStr == 'ACTIVE'
+                                                      ? Colors.green.shade800
+                                                      : (statusStr == 'UPCOMING'
+                                                            ? Colors
+                                                                  .blue
+                                                                  .shade800
+                                                            : Colors
+                                                                  .grey
+                                                                  .shade700),
                                                 ),
                                               ),
                                             ),
                                           ],
                                         ),
                                         const SizedBox(height: 6),
-                                        Text(desc,
-                                            style: TextStyle(
-                                                fontSize: 14,
-                                                color: Colors.grey.shade600)),
+                                        Text(
+                                          desc,
+                                          style: TextStyle(
+                                            fontSize: 14,
+                                            color: Colors.grey.shade600,
+                                          ),
+                                        ),
                                         const SizedBox(height: 10),
                                         Wrap(
                                           spacing: 10,
                                           runSpacing: 6,
-                                          crossAxisAlignment: WrapCrossAlignment.center,
+                                          crossAxisAlignment:
+                                              WrapCrossAlignment.center,
                                           children: [
                                             Container(
-                                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                    horizontal: 6,
+                                                    vertical: 2,
+                                                  ),
                                               decoration: BoxDecoration(
                                                 color: Colors.grey.shade200,
-                                                borderRadius: BorderRadius.circular(4),
+                                                borderRadius:
+                                                    BorderRadius.circular(4),
                                               ),
                                               child: Text(
                                                 'Order: $displayOrder',
                                                 style: const TextStyle(
-                                                    fontSize: 11,
-                                                    color: _dark,
-                                                    fontWeight: FontWeight.bold),
+                                                  fontSize: 11,
+                                                  color: _dark,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
                                               ),
                                             ),
                                             Container(
-                                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                    horizontal: 6,
+                                                    vertical: 2,
+                                                  ),
                                               decoration: BoxDecoration(
                                                 color: Colors.blue.shade50,
-                                                borderRadius: BorderRadius.circular(4),
+                                                borderRadius:
+                                                    BorderRadius.circular(4),
                                               ),
                                               child: Text(
                                                 'XP: $expectedXp',
                                                 style: TextStyle(
-                                                    fontSize: 11,
-                                                    color: Colors.blue.shade800,
-                                                    fontWeight: FontWeight.bold),
+                                                  fontSize: 11,
+                                                  color: Colors.blue.shade800,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
                                               ),
                                             ),
                                             Container(
-                                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                    horizontal: 6,
+                                                    vertical: 2,
+                                                  ),
                                               decoration: BoxDecoration(
                                                 color: Colors.red.shade50,
-                                                borderRadius: BorderRadius.circular(4),
+                                                borderRadius:
+                                                    BorderRadius.circular(4),
                                               ),
                                               child: Text(
                                                 'M: $mThresh',
                                                 style: TextStyle(
-                                                    fontSize: 11,
-                                                    color: Colors.red.shade800,
-                                                    fontWeight: FontWeight.bold),
+                                                  fontSize: 11,
+                                                  color: Colors.red.shade800,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
                                               ),
                                             ),
                                             Container(
-                                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                    horizontal: 6,
+                                                    vertical: 2,
+                                                  ),
                                               decoration: BoxDecoration(
                                                 color: Colors.blue.shade50,
-                                                borderRadius: BorderRadius.circular(4),
+                                                borderRadius:
+                                                    BorderRadius.circular(4),
                                               ),
                                               child: Text(
                                                 'I: $iThresh',
                                                 style: TextStyle(
-                                                    fontSize: 11,
-                                                    color: Colors.blue.shade800,
-                                                    fontWeight: FontWeight.bold),
+                                                  fontSize: 11,
+                                                  color: Colors.blue.shade800,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
                                               ),
                                             ),
                                             Container(
-                                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                    horizontal: 6,
+                                                    vertical: 2,
+                                                  ),
                                               decoration: BoxDecoration(
                                                 color: Colors.green.shade50,
-                                                borderRadius: BorderRadius.circular(4),
+                                                borderRadius:
+                                                    BorderRadius.circular(4),
                                               ),
                                               child: Text(
                                                 'G: $gThresh',
                                                 style: TextStyle(
-                                                    fontSize: 11,
-                                                    color: Colors.green.shade800,
-                                                    fontWeight: FontWeight.bold),
+                                                  fontSize: 11,
+                                                  color: Colors.green.shade800,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
                                               ),
                                             ),
                                           ],
@@ -344,16 +428,15 @@ class _AdminActivityManagementPageState extends State<AdminActivityManagementPag
                                     children: [
                                       IconButton(
                                         icon: const Icon(
-                                            Icons.edit_outlined,
-                                            color: Colors.blue),
+                                          Icons.edit_outlined,
+                                          color: Colors.blue,
+                                        ),
                                         onPressed: () {
                                           Navigator.push(
                                             context,
                                             MaterialPageRoute(
-                                              builder: (_) => EditStagePage(
-                                                
-                                                stage: stage,
-                                              ),
+                                              builder: (_) =>
+                                                  EditStagePage(stage: stage),
                                             ),
                                           ).then((value) {
                                             if (value == true) {
@@ -365,33 +448,36 @@ class _AdminActivityManagementPageState extends State<AdminActivityManagementPag
                                       ),
                                       IconButton(
                                         icon: const Icon(
-                                            Icons.delete_outline,
-                                            color: Colors.red),
+                                          Icons.delete_outline,
+                                          color: Colors.red,
+                                        ),
                                         onPressed: () {
                                           showDialog<void>(
                                             context: context,
                                             builder: (ctx) => AlertDialog(
-                                              title: const Text(
-                                                  'Delete Stage'),
+                                              title: const Text('Delete Stage'),
                                               content: Text(
-                                                  'Are you sure you want to delete $name and all its subgroups?'),
+                                                'Are you sure you want to delete $name and all its subgroups?',
+                                              ),
                                               actions: [
                                                 TextButton(
                                                   onPressed: () =>
                                                       Navigator.pop(ctx),
-                                                  child:
-                                                      const Text('Cancel'),
+                                                  child: const Text('Cancel'),
                                                 ),
                                                 TextButton(
                                                   onPressed: () {
                                                     Navigator.pop(ctx);
                                                     _deleteStage(
-                                                        stage['id'] as int);
+                                                      stage['id'] as int,
+                                                    );
                                                   },
                                                   child: const Text(
-                                                      'Delete',
-                                                      style: TextStyle(
-                                                          color: Colors.red)),
+                                                    'Delete',
+                                                    style: TextStyle(
+                                                      color: Colors.red,
+                                                    ),
+                                                  ),
                                                 ),
                                               ],
                                             ),
@@ -399,8 +485,9 @@ class _AdminActivityManagementPageState extends State<AdminActivityManagementPag
                                         },
                                       ),
                                       const Icon(
-                                          Icons.chevron_right_rounded,
-                                          color: Colors.grey),
+                                        Icons.chevron_right_rounded,
+                                        color: Colors.grey,
+                                      ),
                                     ],
                                   ),
                                 ],

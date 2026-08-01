@@ -1,6 +1,6 @@
 import 'dart:convert';
-import 'package:spdms_app/features/admin/services/admin_service.dart';
-import 'package:spdms_app/core/exceptions/api_exception.dart';
+import 'package:pragatix/features/admin/services/admin_service.dart';
+import 'package:pragatix/core/exceptions/api_exception.dart';
 
 class AdminRepository {
   final AdminService _adminService;
@@ -65,22 +65,36 @@ class AdminRepository {
   }
 
   Future<Map<String, dynamic>> addDepartment(String name, String code) async {
-    final response = await _adminService.post('/api/v1/admin/departments', {'name': name, 'code': code});
+    final response = await _adminService.post('/api/v1/admin/departments', {
+      'name': name,
+      'code': code,
+    });
     return _handleResponse(response);
   }
 
-  Future<Map<String, dynamic>> editDepartment(int id, String name, String code) async {
-    final response = await _adminService.put('/api/v1/admin/departments/$id', {'name': name, 'code': code});
+  Future<Map<String, dynamic>> editDepartment(
+    int id,
+    String name,
+    String code,
+  ) async {
+    final response = await _adminService.put('/api/v1/admin/departments/$id', {
+      'name': name,
+      'code': code,
+    });
     return _handleResponse(response);
   }
 
   Future<void> deleteDepartment(int id) async {
-    final response = await _adminService.delete('/api/v1/admin/departments/$id');
+    final response = await _adminService.delete(
+      '/api/v1/admin/departments/$id',
+    );
     _handleResponse(response);
   }
 
   Future<List<dynamic>> getDepartmentSections(int deptId) async {
-    final response = await _adminService.get('/api/v1/admin/departments/$deptId/sections');
+    final response = await _adminService.get(
+      '/api/v1/admin/departments/$deptId/sections',
+    );
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
       if (data['success'] == true) {
@@ -90,13 +104,21 @@ class AdminRepository {
     throw Exception('Failed to load sections');
   }
 
-  Future<Map<String, dynamic>> addDepartmentSection(int deptId, String sectionName) async {
-    final response = await _adminService.post('/api/v1/admin/departments/$deptId/sections', {'sectionName': sectionName});
+  Future<Map<String, dynamic>> addDepartmentSection(
+    int deptId,
+    String sectionName,
+  ) async {
+    final response = await _adminService.post(
+      '/api/v1/admin/departments/$deptId/sections',
+      {'sectionName': sectionName},
+    );
     return _handleResponse(response);
   }
 
   Future<void> deleteDepartmentSection(int sectionId) async {
-    final response = await _adminService.delete('/api/v1/admin/sections/$sectionId');
+    final response = await _adminService.delete(
+      '/api/v1/admin/sections/$sectionId',
+    );
     _handleResponse(response);
   }
 
@@ -137,7 +159,9 @@ class AdminRepository {
   }
 
   Future<Map<String, dynamic>> addSubject(String name) async {
-    final response = await _adminService.post('/api/v1/admin/subjects', {'name': name});
+    final response = await _adminService.post('/api/v1/admin/subjects', {
+      'name': name,
+    });
     return _handleResponse(response);
   }
 
@@ -163,8 +187,14 @@ class AdminRepository {
     return _handleResponse(response);
   }
 
-  Future<Map<String, dynamic>> updateUser(int id, Map<String, dynamic> userData) async {
-    final response = await _adminService.put('/api/v1/admin/users/$id', userData);
+  Future<Map<String, dynamic>> updateUser(
+    int id,
+    Map<String, dynamic> userData,
+  ) async {
+    final response = await _adminService.put(
+      '/api/v1/admin/users/$id',
+      userData,
+    );
     return _handleResponse(response);
   }
 
@@ -189,13 +219,21 @@ class AdminRepository {
     throw Exception('Failed to load students');
   }
 
-  Future<Map<String, dynamic>> addStudent(Map<String, dynamic> studentData) async {
+  Future<Map<String, dynamic>> addStudent(
+    Map<String, dynamic> studentData,
+  ) async {
     final response = await _adminService.post('/api/v1/students', studentData);
     return _handleResponse(response);
   }
 
-  Future<Map<String, dynamic>> updateStudent(int id, Map<String, dynamic> studentData) async {
-    final response = await _adminService.put('/api/v1/students/$id', studentData);
+  Future<Map<String, dynamic>> updateStudent(
+    int id,
+    Map<String, dynamic> studentData,
+  ) async {
+    final response = await _adminService.put(
+      '/api/v1/students/$id',
+      studentData,
+    );
     return _handleResponse(response);
   }
 
@@ -217,10 +255,9 @@ class AdminRepository {
   }
 
   Future<List<dynamic>> getStages({String? academicYear}) async {
-    String url = '/api/v1/admin/stages';
-    if (academicYear != null) {
-      url += '?academicYear=$academicYear';
-    }
+    final url = academicYear != null && academicYear.isNotEmpty
+        ? '/api/v1/admin/stages?academicYear=$academicYear'
+        : '/api/v1/admin/stages';
     final response = await _adminService.get(url);
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
@@ -232,12 +269,21 @@ class AdminRepository {
   }
 
   Future<Map<String, dynamic>> addStage(Map<String, dynamic> stageData) async {
-    final response = await _adminService.post('/api/v1/admin/stages', stageData);
+    final response = await _adminService.post(
+      '/api/v1/admin/stages',
+      stageData,
+    );
     return _handleResponse(response);
   }
 
-  Future<Map<String, dynamic>> updateStage(int id, Map<String, dynamic> stageData) async {
-    final response = await _adminService.put('/api/v1/admin/stages/$id', stageData);
+  Future<Map<String, dynamic>> updateStage(
+    int id,
+    Map<String, dynamic> stageData,
+  ) async {
+    final response = await _adminService.put(
+      '/api/v1/admin/stages/$id',
+      stageData,
+    );
     return _handleResponse(response);
   }
 
@@ -270,18 +316,31 @@ class AdminRepository {
     throw Exception('Failed to load year admins');
   }
 
-  Future<Map<String, dynamic>> addYearAdmin(Map<String, dynamic> adminData) async {
-    final response = await _adminService.post('/api/v1/superadmin/year-admins', adminData);
+  Future<Map<String, dynamic>> addYearAdmin(
+    Map<String, dynamic> adminData,
+  ) async {
+    final response = await _adminService.post(
+      '/api/v1/superadmin/year-admins',
+      adminData,
+    );
     return _handleResponse(response);
   }
 
-  Future<Map<String, dynamic>> updateYearAdmin(int id, Map<String, dynamic> adminData) async {
-    final response = await _adminService.put('/api/v1/superadmin/year-admins/$id', adminData);
+  Future<Map<String, dynamic>> updateYearAdmin(
+    int id,
+    Map<String, dynamic> adminData,
+  ) async {
+    final response = await _adminService.put(
+      '/api/v1/superadmin/year-admins/$id',
+      adminData,
+    );
     return _handleResponse(response);
   }
 
   Future<void> deleteYearAdmin(int id) async {
-    final response = await _adminService.delete('/api/v1/superadmin/year-admins/$id');
+    final response = await _adminService.delete(
+      '/api/v1/superadmin/year-admins/$id',
+    );
     _handleResponse(response);
   }
 
@@ -291,6 +350,9 @@ class AdminRepository {
     if (response.statusCode >= 200 && response.statusCode < 300) {
       return data;
     }
-    throw ApiException(response.statusCode, data['message'] ?? 'An error occurred');
+    throw ApiException(
+      response.statusCode,
+      data['message'] ?? 'An error occurred',
+    );
   }
 }

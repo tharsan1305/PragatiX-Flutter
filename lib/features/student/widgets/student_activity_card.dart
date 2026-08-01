@@ -17,7 +17,7 @@ class StudentActivityCard extends StatelessWidget {
     final int awardedXp = activity['awardedXp'] ?? 0;
     final String status = activity['status'] ?? 'PENDING';
     final bool isCompleted = status == 'COMPLETED';
-    
+
     final darkColor = const Color(0xFF1E293B);
 
     return Card(
@@ -41,7 +41,9 @@ class StudentActivityCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: isCompleted ? Colors.green.withOpacity(0.1) : Colors.blue.withOpacity(0.1),
+                  color: isCompleted
+                      ? Colors.green.withOpacity(0.1)
+                      : Colors.blue.withOpacity(0.1),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
@@ -65,22 +67,21 @@ class StudentActivityCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      isCompleted 
-                          ? 'Completed • Earned $awardedXp XP' 
+                      isCompleted
+                          ? 'Completed • Earned $awardedXp XP'
                           : 'Reward: $rewardXp XP',
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w500,
-                        color: isCompleted ? Colors.green.shade700 : Colors.grey.shade600,
+                        color: isCompleted
+                            ? Colors.green.shade700
+                            : Colors.grey.shade600,
                       ),
                     ),
                   ],
                 ),
               ),
-              Icon(
-                Icons.chevron_right_rounded,
-                color: Colors.grey.shade400,
-              ),
+              Icon(Icons.chevron_right_rounded, color: Colors.grey.shade400),
             ],
           ),
         ),

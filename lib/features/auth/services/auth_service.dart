@@ -1,6 +1,6 @@
 import 'dart:convert';
-import 'package:spdms_app/core/utils/api_client.dart' as http;
-import 'package:spdms_app/core/config/api_config.dart';
+import 'package:pragatix/core/utils/api_client.dart' as http;
+import 'package:pragatix/core/config/api_config.dart';
 
 class AuthService {
   Future<http.Response> staffLogin(String username, String password) async {

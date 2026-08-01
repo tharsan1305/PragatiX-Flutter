@@ -1,33 +1,36 @@
 import 'package:flutter/material.dart';
-import 'package:spdms_app/features/student/widgets/student_activity_card.dart';
-import 'package:spdms_app/features/student/screens/activity_details_screen.dart';
-import 'package:spdms_app/features/student/widgets/progress_card.dart';
+import 'package:pragatix/features/student/widgets/student_activity_card.dart';
+import 'package:pragatix/features/student/screens/activity_details_screen.dart';
+import 'package:pragatix/features/student/widgets/progress_card.dart';
 
-import 'package:spdms_app/core/utils/string_utils.dart';
+import 'package:pragatix/core/utils/string_utils.dart';
 
 class SubgroupDetailsScreen extends StatelessWidget {
   final Map<String, dynamic> subgroup;
 
-  const SubgroupDetailsScreen({Key? key, required this.subgroup}) : super(key: key);
+  const SubgroupDetailsScreen({Key? key, required this.subgroup})
+    : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     final String rawName = subgroup['name'] ?? 'Subgroup Details';
     final String name = StringUtils.toTitleCase(rawName);
     final List activities = subgroup['activities'] ?? [];
-    
+
     int completedCount = 0;
     int currentXp = 0;
-    
+
     for (var act in activities) {
       if (act['status'] == 'COMPLETED') {
         completedCount++;
       }
       currentXp += (act['awardedXp'] as num?)?.toInt() ?? 0;
     }
-    
+
     final int threshold = subgroup['threshold'] ?? 0;
-    final double progress = threshold > 0 ? (currentXp / threshold).clamp(0.0, 1.0) : 0.0;
+    final double progress = threshold > 0
+        ? (currentXp / threshold).clamp(0.0, 1.0)
+        : 0.0;
     final bool isPassed = currentXp >= threshold && threshold > 0;
 
     return Scaffold(
@@ -78,7 +81,9 @@ class SubgroupDetailsScreen extends StatelessWidget {
                           style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
-                            color: isPassed ? Colors.green.shade700 : Colors.amber.shade700,
+                            color: isPassed
+                                ? Colors.green.shade700
+                                : Colors.amber.shade700,
                           ),
                         ),
                         const SizedBox(height: 4),
@@ -102,9 +107,9 @@ class SubgroupDetailsScreen extends StatelessWidget {
                 ],
               ),
             ),
-            
+
             const SizedBox(height: 24),
-            
+
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -117,7 +122,10 @@ class SubgroupDetailsScreen extends StatelessWidget {
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.blue.shade50,
                     borderRadius: BorderRadius.circular(12),
@@ -134,7 +142,7 @@ class SubgroupDetailsScreen extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 12),
-            
+
             if (activities.isEmpty)
               Center(
                 child: Padding(
@@ -153,7 +161,8 @@ class SubgroupDetailsScreen extends StatelessWidget {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => ActivityDetailsScreen(activity: activity),
+                        builder: (context) =>
+                            ActivityDetailsScreen(activity: activity),
                       ),
                     );
                   },

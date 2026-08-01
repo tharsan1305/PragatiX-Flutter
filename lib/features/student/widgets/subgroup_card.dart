@@ -1,39 +1,38 @@
 import 'package:flutter/material.dart';
-import 'package:spdms_app/features/student/widgets/progress_card.dart';
+import 'package:pragatix/features/student/widgets/progress_card.dart';
 
-import 'package:spdms_app/core/utils/string_utils.dart';
+import 'package:pragatix/core/utils/string_utils.dart';
 
 class SubgroupCard extends StatelessWidget {
   final Map<String, dynamic> subgroup;
   final VoidCallback onTap;
 
-  const SubgroupCard({
-    Key? key,
-    required this.subgroup,
-    required this.onTap,
-  }) : super(key: key);
+  const SubgroupCard({Key? key, required this.subgroup, required this.onTap})
+    : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     final String rawName = subgroup['name'] ?? 'Subgroup';
     final String name = StringUtils.toTitleCase(rawName);
     final List activities = subgroup['activities'] ?? [];
-    
+
     // For progress, we calculate based on the activities completed
     int completedCount = 0;
     int currentXp = 0;
-    
+
     for (var act in activities) {
       if (act['status'] == 'COMPLETED') {
         completedCount++;
       }
       currentXp += (act['awardedXp'] as num?)?.toInt() ?? 0;
     }
-    
+
     final int threshold = subgroup['threshold'] ?? 0;
-    final double progress = threshold > 0 ? (currentXp / threshold).clamp(0.0, 1.0) : 0.0;
+    final double progress = threshold > 0
+        ? (currentXp / threshold).clamp(0.0, 1.0)
+        : 0.0;
     final bool isPassed = currentXp >= threshold && threshold > 0;
-    
+
     final darkColor = const Color(0xFF1E293B);
 
     return Card(

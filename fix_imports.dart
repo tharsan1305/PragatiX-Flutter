@@ -36,7 +36,7 @@ void main() {
       if (libIndex != -1) {
         final packagePath = dirParts.skip(libIndex + 1).join('/');
         changed = true;
-        return "import 'package:spdms_app/$packagePath'$rest;";
+        return "import 'package:pragatix/$packagePath'$rest;";
       }
       
       return match.group(0)!;

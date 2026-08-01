@@ -1,17 +1,13 @@
-import 'package:spdms_app/features/auth/providers/auth_provider.dart';
+import 'package:pragatix/features/auth/providers/auth_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter/material.dart';
-import 'package:spdms_app/features/activity/models/execution_student_model.dart';
-import 'package:spdms_app/features/activity/services/activity_service.dart';
+import 'package:pragatix/features/activity/models/execution_student_model.dart';
+import 'package:pragatix/features/activity/services/activity_service.dart';
 
 class ActivityExecutionPage extends StatefulWidget {
   final int activityId;
 
-  const ActivityExecutionPage({
-    super.key,
-    
-    required this.activityId,
-  });
+  const ActivityExecutionPage({super.key, required this.activityId});
 
   @override
   State<ActivityExecutionPage> createState() => _ActivityExecutionPageState();
@@ -56,7 +52,11 @@ class _ActivityExecutionPageState extends State<ActivityExecutionPage> {
     }
   }
 
-  Future<void> _submitAward(ExecutionStudentModel student, int xp, String remarks) async {
+  Future<void> _submitAward(
+    ExecutionStudentModel student,
+    int xp,
+    String remarks,
+  ) async {
     if (_data == null) return;
     try {
       await _service.awardXp(
@@ -130,7 +130,10 @@ class _ActivityExecutionPageState extends State<ActivityExecutionPage> {
               children: [
                 Text(
                   'Student: ${student.fullName}',
-                  style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 14,
+                  ),
                 ),
                 const SizedBox(height: 4),
                 Text(
@@ -139,7 +142,11 @@ class _ActivityExecutionPageState extends State<ActivityExecutionPage> {
                 ),
                 Text(
                   'Maximum XP Allowed: $maxXP',
-                  style: const TextStyle(color: Colors.blue, fontWeight: FontWeight.bold, fontSize: 13),
+                  style: const TextStyle(
+                    color: Colors.blue,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13,
+                  ),
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
@@ -187,7 +194,9 @@ class _ActivityExecutionPageState extends State<ActivityExecutionPage> {
             style: ElevatedButton.styleFrom(
               backgroundColor: _primary,
               foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
             ),
             onPressed: () {
               if (formKey.currentState?.validate() == true) {
@@ -235,48 +244,39 @@ class _ActivityExecutionPageState extends State<ActivityExecutionPage> {
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _errorMessage != null
-              ? _buildErrorView()
-              : Column(
-                  children: [
-                    Expanded(
-                      child: CustomScrollView(
-                        slivers: [
-                          // ── Activity Header Card ──
-                          SliverToBoxAdapter(
-                            child: _buildActivityHeaderCard(),
+          ? _buildErrorView()
+          : Column(
+              children: [
+                Expanded(
+                  child: CustomScrollView(
+                    slivers: [
+                      // ── Activity Header Card ──
+                      SliverToBoxAdapter(child: _buildActivityHeaderCard()),
+                      // ── Search Section ──
+                      SliverToBoxAdapter(child: _buildSearchSection()),
+                      // ── Students List ──
+                      if (filteredStudents.isEmpty)
+                        SliverFillRemaining(child: _buildEmptyState())
+                      else
+                        SliverPadding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          sliver: SliverList(
+                            delegate: SliverChildBuilderDelegate((ctx, index) {
+                              final student = filteredStudents[index];
+                              return _buildStudentCard(student);
+                            }, childCount: filteredStudents.length),
                           ),
-                          // ── Search Section ──
-                          SliverToBoxAdapter(
-                            child: _buildSearchSection(),
-                          ),
-                          // ── Students List ──
-                          if (filteredStudents.isEmpty)
-                            SliverFillRemaining(
-                              child: _buildEmptyState(),
-                            )
-                          else
-                            SliverPadding(
-                              padding: const EdgeInsets.symmetric(horizontal: 16),
-                              sliver: SliverList(
-                                delegate: SliverChildBuilderDelegate(
-                                  (ctx, index) {
-                                    final student = filteredStudents[index];
-                                    return _buildStudentCard(student);
-                                  },
-                                  childCount: filteredStudents.length,
-                                ),
-                              ),
-                            ),
-                          const SliverToBoxAdapter(
-                            child: SizedBox(height: 80), // spacer for bottom panel
-                          ),
-                        ],
+                        ),
+                      const SliverToBoxAdapter(
+                        child: SizedBox(height: 80), // spacer for bottom panel
                       ),
-                    ),
-                    // ── Bottom Summary Panel ──
-                    _buildBottomSummaryPanel(studentsList.length),
-                  ],
+                    ],
+                  ),
                 ),
+                // ── Bottom Summary Panel ──
+                _buildBottomSummaryPanel(studentsList.length),
+              ],
+            ),
     );
   }
 
@@ -297,18 +297,29 @@ class _ActivityExecutionPageState extends State<ActivityExecutionPage> {
                 Expanded(
                   child: Text(
                     act.name,
-                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: _dark),
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: _dark,
+                    ),
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.blue.shade50,
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
                     act.type,
-                    style: TextStyle(color: Colors.blue.shade800, fontSize: 12, fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                      color: Colors.blue.shade800,
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ],
@@ -327,8 +338,14 @@ class _ActivityExecutionPageState extends State<ActivityExecutionPage> {
                 _buildInfoBadge(Icons.timer, 'Freq: ${act.frequency}'),
                 _buildInfoBadge(Icons.star, 'XP Limit: ${_data!.xpLimit}'),
                 if (act.evidence.isNotEmpty)
-                  _buildInfoBadge(Icons.attach_file, 'Evidence: ${act.evidence.join(", ")}'),
-                _buildInfoBadge(Icons.person, 'Assigned By: ${_data!.assignment.assignedBy}'),
+                  _buildInfoBadge(
+                    Icons.attach_file,
+                    'Evidence: ${act.evidence.join(", ")}',
+                  ),
+                _buildInfoBadge(
+                  Icons.person,
+                  'Assigned By: ${_data!.assignment.assignedBy}',
+                ),
               ],
             ),
           ],
@@ -350,7 +367,14 @@ class _ActivityExecutionPageState extends State<ActivityExecutionPage> {
         children: [
           Icon(icon, size: 14, color: Colors.grey.shade700),
           const SizedBox(width: 4),
-          Text(label, style: TextStyle(fontSize: 11, color: Colors.grey.shade700, fontWeight: FontWeight.w500)),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 11,
+              color: Colors.grey.shade700,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
         ],
       ),
     );
@@ -388,7 +412,9 @@ class _ActivityExecutionPageState extends State<ActivityExecutionPage> {
         child: Row(
           children: [
             CircleAvatar(
-              backgroundColor: isAwarded ? Colors.green.shade100 : Colors.red.shade100,
+              backgroundColor: isAwarded
+                  ? Colors.green.shade100
+                  : Colors.red.shade100,
               radius: 22,
               child: Icon(
                 Icons.person,
@@ -402,7 +428,11 @@ class _ActivityExecutionPageState extends State<ActivityExecutionPage> {
                 children: [
                   Text(
                     student.fullName,
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: _dark),
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                      color: _dark,
+                    ),
                   ),
                   const SizedBox(height: 2),
                   Text(
@@ -421,19 +451,31 @@ class _ActivityExecutionPageState extends State<ActivityExecutionPage> {
               children: [
                 Text(
                   '${student.totalXp} XP',
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.green),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                    color: Colors.green,
+                  ),
                 ),
                 const SizedBox(height: 6),
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: isAwarded ? Colors.green : _primary,
                     foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 0),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 0,
+                    ),
                     minimumSize: const Size(60, 32),
                   ),
                   onPressed: () => _openAwardDialog(student),
-                  child: Text(isAwarded ? 'Re-Award' : 'Award XP', style: const TextStyle(fontSize: 11)),
+                  child: Text(
+                    isAwarded ? 'Re-Award' : 'Award XP',
+                    style: const TextStyle(fontSize: 11),
+                  ),
                 ),
               ],
             ),
@@ -452,7 +494,11 @@ class _ActivityExecutionPageState extends State<ActivityExecutionPage> {
           const SizedBox(height: 16),
           Text(
             'No matching students found.',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.grey.shade600),
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: Colors.grey.shade600,
+            ),
           ),
         ],
       ),
@@ -471,13 +517,14 @@ class _ActivityExecutionPageState extends State<ActivityExecutionPage> {
             Text(
               _errorMessage ?? 'An error occurred',
               textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: _dark),
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: _dark,
+              ),
             ),
             const SizedBox(height: 24),
-            ElevatedButton(
-              onPressed: _loadData,
-              child: const Text('Retry'),
-            ),
+            ElevatedButton(onPressed: _loadData, child: const Text('Retry')),
           ],
         ),
       ),
@@ -505,7 +552,11 @@ class _ActivityExecutionPageState extends State<ActivityExecutionPage> {
         children: [
           _buildSummaryItem('Awarded', '$awarded', Colors.green),
           _buildSummaryItem('Remaining', '$remaining', Colors.orange),
-          _buildSummaryItem('XP Awarded', '+$_totalSessionXpAwarded', Colors.blue),
+          _buildSummaryItem(
+            'XP Awarded',
+            '+$_totalSessionXpAwarded',
+            Colors.blue,
+          ),
         ],
       ),
     );
@@ -517,7 +568,11 @@ class _ActivityExecutionPageState extends State<ActivityExecutionPage> {
       children: [
         Text(
           value,
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: color),
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: color,
+          ),
         ),
         const SizedBox(height: 2),
         Text(

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:spdms_app/features/penalty/providers/penalty_provider.dart';
-import 'package:spdms_app/features/penalty/models/penalty_request.dart';
+import 'package:pragatix/features/penalty/providers/penalty_provider.dart';
+import 'package:pragatix/features/penalty/models/penalty_request.dart';
 import 'package:intl/intl.dart';
 
 class CcInboxTab extends StatelessWidget {
@@ -15,9 +15,18 @@ class CcInboxTab extends StatelessWidget {
         children: [
           Consumer<PenaltyProvider>(
             builder: (context, provider, child) {
-              final pendingCount = provider.ccInbox.where((r) => r.status == 'PENDING').length;
-              final approvedCount = provider.ccInbox.where((r) => r.status == 'APPROVED' || r.status == 'AUTO_APPROVED').length;
-              final rejectedCount = provider.ccInbox.where((r) => r.status == 'REJECTED').length;
+              final pendingCount = provider.ccInbox
+                  .where((r) => r.status == 'PENDING')
+                  .length;
+              final approvedCount = provider.ccInbox
+                  .where(
+                    (r) =>
+                        r.status == 'APPROVED' || r.status == 'AUTO_APPROVED',
+                  )
+                  .length;
+              final rejectedCount = provider.ccInbox
+                  .where((r) => r.status == 'REJECTED')
+                  .length;
 
               return Container(
                 color: Colors.white,
@@ -52,15 +61,42 @@ class CcInboxTab extends StatelessWidget {
                   );
                 }
 
-                final pending = provider.ccInbox.where((r) => r.status == 'PENDING').toList();
-                final approved = provider.ccInbox.where((r) => r.status == 'APPROVED' || r.status == 'AUTO_APPROVED').toList();
-                final rejected = provider.ccInbox.where((r) => r.status == 'REJECTED').toList();
+                final pending = provider.ccInbox
+                    .where((r) => r.status == 'PENDING')
+                    .toList();
+                final approved = provider.ccInbox
+                    .where(
+                      (r) =>
+                          r.status == 'APPROVED' || r.status == 'AUTO_APPROVED',
+                    )
+                    .toList();
+                final rejected = provider.ccInbox
+                    .where((r) => r.status == 'REJECTED')
+                    .toList();
 
                 return TabBarView(
                   children: [
-                    _buildList(context, pending, provider, showButtons: true, tabType: 'PENDING'),
-                    _buildList(context, approved, provider, showButtons: false, tabType: 'APPROVED'),
-                    _buildList(context, rejected, provider, showButtons: false, tabType: 'REJECTED'),
+                    _buildList(
+                      context,
+                      pending,
+                      provider,
+                      showButtons: true,
+                      tabType: 'PENDING',
+                    ),
+                    _buildList(
+                      context,
+                      approved,
+                      provider,
+                      showButtons: false,
+                      tabType: 'APPROVED',
+                    ),
+                    _buildList(
+                      context,
+                      rejected,
+                      provider,
+                      showButtons: false,
+                      tabType: 'REJECTED',
+                    ),
                   ],
                 );
               },
@@ -71,7 +107,13 @@ class CcInboxTab extends StatelessWidget {
     );
   }
 
-  Widget _buildList(BuildContext context, List<PenaltyRequest> list, PenaltyProvider provider, {required bool showButtons, required String tabType}) {
+  Widget _buildList(
+    BuildContext context,
+    List<PenaltyRequest> list,
+    PenaltyProvider provider, {
+    required bool showButtons,
+    required String tabType,
+  }) {
     if (list.isEmpty) {
       return const Center(child: Text('No requests found in this category.'));
     }
@@ -110,10 +152,15 @@ class AnimatedPenaltyCard extends StatefulWidget {
   State<AnimatedPenaltyCard> createState() => _AnimatedPenaltyCardState();
 }
 
-class _AnimatedPenaltyCardState extends State<AnimatedPenaltyCard> with SingleTickerProviderStateMixin {
+class _AnimatedPenaltyCardState extends State<AnimatedPenaltyCard>
+    with SingleTickerProviderStateMixin {
   bool _isDismissing = false;
 
-  void _showRejectDialog(BuildContext context, PenaltyRequest request, PenaltyProvider provider) {
+  void _showRejectDialog(
+    BuildContext context,
+    PenaltyRequest request,
+    PenaltyProvider provider,
+  ) {
     final TextEditingController reasonController = TextEditingController();
     showDialog(
       context: context,
@@ -142,10 +189,15 @@ class _AnimatedPenaltyCardState extends State<AnimatedPenaltyCard> with SingleTi
                 });
                 // Allow animation to play
                 await Future.delayed(const Duration(milliseconds: 300));
-                
-                bool success = await provider.rejectPenalty(request.id, reasonController.text);
+
+                bool success = await provider.rejectPenalty(
+                  request.id,
+                  reasonController.text,
+                );
                 if (success && mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Penalty Rejected')));
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Penalty Rejected')),
+                  );
                 } else if (!success && mounted) {
                   // Revert dismissal if failed
                   setState(() {
@@ -154,7 +206,10 @@ class _AnimatedPenaltyCardState extends State<AnimatedPenaltyCard> with SingleTi
                 }
               },
               style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-              child: const Text('Reject', style: TextStyle(color: Colors.white)),
+              child: const Text(
+                'Reject',
+                style: TextStyle(color: Colors.white),
+              ),
             ),
           ],
         );
@@ -171,7 +226,8 @@ class _AnimatedPenaltyCardState extends State<AnimatedPenaltyCard> with SingleTi
     Color badgeColor;
     if (request.status == 'PENDING') {
       badgeColor = Colors.orange;
-    } else if (request.status == 'APPROVED' || request.status == 'AUTO_APPROVED') {
+    } else if (request.status == 'APPROVED' ||
+        request.status == 'AUTO_APPROVED') {
       badgeColor = Colors.green;
     } else {
       badgeColor = Colors.red;
@@ -185,7 +241,9 @@ class _AnimatedPenaltyCardState extends State<AnimatedPenaltyCard> with SingleTi
           : Card(
               elevation: 3,
               margin: const EdgeInsets.only(bottom: 16),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
               child: Padding(
                 padding: const EdgeInsets.all(16),
                 child: Column(
@@ -197,97 +255,172 @@ class _AnimatedPenaltyCardState extends State<AnimatedPenaltyCard> with SingleTi
                         Expanded(
                           child: Text(
                             request.studentName ?? 'Unknown Student',
-                            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 4,
+                          ),
                           decoration: BoxDecoration(
                             color: badgeColor.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Text(
                             request.status,
-                            style: TextStyle(color: badgeColor, fontWeight: FontWeight.bold, fontSize: 12),
+                            style: TextStyle(
+                              color: badgeColor,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12,
+                            ),
                           ),
                         ),
                       ],
                     ),
                     const SizedBox(height: 8),
                     Text('Register No: ${request.regNo ?? 'N/A'}'),
-                    
+
                     // Show full info for Pending, but hide Department/Year/Section for history to save space (as requested)
                     if (widget.tabType == 'PENDING')
-                      Text('Dept: ${request.department ?? 'N/A'} | Year: ${request.year ?? 'N/A'} | Sec: ${request.section ?? 'N/A'}'),
-                      
+                      Text(
+                        'Dept: ${request.department ?? 'N/A'} | Year: ${request.year ?? 'N/A'} | Sec: ${request.section ?? 'N/A'}',
+                      ),
+
                     const Divider(height: 24),
-                    Text('Activity: ${request.penaltyActivity ?? 'Custom Penalty'}', style: const TextStyle(fontWeight: FontWeight.w600)),
-                    Text('Penalty XP: -${request.penaltyXP}', style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+                    Text(
+                      'Activity: ${request.penaltyActivity ?? 'Custom Penalty'}',
+                      style: const TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                    Text(
+                      'Penalty XP: -${request.penaltyXP}',
+                      style: const TextStyle(
+                        color: Colors.red,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                     const SizedBox(height: 8),
-                    Text('Reason: ${request.reason ?? 'No reason provided'}', style: TextStyle(color: Colors.grey.shade700)),
+                    Text(
+                      'Reason: ${request.reason ?? 'No reason provided'}',
+                      style: TextStyle(color: Colors.grey.shade700),
+                    ),
                     const SizedBox(height: 12),
                     Row(
                       children: [
                         const Icon(Icons.person, size: 14, color: Colors.grey),
                         const SizedBox(width: 4),
-                        Text('By: ${request.submittedBy ?? 'Unknown'}', style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                        Text(
+                          'By: ${request.submittedBy ?? 'Unknown'}',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey,
+                          ),
+                        ),
                       ],
                     ),
                     Row(
                       children: [
-                        const Icon(Icons.access_time, size: 14, color: Colors.grey),
+                        const Icon(
+                          Icons.access_time,
+                          size: 14,
+                          color: Colors.grey,
+                        ),
                         const SizedBox(width: 4),
                         Text(
                           'Requested: ${request.submittedTime != null ? dateFormat.format(request.submittedTime!) : 'N/A'}',
-                          style: const TextStyle(fontSize: 12, color: Colors.grey),
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey,
+                          ),
                         ),
                       ],
                     ),
-                    
+
                     if (widget.tabType == 'APPROVED') ...[
                       const SizedBox(height: 4),
                       Row(
                         children: [
-                          const Icon(Icons.check_circle, size: 14, color: Colors.green),
+                          const Icon(
+                            Icons.check_circle,
+                            size: 14,
+                            color: Colors.green,
+                          ),
                           const SizedBox(width: 4),
-                          Text('Approved By: ${request.approvedBy ?? 'Unknown'}', style: const TextStyle(fontSize: 12, color: Colors.green)),
+                          Text(
+                            'Approved By: ${request.approvedBy ?? 'Unknown'}',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: Colors.green,
+                            ),
+                          ),
                         ],
                       ),
                       Row(
                         children: [
-                          const Icon(Icons.access_time, size: 14, color: Colors.green),
+                          const Icon(
+                            Icons.access_time,
+                            size: 14,
+                            color: Colors.green,
+                          ),
                           const SizedBox(width: 4),
                           Text(
                             'Approved Date: ${request.approvalTime != null ? dateFormat.format(request.approvalTime!) : 'N/A'}',
-                            style: const TextStyle(fontSize: 12, color: Colors.green),
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: Colors.green,
+                            ),
                           ),
                         ],
                       ),
                     ],
-                    
+
                     if (widget.tabType == 'REJECTED') ...[
                       const SizedBox(height: 4),
                       Row(
                         children: [
                           const Icon(Icons.cancel, size: 14, color: Colors.red),
                           const SizedBox(width: 4),
-                          Text('Rejected By: ${request.approvedBy ?? 'Unknown'}', style: const TextStyle(fontSize: 12, color: Colors.red)),
+                          Text(
+                            'Rejected By: ${request.approvedBy ?? 'Unknown'}',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: Colors.red,
+                            ),
+                          ),
                         ],
                       ),
                       Row(
                         children: [
-                          const Icon(Icons.access_time, size: 14, color: Colors.red),
+                          const Icon(
+                            Icons.access_time,
+                            size: 14,
+                            color: Colors.red,
+                          ),
                           const SizedBox(width: 4),
                           Text(
                             'Rejected Date: ${request.approvalTime != null ? dateFormat.format(request.approvalTime!) : 'N/A'}',
-                            style: const TextStyle(fontSize: 12, color: Colors.red),
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: Colors.red,
+                            ),
                           ),
                         ],
                       ),
-                      if (request.rejectedReason != null && request.rejectedReason!.isNotEmpty) ...[
+                      if (request.rejectedReason != null &&
+                          request.rejectedReason!.isNotEmpty) ...[
                         const SizedBox(height: 4),
-                        Text('Rejection Reason: ${request.rejectedReason}', style: const TextStyle(fontSize: 12, color: Colors.red, fontStyle: FontStyle.italic)),
-                      ]
+                        Text(
+                          'Rejection Reason: ${request.rejectedReason}',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Colors.red,
+                            fontStyle: FontStyle.italic,
+                          ),
+                        ),
+                      ],
                     ],
 
                     if (widget.showButtons) ...[
@@ -297,9 +430,16 @@ class _AnimatedPenaltyCardState extends State<AnimatedPenaltyCard> with SingleTi
                         children: [
                           TextButton(
                             onPressed: () {
-                              _showRejectDialog(context, request, widget.provider);
+                              _showRejectDialog(
+                                context,
+                                request,
+                                widget.provider,
+                              );
                             },
-                            child: const Text('Reject', style: TextStyle(color: Colors.red)),
+                            child: const Text(
+                              'Reject',
+                              style: TextStyle(color: Colors.red),
+                            ),
                           ),
                           const SizedBox(width: 8),
                           ElevatedButton(
@@ -308,19 +448,31 @@ class _AnimatedPenaltyCardState extends State<AnimatedPenaltyCard> with SingleTi
                                 _isDismissing = true;
                               });
                               // Allow animation to play
-                              await Future.delayed(const Duration(milliseconds: 300));
+                              await Future.delayed(
+                                const Duration(milliseconds: 300),
+                              );
 
-                              bool success = await widget.provider.approvePenalty(request.id);
+                              bool success = await widget.provider
+                                  .approvePenalty(request.id);
                               if (success && mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Penalty Approved')));
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Penalty Approved'),
+                                  ),
+                                );
                               } else if (!success && mounted) {
                                 setState(() {
                                   _isDismissing = false;
                                 });
                               }
                             },
-                            style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
-                            child: const Text('Approve', style: TextStyle(color: Colors.white)),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.green,
+                            ),
+                            child: const Text(
+                              'Approve',
+                              style: TextStyle(color: Colors.white),
+                            ),
                           ),
                         ],
                       ),

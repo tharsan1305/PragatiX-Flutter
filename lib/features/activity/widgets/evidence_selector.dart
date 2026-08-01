@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:spdms_app/features/activity/utils/constants.dart';
+import 'package:pragatix/features/activity/utils/constants.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Evidence multi-select checkbox list.
@@ -43,9 +43,9 @@ class EvidenceSelector extends StatelessWidget {
                 activeColor: _primary,
                 checkColor: Colors.white,
                 shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10)),
-                contentPadding:
-                    const EdgeInsets.symmetric(horizontal: 8),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 8),
                 onChanged: (val) {
                   final next = Set<String>.from(selected);
                   if (val == true) {
@@ -65,7 +65,9 @@ class EvidenceSelector extends StatelessWidget {
             child: Text(
               'Select at least one evidence type.',
               style: TextStyle(
-                  color: Theme.of(context).colorScheme.error, fontSize: 12),
+                color: Theme.of(context).colorScheme.error,
+                fontSize: 12,
+              ),
             ),
           ),
       ],

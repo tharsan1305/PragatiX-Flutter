@@ -1,8 +1,8 @@
 import 'dart:convert';
-import 'package:spdms_app/core/config/api_config.dart';
-import 'package:spdms_app/features/auth/providers/auth_provider.dart';
-import 'package:spdms_app/core/utils/api_client.dart' as http;
-import 'package:spdms_app/features/penalty/models/penalty_request.dart';
+import 'package:pragatix/core/config/api_config.dart';
+import 'package:pragatix/features/auth/providers/auth_provider.dart';
+import 'package:pragatix/core/utils/api_client.dart' as http;
+import 'package:pragatix/features/penalty/models/penalty_request.dart';
 
 class PenaltyService {
   final AuthProvider authProvider;

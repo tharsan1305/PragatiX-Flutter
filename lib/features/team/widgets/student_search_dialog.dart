@@ -2,10 +2,10 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:spdms_app/features/auth/providers/auth_provider.dart';
-import 'package:spdms_app/core/config/api_config.dart';
-import 'package:spdms_app/features/team/services/team_proxy_service.dart';
-import 'package:spdms_app/core/di/service_locator.dart';
+import 'package:pragatix/features/auth/providers/auth_provider.dart';
+import 'package:pragatix/core/config/api_config.dart';
+import 'package:pragatix/features/team/services/team_proxy_service.dart';
+import 'package:pragatix/core/di/service_locator.dart';
 
 class StudentSearchDTO {
   final int id;
@@ -101,7 +101,9 @@ class _StudentSearchDialogState extends State<StudentSearchDialog> {
     try {
       final authProvider = context.read<AuthProvider>();
       final response = await getIt<TeamProxyService>().get(
-        Uri.parse('${ApiConfig.baseUrl}/api/v1/students/team-member-search?keyword=${Uri.encodeComponent(keyword)}'),
+        Uri.parse(
+          '${ApiConfig.baseUrl}/api/v1/students/team-member-search?keyword=${Uri.encodeComponent(keyword)}',
+        ),
         headers: {'Authorization': 'Bearer ${authProvider.token}'},
       );
       if (response.statusCode == 200) {
@@ -126,7 +128,7 @@ class _StudentSearchDialogState extends State<StudentSearchDialog> {
 
   void _selectStudent(StudentSearchDTO student) {
     if (student.teamId == widget.currentTeamId) return; // Already in this team
-    
+
     // Close keyboard
     FocusScope.of(context).unfocus();
 
@@ -136,9 +138,14 @@ class _StudentSearchDialogState extends State<StudentSearchDialog> {
         context: context,
         builder: (ctx) => AlertDialog(
           title: const Text('Move Student?'),
-          content: Text('Move ${student.fullName} from ${student.teamName} to this team?'),
+          content: Text(
+            'Move ${student.fullName} from ${student.teamName} to this team?',
+          ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('No')),
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('No'),
+            ),
             ElevatedButton(
               onPressed: () {
                 Navigator.pop(ctx);
@@ -168,9 +175,15 @@ class _StudentSearchDialogState extends State<StudentSearchDialog> {
               children: [
                 const Icon(Icons.person_add, color: Colors.indigo),
                 const SizedBox(width: 8),
-                const Text('Add Team Member', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                const Text(
+                  'Add Team Member',
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                ),
                 const Spacer(),
-                IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context)),
+                IconButton(
+                  icon: const Icon(Icons.close),
+                  onPressed: () => Navigator.pop(context),
+                ),
               ],
             ),
             const SizedBox(height: 16),
@@ -180,7 +193,9 @@ class _StudentSearchDialogState extends State<StudentSearchDialog> {
               decoration: InputDecoration(
                 hintText: 'Search by Name, Reg No, or SPR No...',
                 prefixIcon: const Icon(Icons.search),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
                 filled: true,
                 fillColor: Colors.grey.shade50,
               ),
@@ -191,54 +206,108 @@ class _StudentSearchDialogState extends State<StudentSearchDialog> {
               child: _isLoading
                   ? const Center(child: CircularProgressIndicator())
                   : _errorMsg.isNotEmpty
-                      ? Center(child: Text(_errorMsg, style: const TextStyle(color: Colors.red)))
-                      : _results.isEmpty && _searchController.text.isNotEmpty
-                          ? const Center(child: Text('No students found', style: TextStyle(color: Colors.grey)))
-                          : ListView.builder(
-                              itemCount: _results.length,
-                              itemBuilder: (ctx, index) {
-                                final s = _results[index];
-                                final isSelected = _selectedStudent?.id == s.id;
-                                final isAlreadyInThisTeam = s.teamId == widget.currentTeamId;
-                                
-                                return Card(
-                                  elevation: isSelected ? 4 : 1,
-                                  margin: const EdgeInsets.only(bottom: 12),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                    side: isSelected ? const BorderSide(color: Colors.indigo, width: 2) : BorderSide.none,
-                                  ),
-                                  child: ListTile(
-                                    onTap: isAlreadyInThisTeam ? null : () => _selectStudent(s),
-                                    leading: CircleAvatar(
-                                      backgroundColor: isSelected ? Colors.indigo : Colors.grey.shade200,
-                                      foregroundColor: isSelected ? Colors.white : Colors.indigo,
-                                      child: const Icon(Icons.person),
-                                    ),
-                                    title: Text(s.fullName, style: const TextStyle(fontWeight: FontWeight.bold)),
-                                    subtitle: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        const SizedBox(height: 4),
-                                        Text('Reg: ${s.regNo}  •  SPR: ${s.sprNo ?? 'N/A'}'),
-                                        Text('${s.departmentName ?? ''} • Year ${s.year ?? ''} • Sec ${s.section ?? ''}'),
-                                        if (s.teamName != null)
-                                          Text('Current Team: ${s.teamName}', style: TextStyle(color: isAlreadyInThisTeam ? Colors.green : Colors.orange)),
-                                        Text('Current Stage: Stage ${s.currentStage}'),
-                                      ],
-                                    ),
-                                    trailing: isAlreadyInThisTeam
-                                        ? const Column(
-                                            mainAxisAlignment: MainAxisAlignment.center,
-                                            children: [Icon(Icons.check_circle, color: Colors.green), Text('Added', style: TextStyle(color: Colors.green, fontSize: 10))],
-                                          )
-                                        : isSelected
-                                            ? const Icon(Icons.check_circle, color: Colors.indigo, size: 32)
-                                            : null,
-                                  ),
-                                );
-                              },
+                  ? Center(
+                      child: Text(
+                        _errorMsg,
+                        style: const TextStyle(color: Colors.red),
+                      ),
+                    )
+                  : _results.isEmpty && _searchController.text.isNotEmpty
+                  ? const Center(
+                      child: Text(
+                        'No students found',
+                        style: TextStyle(color: Colors.grey),
+                      ),
+                    )
+                  : ListView.builder(
+                      itemCount: _results.length,
+                      itemBuilder: (ctx, index) {
+                        final s = _results[index];
+                        final isSelected = _selectedStudent?.id == s.id;
+                        final isAlreadyInThisTeam =
+                            s.teamId == widget.currentTeamId;
+
+                        return Card(
+                          elevation: isSelected ? 4 : 1,
+                          margin: const EdgeInsets.only(bottom: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            side: isSelected
+                                ? const BorderSide(
+                                    color: Colors.indigo,
+                                    width: 2,
+                                  )
+                                : BorderSide.none,
+                          ),
+                          child: ListTile(
+                            onTap: isAlreadyInThisTeam
+                                ? null
+                                : () => _selectStudent(s),
+                            leading: CircleAvatar(
+                              backgroundColor: isSelected
+                                  ? Colors.indigo
+                                  : Colors.grey.shade200,
+                              foregroundColor: isSelected
+                                  ? Colors.white
+                                  : Colors.indigo,
+                              child: const Icon(Icons.person),
                             ),
+                            title: Text(
+                              s.fullName,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            subtitle: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const SizedBox(height: 4),
+                                Text(
+                                  'Reg: ${s.regNo}  •  SPR: ${s.sprNo ?? 'N/A'}',
+                                ),
+                                Text(
+                                  '${s.departmentName ?? ''} • Year ${s.year ?? ''} • Sec ${s.section ?? ''}',
+                                ),
+                                if (s.teamName != null)
+                                  Text(
+                                    'Current Team: ${s.teamName}',
+                                    style: TextStyle(
+                                      color: isAlreadyInThisTeam
+                                          ? Colors.green
+                                          : Colors.orange,
+                                    ),
+                                  ),
+                                Text('Current Stage: Stage ${s.currentStage}'),
+                              ],
+                            ),
+                            trailing: isAlreadyInThisTeam
+                                ? const Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(
+                                        Icons.check_circle,
+                                        color: Colors.green,
+                                      ),
+                                      Text(
+                                        'Added',
+                                        style: TextStyle(
+                                          color: Colors.green,
+                                          fontSize: 10,
+                                        ),
+                                      ),
+                                    ],
+                                  )
+                                : isSelected
+                                ? const Icon(
+                                    Icons.check_circle,
+                                    color: Colors.indigo,
+                                    size: 32,
+                                  )
+                                : null,
+                          ),
+                        );
+                      },
+                    ),
             ),
             const SizedBox(height: 16),
             Row(
@@ -250,18 +319,23 @@ class _StudentSearchDialogState extends State<StudentSearchDialog> {
                 ),
                 const SizedBox(width: 12),
                 ElevatedButton(
-                  onPressed: _selectedStudent == null ? null : () {
-                    Navigator.pop(context, _selectedStudent!.regNo);
-                  },
+                  onPressed: _selectedStudent == null
+                      ? null
+                      : () {
+                          Navigator.pop(context, _selectedStudent!.regNo);
+                        },
                   style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24,
+                      vertical: 12,
+                    ),
                     backgroundColor: Colors.indigo,
                     foregroundColor: Colors.white,
                   ),
                   child: const Text('Add Member'),
                 ),
               ],
-            )
+            ),
           ],
         ),
       ),

@@ -63,13 +63,27 @@ class ActivityXpSection extends StatelessWidget {
       children: [
         const Text(
           'XP Configuration',
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: _dark),
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 16,
+            color: _dark,
+          ),
         ),
         const SizedBox(height: 12),
         SwitchListTile(
           activeThumbColor: _primary,
-          title: const Text('Award XP', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: _dark)),
-          subtitle: const Text('Award points when student satisfies the activity condition', style: TextStyle(fontSize: 12)),
+          title: const Text(
+            'Award XP',
+            style: TextStyle(
+              fontWeight: FontWeight.w600,
+              fontSize: 14,
+              color: _dark,
+            ),
+          ),
+          subtitle: const Text(
+            'Award points when student satisfies the activity condition',
+            style: TextStyle(fontSize: 12),
+          ),
           value: awardEnabled,
           onChanged: onAwardEnabledChanged,
         ),
@@ -80,15 +94,21 @@ class ActivityXpSection extends StatelessWidget {
             controller: awardXpCtrl,
             keyboardType: TextInputType.number,
             style: const TextStyle(color: _dark, fontSize: 15),
-            decoration: _deco('Award XP Value', Icons.add_circle_outline_rounded),
+            decoration: _deco(
+              'Award XP Value',
+              Icons.add_circle_outline_rounded,
+            ),
             validator: (val) {
               if (!awardEnabled) return null;
-              if (val == null || val.trim().isEmpty) return 'Award XP is required when enabled';
+              if (val == null || val.trim().isEmpty)
+                return 'Award XP is required when enabled';
               final parsed = int.tryParse(val);
               if (penaltyEnabled) {
-                if (parsed == null || parsed < 0) return 'Must be a non-negative integer';
+                if (parsed == null || parsed < 0)
+                  return 'Must be a non-negative integer';
               } else {
-                if (parsed == null || parsed <= 0) return 'Must be a positive integer greater than zero';
+                if (parsed == null || parsed <= 0)
+                  return 'Must be a positive integer greater than zero';
               }
               return null;
             },
@@ -97,8 +117,18 @@ class ActivityXpSection extends StatelessWidget {
         const SizedBox(height: 16),
         SwitchListTile(
           activeThumbColor: _primary,
-          title: const Text('Penalty XP', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: _dark)),
-          subtitle: const Text('Deduct points when student violates/fails the activity condition', style: TextStyle(fontSize: 12)),
+          title: const Text(
+            'Penalty XP',
+            style: TextStyle(
+              fontWeight: FontWeight.w600,
+              fontSize: 14,
+              color: _dark,
+            ),
+          ),
+          subtitle: const Text(
+            'Deduct points when student violates/fails the activity condition',
+            style: TextStyle(fontSize: 12),
+          ),
           value: penaltyEnabled,
           onChanged: onPenaltyEnabledChanged,
         ),
@@ -109,12 +139,17 @@ class ActivityXpSection extends StatelessWidget {
             controller: penaltyXpCtrl,
             keyboardType: TextInputType.number,
             style: const TextStyle(color: _dark, fontSize: 15),
-            decoration: _deco('Penalty XP Value', Icons.remove_circle_outline_rounded),
+            decoration: _deco(
+              'Penalty XP Value',
+              Icons.remove_circle_outline_rounded,
+            ),
             validator: (val) {
               if (!penaltyEnabled) return null;
-              if (val == null || val.trim().isEmpty) return 'Penalty XP is required when enabled';
+              if (val == null || val.trim().isEmpty)
+                return 'Penalty XP is required when enabled';
               final parsed = int.tryParse(val);
-              if (parsed == null || parsed <= 0) return 'Must be a positive integer greater than zero';
+              if (parsed == null || parsed <= 0)
+                return 'Must be a positive integer greater than zero';
               return null;
             },
           ),
@@ -135,7 +170,11 @@ class ActivityXpSection extends StatelessWidget {
                 Expanded(
                   child: Text(
                     'At least one toggle (Award XP or Penalty XP) must be enabled.',
-                    style: TextStyle(color: Colors.red.shade800, fontSize: 13, fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                      color: Colors.red.shade800,
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ],
@@ -152,8 +191,20 @@ class ActivityXpSection extends StatelessWidget {
             underline: const SizedBox.shrink(),
             icon: const Icon(Icons.expand_more_rounded, color: _primary),
             items: const [
-              DropdownMenuItem<String>(value: 'Fixed XP', child: Text('Fixed XP', style: TextStyle(fontSize: 14, color: _dark))),
-              DropdownMenuItem<String>(value: 'Variable XP (future use)', child: Text('Variable XP (future use)', style: TextStyle(fontSize: 14, color: _dark))),
+              DropdownMenuItem<String>(
+                value: 'Fixed XP',
+                child: Text(
+                  'Fixed XP',
+                  style: TextStyle(fontSize: 14, color: _dark),
+                ),
+              ),
+              DropdownMenuItem<String>(
+                value: 'Variable XP (future use)',
+                child: Text(
+                  'Variable XP (future use)',
+                  style: TextStyle(fontSize: 14, color: _dark),
+                ),
+              ),
             ],
             onChanged: onAwardTypeChanged,
           ),

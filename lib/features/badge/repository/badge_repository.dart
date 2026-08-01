@@ -1,6 +1,6 @@
 import 'dart:convert';
-import 'package:spdms_app/core/utils/api_client.dart' as http;
-import 'package:spdms_app/core/config/api_config.dart';
+import 'package:pragatix/core/utils/api_client.dart' as http;
+import 'package:pragatix/core/config/api_config.dart';
 import 'package:flutter/foundation.dart';
 
 class BadgeRepository {
@@ -15,9 +15,15 @@ class BadgeRepository {
         if (data['success'] == true) {
           return {'success': true, 'data': data['data'] ?? []};
         }
-        return {'success': false, 'message': data['message'] ?? 'Failed to load badges'};
+        return {
+          'success': false,
+          'message': data['message'] ?? 'Failed to load badges',
+        };
       }
-      return {'success': false, 'message': 'Server error: ${response.statusCode}'};
+      return {
+        'success': false,
+        'message': 'Server error: ${response.statusCode}',
+      };
     } catch (e) {
       return {'success': false, 'message': e.toString()};
     }
@@ -34,18 +40,33 @@ class BadgeRepository {
         if (data['success'] == true) {
           return {'success': true, 'data': data['data'] ?? []};
         }
-        return {'success': false, 'message': data['message'] ?? 'Failed to load badges'};
+        return {
+          'success': false,
+          'message': data['message'] ?? 'Failed to load badges',
+        };
       }
-      return {'success': false, 'message': 'Server error: ${response.statusCode}'};
+      return {
+        'success': false,
+        'message': 'Server error: ${response.statusCode}',
+      };
     } catch (e) {
       return {'success': false, 'message': e.toString()};
     }
   }
 
-  Future<Map<String, dynamic>> submitBadgeClaim(String token, String badgeName, String evidenceUrl) async {
+  Future<Map<String, dynamic>> submitBadgeClaim(
+    String token,
+    String badgeName,
+    String evidenceUrl,
+  ) async {
     try {
-      debugPrint('BadgeRepository: POST URL: ${ApiConfig.baseUrl}/api/v1/badges/submit');
-      final bodyStr = jsonEncode({'badgeName': badgeName, 'evidenceUrl': evidenceUrl});
+      debugPrint(
+        'BadgeRepository: POST URL: ${ApiConfig.baseUrl}/api/v1/badges/submit',
+      );
+      final bodyStr = jsonEncode({
+        'badgeName': badgeName,
+        'evidenceUrl': evidenceUrl,
+      });
       debugPrint('BadgeRepository: Request Body: $bodyStr');
 
       final response = await http.post(
@@ -56,15 +77,21 @@ class BadgeRepository {
         },
         body: bodyStr,
       );
-      
+
       debugPrint('BadgeRepository: Response Code: ${response.statusCode}');
       debugPrint('BadgeRepository: Response Body: ${response.body}');
 
       final data = jsonDecode(response.body);
       if (response.statusCode == 200 && data['success'] == true) {
-        return {'success': true, 'message': 'Badge claim submitted successfully!'};
+        return {
+          'success': true,
+          'message': 'Badge claim submitted successfully!',
+        };
       }
-      return {'success': false, 'message': data['message'] ?? 'Failed to claim badge'};
+      return {
+        'success': false,
+        'message': data['message'] ?? 'Failed to claim badge',
+      };
     } catch (e) {
       debugPrint('BadgeRepository: JSON Parsing/Network error: $e');
       return {'success': false, 'message': 'Connection error: $e'};
@@ -82,9 +109,15 @@ class BadgeRepository {
         if (data['success'] == true) {
           return {'success': true, 'data': data['data'] ?? []};
         }
-        return {'success': false, 'message': data['message'] ?? 'Failed to fetch claims'};
+        return {
+          'success': false,
+          'message': data['message'] ?? 'Failed to fetch claims',
+        };
       }
-      return {'success': false, 'message': 'Server error: ${response.statusCode}'};
+      return {
+        'success': false,
+        'message': 'Server error: ${response.statusCode}',
+      };
     } catch (e) {
       return {'success': false, 'message': e.toString()};
     }
@@ -98,9 +131,15 @@ class BadgeRepository {
       );
       final data = jsonDecode(response.body);
       if (response.statusCode == 200 && data['success'] == true) {
-        return {'success': true, 'message': 'Badge claim approved successfully!'};
+        return {
+          'success': true,
+          'message': 'Badge claim approved successfully!',
+        };
       }
-      return {'success': false, 'message': data['message'] ?? 'Failed to approve claim'};
+      return {
+        'success': false,
+        'message': data['message'] ?? 'Failed to approve claim',
+      };
     } catch (e) {
       return {'success': false, 'message': e.toString()};
     }
@@ -114,9 +153,15 @@ class BadgeRepository {
       );
       final data = jsonDecode(response.body);
       if (response.statusCode == 200 && data['success'] == true) {
-        return {'success': true, 'message': 'Badge claim rejected successfully!'};
+        return {
+          'success': true,
+          'message': 'Badge claim rejected successfully!',
+        };
       }
-      return {'success': false, 'message': data['message'] ?? 'Failed to reject claim'};
+      return {
+        'success': false,
+        'message': data['message'] ?? 'Failed to reject claim',
+      };
     } catch (e) {
       return {'success': false, 'message': e.toString()};
     }
@@ -124,7 +169,11 @@ class BadgeRepository {
 
   // --- NEW BADGE REQUEST API (Workflow) ---
 
-  Future<Map<String, dynamic>> requestBadge(String token, int badgeId, String proofLink) async {
+  Future<Map<String, dynamic>> requestBadge(
+    String token,
+    int badgeId,
+    String proofLink,
+  ) async {
     try {
       final bodyStr = jsonEncode({'badgeId': badgeId, 'proofLink': proofLink});
       final response = await http.post(
@@ -137,9 +186,16 @@ class BadgeRepository {
       );
       final data = jsonDecode(response.body);
       if (response.statusCode == 200 && data['success'] == true) {
-        return {'success': true, 'message': 'Badge requested successfully', 'data': data['data']};
+        return {
+          'success': true,
+          'message': 'Badge requested successfully',
+          'data': data['data'],
+        };
       }
-      return {'success': false, 'message': data['message'] ?? 'Failed to request badge'};
+      return {
+        'success': false,
+        'message': data['message'] ?? 'Failed to request badge',
+      };
     } catch (e) {
       return {'success': false, 'message': 'Connection error: $e'};
     }
@@ -156,9 +212,15 @@ class BadgeRepository {
         if (data['success'] == true) {
           return {'success': true, 'data': data['data'] ?? []};
         }
-        return {'success': false, 'message': data['message'] ?? 'Failed to load requests'};
+        return {
+          'success': false,
+          'message': data['message'] ?? 'Failed to load requests',
+        };
       }
-      return {'success': false, 'message': 'Server error: ${response.statusCode}'};
+      return {
+        'success': false,
+        'message': 'Server error: ${response.statusCode}',
+      };
     } catch (e) {
       return {'success': false, 'message': e.toString()};
     }
@@ -175,9 +237,15 @@ class BadgeRepository {
         if (data['success'] == true) {
           return {'success': true, 'data': data['data'] ?? []};
         }
-        return {'success': false, 'message': data['message'] ?? 'Failed to load requests'};
+        return {
+          'success': false,
+          'message': data['message'] ?? 'Failed to load requests',
+        };
       }
-      return {'success': false, 'message': 'Server error: ${response.statusCode}'};
+      return {
+        'success': false,
+        'message': 'Server error: ${response.statusCode}',
+      };
     } catch (e) {
       return {'success': false, 'message': e.toString()};
     }
@@ -194,37 +262,59 @@ class BadgeRepository {
         if (data['success'] == true) {
           return {'success': true, 'data': data['data'] ?? []};
         }
-        return {'success': false, 'message': data['message'] ?? 'Failed to load requests'};
+        return {
+          'success': false,
+          'message': data['message'] ?? 'Failed to load requests',
+        };
       }
-      return {'success': false, 'message': 'Server error: ${response.statusCode}'};
+      return {
+        'success': false,
+        'message': 'Server error: ${response.statusCode}',
+      };
     } catch (e) {
       return {'success': false, 'message': e.toString()};
     }
   }
 
-  Future<Map<String, dynamic>> approveWorkflowRequest(String token, int requestId, String role) async {
+  Future<Map<String, dynamic>> approveWorkflowRequest(
+    String token,
+    int requestId,
+    String role,
+  ) async {
     try {
       String endpoint = role == 'ADMIN' ? 'admin' : 'cc';
       final response = await http.put(
-        Uri.parse('${ApiConfig.baseUrl}/api/$endpoint/badge-requests/$requestId/approve'),
+        Uri.parse(
+          '${ApiConfig.baseUrl}/api/$endpoint/badge-requests/$requestId/approve',
+        ),
         headers: {'Authorization': 'Bearer $token'},
       );
       final data = jsonDecode(response.body);
       if (response.statusCode == 200 && data['success'] == true) {
         return {'success': true, 'message': 'Request approved'};
       }
-      return {'success': false, 'message': data['message'] ?? 'Failed to approve request'};
+      return {
+        'success': false,
+        'message': data['message'] ?? 'Failed to approve request',
+      };
     } catch (e) {
       return {'success': false, 'message': e.toString()};
     }
   }
 
-  Future<Map<String, dynamic>> rejectWorkflowRequest(String token, int requestId, String role, {String? remarks}) async {
+  Future<Map<String, dynamic>> rejectWorkflowRequest(
+    String token,
+    int requestId,
+    String role, {
+    String? remarks,
+  }) async {
     try {
       String endpoint = role == 'ADMIN' ? 'admin' : 'cc';
       final bodyStr = remarks != null ? jsonEncode({'remarks': remarks}) : null;
       final response = await http.put(
-        Uri.parse('${ApiConfig.baseUrl}/api/$endpoint/badge-requests/$requestId/reject'),
+        Uri.parse(
+          '${ApiConfig.baseUrl}/api/$endpoint/badge-requests/$requestId/reject',
+        ),
         headers: {
           'Authorization': 'Bearer $token',
           if (bodyStr != null) 'Content-Type': 'application/json',
@@ -235,7 +325,10 @@ class BadgeRepository {
       if (response.statusCode == 200 && data['success'] == true) {
         return {'success': true, 'message': 'Request rejected'};
       }
-      return {'success': false, 'message': data['message'] ?? 'Failed to reject request'};
+      return {
+        'success': false,
+        'message': data['message'] ?? 'Failed to reject request',
+      };
     } catch (e) {
       return {'success': false, 'message': e.toString()};
     }

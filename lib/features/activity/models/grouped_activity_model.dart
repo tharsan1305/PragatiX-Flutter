@@ -1,19 +1,19 @@
-import 'package:spdms_app/features/activity/models/activity_model.dart';
+import 'package:pragatix/features/activity/models/activity_model.dart';
 
 class GroupedActivityModel {
   final String subgroup;
   final List<ActivityOptionModel> activities;
 
-  GroupedActivityModel({
-    required this.subgroup,
-    required this.activities,
-  });
+  GroupedActivityModel({required this.subgroup, required this.activities});
 
   factory GroupedActivityModel.fromJson(Map<String, dynamic> json) {
     return GroupedActivityModel(
       subgroup: json['subgroup'] as String? ?? 'Uncategorized',
-      activities: (json['activities'] as List<dynamic>?)
-              ?.map((e) => ActivityOptionModel.fromJson(e as Map<String, dynamic>))
+      activities:
+          (json['activities'] as List<dynamic>?)
+              ?.map(
+                (e) => ActivityOptionModel.fromJson(e as Map<String, dynamic>),
+              )
               .toList() ??
           [],
     );
@@ -27,6 +27,7 @@ class ActivityOptionModel {
   final int awardXp;
   final String awardFrequency;
   final String type;
+  final bool alreadyMapped;
 
   ActivityOptionModel({
     required this.id,
@@ -35,6 +36,7 @@ class ActivityOptionModel {
     required this.awardXp,
     required this.awardFrequency,
     required this.type,
+    this.alreadyMapped = false,
   });
 
   factory ActivityOptionModel.fromJson(Map<String, dynamic> json) {
@@ -45,6 +47,7 @@ class ActivityOptionModel {
       awardXp: json['awardXp'] as int? ?? 0,
       awardFrequency: json['awardFrequency'] as String? ?? '',
       type: json['type'] as String? ?? '',
+      alreadyMapped: json['alreadyMapped'] as bool? ?? false,
     );
   }
 

@@ -1,30 +1,34 @@
-import 'package:spdms_app/features/auth/providers/auth_provider.dart';
+import 'package:pragatix/features/auth/providers/auth_provider.dart';
 import 'package:provider/provider.dart';
-import 'package:spdms_app/core/config/api_config.dart';
+import 'package:pragatix/core/config/api_config.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:spdms_app/core/utils/error_handler.dart';
-import 'package:spdms_app/features/teacher/services/teacher_proxy_service.dart';
-import 'package:spdms_app/shared/widgets/shared_student_card.dart';
+import 'package:pragatix/core/utils/error_handler.dart';
+import 'package:pragatix/features/teacher/services/teacher_proxy_service.dart';
+import 'package:pragatix/shared/widgets/shared_student_card.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:spdms_app/features/teacher/pages/teacher_student_detail.dart';
-import 'package:spdms_app/core/di/service_locator.dart';
-import 'package:spdms_app/core/utils/string_utils.dart';
+import 'package:pragatix/features/teacher/pages/teacher_student_detail.dart';
+import 'package:pragatix/core/di/service_locator.dart';
+import 'package:pragatix/core/utils/string_utils.dart';
 
 part 'students_tab_dialogs.dart';
 
-
 class StudentsTab extends StatefulWidget {
   final List<String> subRoles;
-  const StudentsTab({super.key,  required this.subRoles});
+  const StudentsTab({super.key, required this.subRoles});
 
   @override
   State<StudentsTab> createState() => _StudentsTabState();
 }
 
 class _StudentsTabState extends State<StudentsTab> {
-  bool get isCc => widget.subRoles.any((r) => r.toUpperCase() == 'CC' || r.toUpperCase() == 'CLASS_COORDINATOR' || r.toUpperCase() == 'ROLE_CC');
+  bool get isCc => widget.subRoles.any(
+    (r) =>
+        r.toUpperCase() == 'CC' ||
+        r.toUpperCase() == 'CLASS_COORDINATOR' ||
+        r.toUpperCase() == 'ROLE_CC',
+  );
   List<dynamic> studentsList = [];
   List<dynamic> departments = [];
   List<dynamic> academicYears = [];
@@ -99,7 +103,9 @@ class _StudentsTabState extends State<StudentsTab> {
     try {
       final response = await getIt<TeacherProxyService>().get(
         Uri.parse('${ApiConfig.baseUrl}/api/v1/auth/me'),
-        headers: {'Authorization': 'Bearer ${context.read<AuthProvider>().token!}'},
+        headers: {
+          'Authorization': 'Bearer ${context.read<AuthProvider>().token!}',
+        },
       );
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -119,8 +125,11 @@ class _StudentsTabState extends State<StudentsTab> {
   void _resolveCcDeptId() {
     if (ccDeptName != null && departments.isNotEmpty) {
       final match = departments.firstWhere(
-        (d) => (d['name'] ?? '').toString().toLowerCase() == ccDeptName!.toLowerCase() ||
-               (d['code'] ?? '').toString().toLowerCase() == ccDeptName!.toLowerCase(),
+        (d) =>
+            (d['name'] ?? '').toString().toLowerCase() ==
+                ccDeptName!.toLowerCase() ||
+            (d['code'] ?? '').toString().toLowerCase() ==
+                ccDeptName!.toLowerCase(),
         orElse: () => null,
       );
       if (match != null) {
@@ -145,15 +154,38 @@ class _StudentsTabState extends State<StudentsTab> {
 
   Future<void> _loadAllLookups() async {
     try {
-      final headers = {'Authorization': 'Bearer ${context.read<AuthProvider>().token!}'};
+      final headers = {
+        'Authorization': 'Bearer ${context.read<AuthProvider>().token!}',
+      };
       final results = await Future.wait([
-        getIt<TeacherProxyService>().get(Uri.parse('${ApiConfig.baseUrl}/api/v1/admin/departments'), headers: headers),
-        getIt<TeacherProxyService>().get(Uri.parse('${ApiConfig.baseUrl}/api/v1/admin/academic-years'), headers: headers),
-        getIt<TeacherProxyService>().get(Uri.parse('${ApiConfig.baseUrl}/api/v1/admin/years'), headers: headers),
-        getIt<TeacherProxyService>().get(Uri.parse('${ApiConfig.baseUrl}/api/v1/admin/semesters'), headers: headers),
-        getIt<TeacherProxyService>().get(Uri.parse('${ApiConfig.baseUrl}/api/v1/admin/genders'), headers: headers),
-        getIt<TeacherProxyService>().get(Uri.parse('${ApiConfig.baseUrl}/api/v1/admin/sections'), headers: headers),
-        getIt<TeacherProxyService>().get(Uri.parse('${ApiConfig.baseUrl}/api/v1/teams'), headers: headers),
+        getIt<TeacherProxyService>().get(
+          Uri.parse('${ApiConfig.baseUrl}/api/v1/admin/departments'),
+          headers: headers,
+        ),
+        getIt<TeacherProxyService>().get(
+          Uri.parse('${ApiConfig.baseUrl}/api/v1/admin/academic-years'),
+          headers: headers,
+        ),
+        getIt<TeacherProxyService>().get(
+          Uri.parse('${ApiConfig.baseUrl}/api/v1/admin/years'),
+          headers: headers,
+        ),
+        getIt<TeacherProxyService>().get(
+          Uri.parse('${ApiConfig.baseUrl}/api/v1/admin/semesters'),
+          headers: headers,
+        ),
+        getIt<TeacherProxyService>().get(
+          Uri.parse('${ApiConfig.baseUrl}/api/v1/admin/genders'),
+          headers: headers,
+        ),
+        getIt<TeacherProxyService>().get(
+          Uri.parse('${ApiConfig.baseUrl}/api/v1/admin/sections'),
+          headers: headers,
+        ),
+        getIt<TeacherProxyService>().get(
+          Uri.parse('${ApiConfig.baseUrl}/api/v1/teams'),
+          headers: headers,
+        ),
       ]);
 
       if (!mounted) return;
@@ -214,7 +246,8 @@ class _StudentsTabState extends State<StudentsTab> {
       return;
     }
 
-    const String url = '${ApiConfig.baseUrl}/api/v1/students?page=0&size=1000&sortBy=fullName';
+    const String url =
+        '${ApiConfig.baseUrl}/api/v1/students?page=0&size=1000&sortBy=fullName';
     debugPrint('Requested URL: $url');
     debugPrint('Request parameters: page=0, size=1000, sortBy=fullName');
 
@@ -259,7 +292,9 @@ class _StudentsTabState extends State<StudentsTab> {
     setState(() => isLoading = true);
     try {
       final response = await getIt<TeacherProxyService>().get(
-        Uri.parse('${ApiConfig.baseUrl}/api/v1/students/search?keyword=${Uri.encodeComponent(query.trim())}&page=0&size=1000'),
+        Uri.parse(
+          '${ApiConfig.baseUrl}/api/v1/students/search?keyword=${Uri.encodeComponent(query.trim())}&page=0&size=1000',
+        ),
         headers: {
           'Authorization': 'Bearer ${context.read<AuthProvider>().token!}',
         },
@@ -272,8 +307,10 @@ class _StudentsTabState extends State<StudentsTab> {
             if (isCc) {
               studentsList = rawList.where((s) {
                 final sYear = s['year']?.toString().trim().toLowerCase() ?? '';
-                final sDeptName = s['departmentName']?.toString().trim().toLowerCase() ?? '';
-                final sSection = s['section']?.toString().trim().toLowerCase() ?? '';
+                final sDeptName =
+                    s['departmentName']?.toString().trim().toLowerCase() ?? '';
+                final sSection =
+                    s['section']?.toString().trim().toLowerCase() ?? '';
 
                 final targetYear = ccYear?.trim().toLowerCase() ?? '';
                 final targetDeptName = ccDeptName?.trim().toLowerCase() ?? '';
@@ -292,8 +329,10 @@ class _StudentsTabState extends State<StudentsTab> {
                   }
                 }
 
-                final bool deptMatches = targetDeptName.isEmpty || sDeptName == targetDeptName;
-                final bool sectionMatches = targetSection.isEmpty || sSection == targetSection;
+                final bool deptMatches =
+                    targetDeptName.isEmpty || sDeptName == targetDeptName;
+                final bool sectionMatches =
+                    targetSection.isEmpty || sSection == targetSection;
 
                 return yearMatches && deptMatches && sectionMatches;
               }).toList();
@@ -329,15 +368,19 @@ class _StudentsTabState extends State<StudentsTab> {
         emailController.text.trim().isEmpty ||
         selectedDob == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Name, Reg No, Email and DOB are required.')),
+        const SnackBar(
+          content: Text('Name, Reg No, Email and DOB are required.'),
+        ),
       );
       return;
     }
 
-    final formattedDob = "${selectedDob!.year}-${selectedDob!.month.toString().padLeft(2, '0')}-${selectedDob!.day.toString().padLeft(2, '0')}";
+    final formattedDob =
+        "${selectedDob!.year}-${selectedDob!.month.toString().padLeft(2, '0')}-${selectedDob!.day.toString().padLeft(2, '0')}";
 
     // Generates DOB as ddMMyyyy (e.g. 15102004)
-    final passwordDob = "${selectedDob!.day.toString().padLeft(2, '0')}${selectedDob!.month.toString().padLeft(2, '0')}${selectedDob!.year}";
+    final passwordDob =
+        "${selectedDob!.day.toString().padLeft(2, '0')}${selectedDob!.month.toString().padLeft(2, '0')}${selectedDob!.year}";
 
     try {
       final response = await getIt<TeacherProxyService>().post(
@@ -369,16 +412,20 @@ class _StudentsTabState extends State<StudentsTab> {
             'relationship': selectedGuardianRel,
             'phoneNo': guardianPhoneCtrl.text.trim(),
             'email': guardianEmailCtrl.text.trim(),
-          }
+          },
         }),
       );
 
       if (!mounted) return;
       final data = jsonDecode(response.body);
 
-      if (response.statusCode == 201 || (response.statusCode == 200 && data['success'] == true)) {
+      if (response.statusCode == 201 ||
+          (response.statusCode == 200 && data['success'] == true)) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Student registered successfully!'), backgroundColor: Colors.green),
+          const SnackBar(
+            content: Text('Student registered successfully!'),
+            backgroundColor: Colors.green,
+          ),
         );
         _clearControllers();
         Navigator.pop(context);
@@ -386,13 +433,19 @@ class _StudentsTabState extends State<StudentsTab> {
         _fetchStudents();
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(data['message'] ?? 'Registration Failed'), backgroundColor: Colors.redAccent),
+          SnackBar(
+            content: Text(data['message'] ?? 'Registration Failed'),
+            backgroundColor: Colors.redAccent,
+          ),
         );
       }
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Added student locally'), backgroundColor: Colors.orange),
+        const SnackBar(
+          content: Text('Added student locally'),
+          backgroundColor: Colors.orange,
+        ),
       );
       setState(() {
         studentsList.add({
@@ -401,10 +454,13 @@ class _StudentsTabState extends State<StudentsTab> {
           'fullName': nameController.text.trim(),
           'email': emailController.text.trim(),
           'phone': phoneController.text.trim(),
-          'departmentName': departments.firstWhere((d) => d['id'] == departmentId, orElse: () => {'name': 'CSE'})['name'],
+          'departmentName': departments.firstWhere(
+            (d) => d['id'] == departmentId,
+            orElse: () => {'name': 'CSE'},
+          )['name'],
           'semester': '1',
           'sprNo': sprNoController.text.trim(),
-          'dateOfBirth': formattedDob
+          'dateOfBirth': formattedDob,
         });
       });
       _clearControllers();
@@ -415,7 +471,7 @@ class _StudentsTabState extends State<StudentsTab> {
   Future<void> _uploadBulkExcel() async {
     final messenger = ScaffoldMessenger.of(context);
     final navigator = Navigator.of(context);
-    
+
     try {
       final result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
@@ -424,7 +480,7 @@ class _StudentsTabState extends State<StudentsTab> {
 
       if (result == null || result.files.single.path == null) return;
       final filePath = result.files.single.path!;
-      
+
       if (!mounted) return;
 
       setState(() => isLoading = true);
@@ -433,7 +489,8 @@ class _StudentsTabState extends State<StudentsTab> {
         'POST',
         Uri.parse('${ApiConfig.baseUrl}/api/v1/students/bulk-parse'),
       );
-      request.headers['Authorization'] = 'Bearer ${context.read<AuthProvider>().token!}';
+      request.headers['Authorization'] =
+          'Bearer ${context.read<AuthProvider>().token!}';
       request.files.add(await http.MultipartFile.fromPath('file', filePath));
 
       final response = await request.send();
@@ -445,18 +502,37 @@ class _StudentsTabState extends State<StudentsTab> {
 
       if (response.statusCode == 200 && data['success'] == true) {
         List<dynamic> allRows = data['data'] ?? [];
-        List<dynamic> rejectedRows = allRows.where((s) => s['errorReason'] != null && s['errorReason'].toString().isNotEmpty).toList();
-        List<dynamic> parsedStudents = allRows.where((s) => s['errorReason'] == null || s['errorReason'].toString().isEmpty).toList();
+        List<dynamic> rejectedRows = allRows
+            .where(
+              (s) =>
+                  s['errorReason'] != null &&
+                  s['errorReason'].toString().isNotEmpty,
+            )
+            .toList();
+        List<dynamic> parsedStudents = allRows
+            .where(
+              (s) =>
+                  s['errorReason'] == null ||
+                  s['errorReason'].toString().isEmpty,
+            )
+            .toList();
 
         if (rejectedRows.isNotEmpty && mounted) {
-          String reasons = rejectedRows.map((r) => '${r['fullName']} (${r['regNo']}): ${r['errorReason']}').join('\n\n');
+          String reasons = rejectedRows
+              .map(
+                (r) => '${r['fullName']} (${r['regNo']}): ${r['errorReason']}',
+              )
+              .join('\n\n');
           showDialog(
             context: context,
             builder: (ctx) => AlertDialog(
               title: const Text('Some Rows Rejected'),
               content: SingleChildScrollView(child: Text(reasons)),
               actions: [
-                TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('OK'))
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx),
+                  child: const Text('OK'),
+                ),
               ],
             ),
           );
@@ -464,7 +540,12 @@ class _StudentsTabState extends State<StudentsTab> {
 
         if (parsedStudents.isEmpty) {
           messenger.showSnackBar(
-            const SnackBar(content: Text('No valid student records found in the Excel sheet.'), backgroundColor: Colors.orange),
+            const SnackBar(
+              content: Text(
+                'No valid student records found in the Excel sheet.',
+              ),
+              backgroundColor: Colors.orange,
+            ),
           );
           return;
         }
@@ -475,8 +556,11 @@ class _StudentsTabState extends State<StudentsTab> {
           int? ccYearId;
           if (ccYear != null) {
             final yMatch = years.firstWhere(
-                (y) => y['yearNo']?.toString() == ccYear || "Year ${y["yearNo"]}" == ccYear,
-                orElse: () => null);
+              (y) =>
+                  y['yearNo']?.toString() == ccYear ||
+                  "Year ${y["yearNo"]}" == ccYear,
+              orElse: () => null,
+            );
             if (yMatch != null) ccYearId = yMatch['id'];
           }
 
@@ -484,7 +568,9 @@ class _StudentsTabState extends State<StudentsTab> {
           int? ccSectionId;
           if (ccSection != null && ccSection!.isNotEmpty && ccDeptId != null) {
             final sMatch = sections.firstWhere((sec) {
-              final depId = sec['department'] != null ? sec['department']['id'] : sec['departmentId'];
+              final depId = sec['department'] != null
+                  ? sec['department']['id']
+                  : sec['departmentId'];
               final sName = _normalizeSectionName(sec['sectionName'] ?? '');
               final targetSec = _normalizeSectionName(ccSection!);
               return depId == ccDeptId && sName == targetSec;
@@ -497,7 +583,8 @@ class _StudentsTabState extends State<StudentsTab> {
             if (ccDeptId != null) student['departmentId'] = ccDeptId;
             if (ccYearId != null) student['yearId'] = ccYearId;
             if (ccSectionId != null) student['sectionId'] = ccSectionId;
-            if (ccSection != null && ccSection!.isNotEmpty) student['section'] = ccSection;
+            if (ccSection != null && ccSection!.isNotEmpty)
+              student['section'] = ccSection;
             return student;
           }).toList();
         }
@@ -506,7 +593,7 @@ class _StudentsTabState extends State<StudentsTab> {
           MaterialPageRoute(
             builder: (context) => BulkVerificationScreen(
               parsedStudents: parsedStudents,
-              
+
               departments: departments,
             ),
           ),
@@ -518,18 +605,25 @@ class _StudentsTabState extends State<StudentsTab> {
         }
       } else {
         messenger.showSnackBar(
-          SnackBar(content: Text(data['message'] ?? 'Failed to parse spreadsheet file.'), backgroundColor: Colors.redAccent),
+          SnackBar(
+            content: Text(
+              data['message'] ?? 'Failed to parse spreadsheet file.',
+            ),
+            backgroundColor: Colors.redAccent,
+          ),
         );
       }
     } catch (e) {
       if (!mounted) return;
       setState(() => isLoading = false);
       messenger.showSnackBar(
-        SnackBar(content: Text('Error picking/parsing file: $e'), backgroundColor: Colors.redAccent),
+        SnackBar(
+          content: Text('Error picking/parsing file: $e'),
+          backgroundColor: Colors.redAccent,
+        ),
       );
     }
   }
-
 
   void _clearControllers() {
     nameController.clear();
@@ -554,8 +648,12 @@ class _StudentsTabState extends State<StudentsTab> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
-        title: const Text('Students Directory', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+        title: const Text(
+          'Students Directory',
+          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+        ),
         backgroundColor: const Color(0xFF1E293B),
         elevation: 0,
         actions: [
@@ -577,7 +675,7 @@ class _StudentsTabState extends State<StudentsTab> {
               setState(() => isLoading = true);
               _fetchStudents();
             },
-          )
+          ),
         ],
       ),
       body: isLoading
@@ -589,7 +687,9 @@ class _StudentsTabState extends State<StudentsTab> {
                   if (widget.subRoles.contains('HOD')) ...[
                     Card(
                       elevation: 2,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                       color: const Color(0xFF1E293B).withValues(alpha: 0.05),
                       child: Padding(
                         padding: const EdgeInsets.all(12.0),
@@ -598,7 +698,10 @@ class _StudentsTabState extends State<StudentsTab> {
                           children: [
                             const Text(
                               'Filter Students (HOD)',
-                              style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF1E293B),
+                              ),
                             ),
                             const SizedBox(height: 8),
                             Row(
@@ -609,13 +712,28 @@ class _StudentsTabState extends State<StudentsTab> {
                                     decoration: const InputDecoration(
                                       labelText: 'Select Year *',
                                       border: OutlineInputBorder(),
-                                      contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                                      contentPadding: EdgeInsets.symmetric(
+                                        horizontal: 10,
+                                        vertical: 8,
+                                      ),
                                     ),
                                     items: const [
-                                      DropdownMenuItem(value: 'I', child: Text('I Year')),
-                                      DropdownMenuItem(value: 'II', child: Text('II Year')),
-                                      DropdownMenuItem(value: 'III', child: Text('III Year')),
-                                      DropdownMenuItem(value: 'IV', child: Text('IV Year')),
+                                      DropdownMenuItem(
+                                        value: 'I',
+                                        child: Text('I Year'),
+                                      ),
+                                      DropdownMenuItem(
+                                        value: 'II',
+                                        child: Text('II Year'),
+                                      ),
+                                      DropdownMenuItem(
+                                        value: 'III',
+                                        child: Text('III Year'),
+                                      ),
+                                      DropdownMenuItem(
+                                        value: 'IV',
+                                        child: Text('IV Year'),
+                                      ),
                                     ],
                                     onChanged: (value) {
                                       setState(() {
@@ -633,7 +751,10 @@ class _StudentsTabState extends State<StudentsTab> {
                                     decoration: const InputDecoration(
                                       labelText: 'Section (Optional)',
                                       border: OutlineInputBorder(),
-                                      contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                                      contentPadding: EdgeInsets.symmetric(
+                                        horizontal: 10,
+                                        vertical: 8,
+                                      ),
                                     ),
                                     onChanged: (value) {
                                       setState(() => isLoading = true);
@@ -661,7 +782,9 @@ class _StudentsTabState extends State<StudentsTab> {
                           _fetchStudents();
                         },
                       ),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
                     onSubmitted: (value) {
                       _searchStudents(value);
@@ -675,7 +798,8 @@ class _StudentsTabState extends State<StudentsTab> {
                         final s = studentsList[index];
                         final String sId = s['regNo'] ?? '';
                         final String name = s['fullName'] ?? '';
-                        final String deptName = s['departmentName'] ?? 'No Department';
+                        final String deptName =
+                            s['departmentName'] ?? 'No Department';
                         final String spr = s['sprNo'] ?? 'N/A';
 
                         if (searchQuery.isNotEmpty &&
@@ -686,39 +810,65 @@ class _StudentsTabState extends State<StudentsTab> {
 
                         final int score = s['score'] ?? 0;
 
-                        final String yearStr = s['year'] != null && s['year'].toString().isNotEmpty ? " • Year: ${s["year"]}" : '';
-                        final String sectionStr = s['section'] != null && s['section'].toString().isNotEmpty ? " • Section: ${s["section"]}" : '';
+                        final String yearStr =
+                            s['year'] != null && s['year'].toString().isNotEmpty
+                            ? " • Year: ${s["year"]}"
+                            : '';
+                        final String sectionStr =
+                            s['section'] != null &&
+                                s['section'].toString().isNotEmpty
+                            ? " • Section: ${s["section"]}"
+                            : '';
 
                         return SharedStudentCard(
                           name: name,
                           themeColor: const Color(0xFF11998e),
-                          subtitle: 'Reg No: $sId • SPR: $spr$yearStr$sectionStr\nDept: $deptName',
+                          subtitle:
+                              'Reg No: $sId • SPR: $spr$yearStr$sectionStr\nDept: $deptName',
                           score: score,
                           trailingContent: isCc
                               ? Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
                                     IconButton(
-                                      icon: const Icon(Icons.edit_outlined, color: Colors.blue),
-                                      onPressed: () => _showEditStudentDialog(s),
+                                      icon: const Icon(
+                                        Icons.edit_outlined,
+                                        color: Colors.blue,
+                                      ),
+                                      onPressed: () =>
+                                          _showEditStudentDialog(s),
                                       tooltip: 'Edit student',
                                     ),
                                     IconButton(
-                                      icon: const Icon(Icons.delete_outline, color: Colors.red),
+                                      icon: const Icon(
+                                        Icons.delete_outline,
+                                        color: Colors.red,
+                                      ),
                                       onPressed: () {
                                         showDialog(
                                           context: context,
                                           builder: (context) => AlertDialog(
                                             title: const Text('Delete Student'),
-                                            content: Text('Are you sure you want to delete student $name?'),
+                                            content: Text(
+                                              'Are you sure you want to delete student $name?',
+                                            ),
                                             actions: [
-                                              TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+                                              TextButton(
+                                                onPressed: () =>
+                                                    Navigator.pop(context),
+                                                child: const Text('Cancel'),
+                                              ),
                                               TextButton(
                                                 onPressed: () {
                                                   Navigator.pop(context);
                                                   _deleteStudent(s['id']);
                                                 },
-                                                child: const Text('Delete', style: TextStyle(color: Colors.red)),
+                                                child: const Text(
+                                                  'Delete',
+                                                  style: TextStyle(
+                                                    color: Colors.red,
+                                                  ),
+                                                ),
                                               ),
                                             ],
                                           ),
@@ -730,27 +880,29 @@ class _StudentsTabState extends State<StudentsTab> {
                                 )
                               : null,
                           onTap: () {
-                              final mappedStudent = {
-                                'id': s['id'],
-                                'name': name,
-                                'regNo': sId,
-                                'dept': deptName,
-                                'score': score,
-                                'teamRole': s['teamRole'] ?? 'MEMBER',
-                              };
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => TeacherStudentDetail(student: mappedStudent, ),
+                            final mappedStudent = {
+                              'id': s['id'],
+                              'name': name,
+                              'regNo': sId,
+                              'dept': deptName,
+                              'score': score,
+                              'teamRole': s['teamRole'] ?? 'MEMBER',
+                            };
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => TeacherStudentDetail(
+                                  student: mappedStudent,
                                 ),
-                              ).then((_) {
-                                if (_searchController.text.trim().isNotEmpty) {
-                                  _searchStudents(_searchController.text.trim());
-                                } else {
-                                  _fetchStudents();
-                                }
-                              });
-                            },
+                              ),
+                            ).then((_) {
+                              if (_searchController.text.trim().isNotEmpty) {
+                                _searchStudents(_searchController.text.trim());
+                              } else {
+                                _fetchStudents();
+                              }
+                            });
+                          },
                         );
                       },
                     ),
@@ -763,7 +915,13 @@ class _StudentsTabState extends State<StudentsTab> {
               onPressed: _showAddStudentOptions,
               backgroundColor: const Color(0xFF11998e),
               icon: const Icon(Icons.add, color: Colors.white),
-              label: const Text('Add Students', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+              label: const Text(
+                'Add Students',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             )
           : null,
     );
@@ -777,7 +935,7 @@ class BulkVerificationScreen extends StatefulWidget {
   const BulkVerificationScreen({
     super.key,
     required this.parsedStudents,
-    
+
     required this.departments,
   });
 
@@ -837,7 +995,10 @@ class _BulkVerificationScreenState extends State<BulkVerificationScreen> {
 
     if (selectedStudents.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please check at least one student to import.'), backgroundColor: Colors.orange),
+        const SnackBar(
+          content: Text('Please check at least one student to import.'),
+          backgroundColor: Colors.orange,
+        ),
       );
       return;
     }
@@ -862,30 +1023,44 @@ class _BulkVerificationScreenState extends State<BulkVerificationScreen> {
 
       if (response.statusCode == 200 && data['success'] == true) {
         messenger.showSnackBar(
-          SnackBar(content: Text(data['message'] ?? 'Import complete!'), backgroundColor: Colors.green),
+          SnackBar(
+            content: Text(data['message'] ?? 'Import complete!'),
+            backgroundColor: Colors.green,
+          ),
         );
         navigator.pop(true);
       } else {
         messenger.showSnackBar(
-          SnackBar(content: Text(data['message'] ?? 'Failed to save students list.'), backgroundColor: Colors.redAccent),
+          SnackBar(
+            content: Text(data['message'] ?? 'Failed to save students list.'),
+            backgroundColor: Colors.redAccent,
+          ),
         );
       }
     } catch (e) {
       setState(() => _isImporting = false);
       messenger.showSnackBar(
-        SnackBar(content: Text('Network/Server error: $e'), backgroundColor: Colors.redAccent),
+        SnackBar(
+          content: Text('Network/Server error: $e'),
+          backgroundColor: Colors.redAccent,
+        ),
       );
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final allChecked = _checkedStates.isNotEmpty && _checkedStates.every((e) => e);
+    final allChecked =
+        _checkedStates.isNotEmpty && _checkedStates.every((e) => e);
     final anyChecked = _checkedStates.any((e) => e);
 
     return Scaffold(
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
-        title: const Text('Verify Spreadsheet Data', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+        title: const Text(
+          'Verify Spreadsheet Data',
+          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+        ),
         backgroundColor: const Color(0xFF1E293B),
         elevation: 0,
         actions: [
@@ -902,7 +1077,10 @@ class _BulkVerificationScreenState extends State<BulkVerificationScreen> {
                 children: [
                   CircularProgressIndicator(color: Color(0xFF11998e)),
                   SizedBox(height: 16),
-                  Text('Saving selected students into database...', style: TextStyle(fontWeight: FontWeight.w500)),
+                  Text(
+                    'Saving selected students into database...',
+                    style: TextStyle(fontWeight: FontWeight.w500),
+                  ),
                 ],
               ),
             )
@@ -911,7 +1089,10 @@ class _BulkVerificationScreenState extends State<BulkVerificationScreen> {
               child: Column(
                 children: [
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
                     decoration: BoxDecoration(
                       color: const Color(0xFF11998e).withValues(alpha: 0.08),
                       borderRadius: BorderRadius.circular(12),
@@ -926,12 +1107,18 @@ class _BulkVerificationScreenState extends State<BulkVerificationScreen> {
                         ),
                         Text(
                           allChecked ? 'Uncheck All' : 'Check All',
-                          style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF1E293B),
+                          ),
                         ),
                         const Spacer(),
                         Text(
                           '${_checkedStates.where((c) => c).length} selected',
-                          style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF11998e)),
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF11998e),
+                          ),
                         ),
                       ],
                     ),
@@ -955,7 +1142,9 @@ class _BulkVerificationScreenState extends State<BulkVerificationScreen> {
                             borderRadius: BorderRadius.circular(14),
                             side: BorderSide(
                               color: _checkedStates[index]
-                                  ? const Color(0xFF11998e).withValues(alpha: 0.4)
+                                  ? const Color(
+                                      0xFF11998e,
+                                    ).withValues(alpha: 0.4)
                                   : Colors.grey.shade300,
                             ),
                           ),
@@ -978,19 +1167,24 @@ class _BulkVerificationScreenState extends State<BulkVerificationScreen> {
                                 const SizedBox(width: 8),
                                 Expanded(
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Text(
                                         name,
                                         style: TextStyle(
                                           fontWeight: FontWeight.bold,
                                           fontSize: 16,
-                                          color: _checkedStates[index] ? Colors.black87 : Colors.grey,
+                                          color: _checkedStates[index]
+                                              ? Colors.black87
+                                              : Colors.grey,
                                         ),
                                       ),
                                       const SizedBox(height: 4),
                                       Text('Reg: $regNo • SPR: $sprNo'),
-                                      Text('Dept: $dept • Acad Year: $academicYear • DOB: $dob'),
+                                      Text(
+                                        'Dept: $dept • Acad Year: $academicYear • DOB: $dob',
+                                      ),
                                       Text('Email: $email'),
                                     ],
                                   ),
@@ -998,12 +1192,18 @@ class _BulkVerificationScreenState extends State<BulkVerificationScreen> {
                                 Column(
                                   children: [
                                     IconButton(
-                                      icon: const Icon(Icons.edit_outlined, color: Colors.blueAccent),
+                                      icon: const Icon(
+                                        Icons.edit_outlined,
+                                        color: Colors.blueAccent,
+                                      ),
                                       onPressed: () => _editStudent(index),
                                       tooltip: 'Edit details',
                                     ),
                                     IconButton(
-                                      icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
+                                      icon: const Icon(
+                                        Icons.delete_outline,
+                                        color: Colors.redAccent,
+                                      ),
                                       onPressed: () => _removeStudent(index),
                                       tooltip: 'Delete record',
                                     ),
@@ -1029,10 +1229,14 @@ class _BulkVerificationScreenState extends State<BulkVerificationScreen> {
           children: [
             Expanded(
               child: OutlinedButton(
-                onPressed: _isImporting ? null : () => Navigator.pop(context, false),
+                onPressed: _isImporting
+                    ? null
+                    : () => Navigator.pop(context, false),
                 style: OutlinedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
                 child: const Text('Cancel'),
               ),
@@ -1044,11 +1248,16 @@ class _BulkVerificationScreenState extends State<BulkVerificationScreen> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF11998e),
                   padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
                 child: const Text(
                   'Proceed Import',
-                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
             ),
@@ -1085,8 +1294,12 @@ class _EditStudentDialogState extends State<EditStudentDialog> {
     sprCtrl = TextEditingController(text: widget.student['sprNo'] ?? '');
     emailCtrl = TextEditingController(text: widget.student['email'] ?? '');
     phoneCtrl = TextEditingController(text: widget.student['phone'] ?? '');
-    deptCtrl = TextEditingController(text: widget.student['departmentName'] ?? '');
-    academicYearCtrl = TextEditingController(text: widget.student['academicYear'] ?? '');
+    deptCtrl = TextEditingController(
+      text: widget.student['departmentName'] ?? '',
+    );
+    academicYearCtrl = TextEditingController(
+      text: widget.student['academicYear'] ?? '',
+    );
     if (widget.student['dateOfBirth'] != null) {
       try {
         dob = DateTime.parse(widget.student['dateOfBirth']);
@@ -1109,15 +1322,32 @@ class _EditStudentDialogState extends State<EditStudentDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('Edit Student Details', style: TextStyle(fontWeight: FontWeight.bold)),
+      title: const Text(
+        'Edit Student Details',
+        style: TextStyle(fontWeight: FontWeight.bold),
+      ),
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: 'Full Name')),
-            TextField(controller: regCtrl, decoration: const InputDecoration(labelText: 'Register No (reg_no)')),
-            TextField(controller: sprCtrl, decoration: const InputDecoration(labelText: 'SPR No (spr_no)')),
-            TextField(controller: emailCtrl, decoration: const InputDecoration(labelText: 'Email')),
+            TextField(
+              controller: nameCtrl,
+              decoration: const InputDecoration(labelText: 'Full Name'),
+            ),
+            TextField(
+              controller: regCtrl,
+              decoration: const InputDecoration(
+                labelText: 'Register No (reg_no)',
+              ),
+            ),
+            TextField(
+              controller: sprCtrl,
+              decoration: const InputDecoration(labelText: 'SPR No (spr_no)'),
+            ),
+            TextField(
+              controller: emailCtrl,
+              decoration: const InputDecoration(labelText: 'Email'),
+            ),
             TextField(
               controller: phoneCtrl,
               keyboardType: TextInputType.phone,
@@ -1127,8 +1357,16 @@ class _EditStudentDialogState extends State<EditStudentDialog> {
                 counterText: '',
               ),
             ),
-            TextField(controller: deptCtrl, decoration: const InputDecoration(labelText: 'Department')),
-            TextField(controller: academicYearCtrl, decoration: const InputDecoration(labelText: 'Academic Year (e.g. 2024-2025)')),
+            TextField(
+              controller: deptCtrl,
+              decoration: const InputDecoration(labelText: 'Department'),
+            ),
+            TextField(
+              controller: academicYearCtrl,
+              decoration: const InputDecoration(
+                labelText: 'Academic Year (e.g. 2024-2025)',
+              ),
+            ),
             const SizedBox(height: 16),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1155,14 +1393,17 @@ class _EditStudentDialogState extends State<EditStudentDialog> {
                   },
                   icon: const Icon(Icons.calendar_month),
                   label: const Text('Select'),
-                )
+                ),
               ],
             ),
           ],
         ),
       ),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(context, null), child: const Text('Cancel')),
+        TextButton(
+          onPressed: () => Navigator.pop(context, null),
+          child: const Text('Cancel'),
+        ),
         ElevatedButton(
           onPressed: () {
             final updatedStudent = Map<String, dynamic>.from(widget.student);
@@ -1174,11 +1415,14 @@ class _EditStudentDialogState extends State<EditStudentDialog> {
             updatedStudent['departmentName'] = deptCtrl.text.trim();
             updatedStudent['academicYear'] = academicYearCtrl.text.trim();
             if (dob != null) {
-              updatedStudent['dateOfBirth'] = "${dob!.year}-${dob!.month.toString().padLeft(2, '0')}-${dob!.day.toString().padLeft(2, '0')}";
+              updatedStudent['dateOfBirth'] =
+                  "${dob!.year}-${dob!.month.toString().padLeft(2, '0')}-${dob!.day.toString().padLeft(2, '0')}";
             }
             Navigator.pop(context, updatedStudent);
           },
-          style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF11998e)),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color(0xFF11998e),
+          ),
           child: const Text('Apply', style: TextStyle(color: Colors.white)),
         ),
       ],

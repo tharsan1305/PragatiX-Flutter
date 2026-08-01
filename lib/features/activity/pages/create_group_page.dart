@@ -1,8 +1,8 @@
-import 'package:spdms_app/features/auth/providers/auth_provider.dart';
+import 'package:pragatix/features/auth/providers/auth_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter/material.dart';
 import 'dart:convert';
-import 'package:spdms_app/features/activity/services/group_activity_service.dart';
+import 'package:pragatix/features/activity/services/group_activity_service.dart';
 
 class CreateGroupPage extends StatefulWidget {
   final int assignmentId;
@@ -12,7 +12,7 @@ class CreateGroupPage extends StatefulWidget {
 
   const CreateGroupPage({
     super.key,
-    
+
     required this.assignmentId,
     this.preselectedYear,
     this.preselectedDept,
@@ -25,10 +25,10 @@ class CreateGroupPage extends StatefulWidget {
 
 class _CreateGroupPageState extends State<CreateGroupPage> {
   final _formKey = GlobalKey<FormState>();
-  
+
   final _nameController = TextEditingController();
   final _sizeController = TextEditingController(text: '5');
-  
+
   // Captain Search
   bool _isSearching = false;
   List<dynamic> _searchResults = [];
@@ -54,25 +54,33 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
     }
 
     setState(() => _isSearching = true);
-    
+
     try {
-      final response = await GroupActivityService(context.read<AuthProvider>()).searchStudents(query.trim(), 0, 50);
-      
+      final response = await GroupActivityService(
+        context.read<AuthProvider>(),
+      ).searchStudents(query.trim(), 0, 50);
+
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         final list = (data['data']?['content'] ?? []) as List<dynamic>;
-        
+
         // Filter by pre-selected department and section (if they exist)
         final filteredList = list.where((s) {
           final sDept = s['departmentName'] ?? '';
           final sSec = s['sectionName'] ?? '';
-          
-          final bool matchesDept = widget.preselectedDept == null || widget.preselectedDept == 'N/A' || sDept == widget.preselectedDept;
-          final bool matchesSec = widget.preselectedSection == null || widget.preselectedSection == 'N/A' || sSec == widget.preselectedSection;
-          
+
+          final bool matchesDept =
+              widget.preselectedDept == null ||
+              widget.preselectedDept == 'N/A' ||
+              sDept == widget.preselectedDept;
+          final bool matchesSec =
+              widget.preselectedSection == null ||
+              widget.preselectedSection == 'N/A' ||
+              sSec == widget.preselectedSection;
+
           return matchesDept && matchesSec;
         }).toList();
-        
+
         setState(() {
           _searchResults = filteredList;
         });
@@ -84,26 +92,30 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
-    
+
     if (_selectedCaptain == null) {
       _showErrorDialog('Please select a captain.');
       return;
     }
 
     try {
-      final response = await GroupActivityService(context.read<AuthProvider>()).createTeam({
-        'name': _nameController.text.trim(),
-        'size': int.parse(_sizeController.text.trim()),
-        'captainStudentId': _selectedCaptain['regNo'],
-        'assignmentId': widget.assignmentId,
-      });
-      
+      final response = await GroupActivityService(context.read<AuthProvider>())
+          .createTeam({
+            'name': _nameController.text.trim(),
+            'size': int.parse(_sizeController.text.trim()),
+            'captainStudentId': _selectedCaptain['regNo'],
+            'assignmentId': widget.assignmentId,
+          });
+
       final jsonResponse = jsonDecode(response.body);
       if (response.statusCode == 200 || response.statusCode == 201) {
         if (jsonResponse['success']) {
           if (!mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Group created successfully!'), backgroundColor: Colors.green),
+            const SnackBar(
+              content: Text('Group created successfully!'),
+              backgroundColor: Colors.green,
+            ),
           );
           if (!mounted) return;
           Navigator.pop(context, true); // return true to refresh
@@ -125,7 +137,10 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
         title: const Text('Error', style: TextStyle(color: Colors.red)),
         content: Text(msg),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('OK')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('OK'),
+          ),
         ],
       ),
     );
@@ -148,18 +163,39 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('Academic Scope', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: _dark)),
+              const Text(
+                'Academic Scope',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                  color: _dark,
+                ),
+              ),
               const SizedBox(height: 16),
-              
-              _buildReadOnlyField('Academic Year', widget.preselectedYear ?? 'Global'),
+
+              _buildReadOnlyField(
+                'Academic Year',
+                widget.preselectedYear ?? 'Global',
+              ),
               const SizedBox(height: 12),
-              _buildReadOnlyField('Department', widget.preselectedDept ?? 'Global'),
+              _buildReadOnlyField(
+                'Department',
+                widget.preselectedDept ?? 'Global',
+              ),
               const SizedBox(height: 12),
-              if (widget.preselectedSection != null && widget.preselectedSection != 'N/A')
+              if (widget.preselectedSection != null &&
+                  widget.preselectedSection != 'N/A')
                 _buildReadOnlyField('Section', widget.preselectedSection!),
-              
+
               const SizedBox(height: 24),
-              const Text('Group Details', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: _dark)),
+              const Text(
+                'Group Details',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                  color: _dark,
+                ),
+              ),
               const SizedBox(height: 16),
               TextFormField(
                 controller: _nameController,
@@ -169,7 +205,8 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
                   filled: true,
                   fillColor: Colors.white,
                 ),
-                validator: (val) => val == null || val.isEmpty ? 'Required' : null,
+                validator: (val) =>
+                    val == null || val.isEmpty ? 'Required' : null,
               ),
               const SizedBox(height: 16),
               TextFormField(
@@ -183,22 +220,36 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
                 ),
                 validator: (val) {
                   if (val == null || val.isEmpty) return 'Required';
-                  if (int.tryParse(val) == null || int.parse(val) <= 0) return 'Invalid number';
+                  if (int.tryParse(val) == null || int.parse(val) <= 0)
+                    return 'Invalid number';
                   return null;
                 },
               ),
-              
+
               const SizedBox(height: 24),
-              const Text('Captain', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: _dark)),
+              const Text(
+                'Captain',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                  color: _dark,
+                ),
+              ),
               const SizedBox(height: 16),
-              
+
               if (_selectedCaptain != null)
                 Card(
                   color: Colors.blue.shade50,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: BorderSide(color: Colors.blue.shade200)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    side: BorderSide(color: Colors.blue.shade200),
+                  ),
                   elevation: 0,
                   child: ListTile(
-                    leading: const CircleAvatar(backgroundColor: Colors.blue, child: Icon(Icons.person, color: Colors.white)),
+                    leading: const CircleAvatar(
+                      backgroundColor: Colors.blue,
+                      child: Icon(Icons.person, color: Colors.white),
+                    ),
                     title: Text(_selectedCaptain['fullName'] ?? ''),
                     subtitle: Text(_selectedCaptain['regNo'] ?? ''),
                     trailing: IconButton(
@@ -221,9 +272,12 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
                     border: const OutlineInputBorder(),
                     filled: true,
                     fillColor: Colors.white,
-                    suffixIcon: _isSearching 
-                      ? const Padding(padding: EdgeInsets.all(12), child: CircularProgressIndicator(strokeWidth: 2))
-                      : const Icon(Icons.search),
+                    suffixIcon: _isSearching
+                        ? const Padding(
+                            padding: EdgeInsets.all(12),
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.search),
                   ),
                   onChanged: (val) {
                     Future.delayed(const Duration(milliseconds: 500), () {
@@ -249,7 +303,9 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
                         final s = _searchResults[idx];
                         return ListTile(
                           title: Text(s['fullName'] ?? ''),
-                          subtitle: Text('${s['regNo']} | ${s['departmentName']} ${s['sectionName']}'),
+                          subtitle: Text(
+                            '${s['regNo']} | ${s['departmentName']} ${s['sectionName']}',
+                          ),
                           onTap: () {
                             setState(() {
                               _selectedCaptain = s;
@@ -262,7 +318,7 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
                     ),
                   ),
               ],
-              
+
               const SizedBox(height: 48),
               SizedBox(
                 width: double.infinity,
@@ -271,10 +327,15 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.green,
                     foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
                   onPressed: _submit,
-                  child: const Text('Save Group', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  child: const Text(
+                    'Save Group',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
                 ),
               ),
             ],
@@ -292,17 +353,20 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
         labelText: label,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: Colors.grey.shade300)
+          borderSide: BorderSide(color: Colors.grey.shade300),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: Colors.grey.shade300)
+          borderSide: BorderSide(color: Colors.grey.shade300),
         ),
         filled: true,
         fillColor: Colors.grey.shade100,
         labelStyle: TextStyle(color: Colors.grey.shade700),
       ),
-      style: const TextStyle(color: Colors.black87, fontWeight: FontWeight.w500),
+      style: const TextStyle(
+        color: Colors.black87,
+        fontWeight: FontWeight.w500,
+      ),
     );
   }
 

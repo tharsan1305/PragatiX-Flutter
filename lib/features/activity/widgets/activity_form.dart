@@ -1,19 +1,19 @@
-import 'package:spdms_app/features/auth/providers/auth_provider.dart';
+import 'package:pragatix/features/auth/providers/auth_provider.dart';
 import 'package:provider/provider.dart';
-import 'package:spdms_app/features/activity/widgets/activity_basic_information_section.dart';
-import 'package:spdms_app/features/activity/widgets/activity_xp_section.dart';
-import 'package:spdms_app/features/activity/widgets/activity_frequency_section.dart';
-import 'package:spdms_app/features/activity/widgets/activity_owner_section.dart';
+import 'package:pragatix/features/activity/widgets/activity_basic_information_section.dart';
+import 'package:pragatix/features/activity/widgets/activity_xp_section.dart';
+import 'package:pragatix/features/activity/widgets/activity_frequency_section.dart';
+import 'package:pragatix/features/activity/widgets/activity_owner_section.dart';
 import 'package:flutter/material.dart';
 import 'dart:convert';
-import 'package:spdms_app/features/activity/services/activity_proxy_service.dart';
-import 'package:spdms_app/core/config/api_config.dart';
-import 'package:spdms_app/features/activity/models/activity_model.dart';
-import 'package:spdms_app/features/activity/providers/activity_provider.dart';
-import 'package:spdms_app/features/activity/widgets/activity_section.dart';
-import 'package:spdms_app/features/activity/widgets/evidence_selector.dart';
-import 'package:spdms_app/features/activity/widgets/type_selector.dart';
-import 'package:spdms_app/core/di/service_locator.dart';
+import 'package:pragatix/features/activity/services/activity_proxy_service.dart';
+import 'package:pragatix/core/config/api_config.dart';
+import 'package:pragatix/features/activity/models/activity_model.dart';
+import 'package:pragatix/features/activity/providers/activity_provider.dart';
+import 'package:pragatix/features/activity/widgets/activity_section.dart';
+import 'package:pragatix/features/activity/widgets/evidence_selector.dart';
+import 'package:pragatix/features/activity/widgets/type_selector.dart';
+import 'package:pragatix/core/di/service_locator.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Shared activity form used by both CreateActivityPage and EditActivityPage.
@@ -31,7 +31,7 @@ class ActivityForm extends StatefulWidget {
     super.key,
     required this.allTeachers,
     required this.sections,
-    
+
     required this.provider,
     this.initialData,
     this.isCc = false,
@@ -62,6 +62,7 @@ class ActivityFormState extends State<ActivityForm> {
   final _penaltyXpCtrl = TextEditingController(text: '0');
   String _selectedStatus = 'ACTIVE';
   bool _allowStudentRequest = false;
+  String? _selectedSubgroup;
 
   // ── Selection state ───────────────────────────────────────────────────────
   dynamic _selectedTeacher;
@@ -86,9 +87,13 @@ class ActivityFormState extends State<ActivityForm> {
     'Cultural',
   ];
 
-
   static const List<String> _workingDays = [
-    'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday',
+    'Monday',
+    'Tuesday',
+    'Wednesday',
+    'Thursday',
+    'Friday',
+    'Saturday',
   ];
 
   bool _submitted = false;
@@ -105,7 +110,9 @@ class ActivityFormState extends State<ActivityForm> {
     try {
       final response = await getIt<ActivityProxyService>().get(
         Uri.parse('${ApiConfig.baseUrl}/api/v1/auth/me'),
-        headers: {'Authorization': 'Bearer ${context.read<AuthProvider>().token!}'},
+        headers: {
+          'Authorization': 'Bearer ${context.read<AuthProvider>().token!}',
+        },
       );
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -113,7 +120,9 @@ class ActivityFormState extends State<ActivityForm> {
           final profile = data['data'];
           setState(() {
             _ccYear = profile['year']?.toString();
-            _ccDeptId = profile['departmentId'] != null ? (profile['departmentId'] as num).toInt() : null;
+            _ccDeptId = profile['departmentId'] != null
+                ? (profile['departmentId'] as num).toInt()
+                : null;
             _ccDeptName = profile['departmentName']?.toString();
             _ccSection = profile['section']?.toString();
 
@@ -121,7 +130,9 @@ class ActivityFormState extends State<ActivityForm> {
             if (_ccSection != null && _ccSection!.isNotEmpty) {
               try {
                 _selectedSection = _filteredSections.firstWhere(
-                  (s) => s['sectionName']?.toString().toLowerCase() == _ccSection!.toLowerCase(),
+                  (s) =>
+                      s['sectionName']?.toString().toLowerCase() ==
+                      _ccSection!.toLowerCase(),
                 );
               } catch (_) {}
             }
@@ -143,12 +154,17 @@ class ActivityFormState extends State<ActivityForm> {
         return StatefulBuilder(
           builder: (ctx, setStateDialog) {
             return AlertDialog(
-              title: const Text('New Custom Frequency', style: TextStyle(fontWeight: FontWeight.bold)),
+              title: const Text(
+                'New Custom Frequency',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   TextField(
-                    decoration: const InputDecoration(labelText: 'Frequency Name (e.g. Assignment)'),
+                    decoration: const InputDecoration(
+                      labelText: 'Frequency Name (e.g. Assignment)',
+                    ),
                     onChanged: (val) => name = val,
                   ),
                   const SizedBox(height: 16),
@@ -157,20 +173,24 @@ class ActivityFormState extends State<ActivityForm> {
                       Radio<String>(
                         value: 'UNLIMITED',
                         groupValue: capType,
-                        onChanged: (val) => setStateDialog(() => capType = val!),
+                        onChanged: (val) =>
+                            setStateDialog(() => capType = val!),
                       ),
                       const Text('Unlimited'),
                       Radio<String>(
                         value: 'MANUAL_CAP',
                         groupValue: capType,
-                        onChanged: (val) => setStateDialog(() => capType = val!),
+                        onChanged: (val) =>
+                            setStateDialog(() => capType = val!),
                       ),
                       const Text('Manual Cap'),
                     ],
                   ),
                   if (capType == 'MANUAL_CAP')
                     TextField(
-                      decoration: const InputDecoration(labelText: 'Maximum Count'),
+                      decoration: const InputDecoration(
+                        labelText: 'Maximum Count',
+                      ),
                       keyboardType: TextInputType.number,
                       onChanged: (val) => maxCountStr = val,
                     ),
@@ -200,7 +220,11 @@ class ActivityFormState extends State<ActivityForm> {
                     } else {
                       if (!mounted) return;
                       ScaffoldMessenger.of(ctx).showSnackBar(
-                        SnackBar(content: Text(widget.provider.error ?? 'Error creating frequency')),
+                        SnackBar(
+                          content: Text(
+                            widget.provider.error ?? 'Error creating frequency',
+                          ),
+                        ),
                       );
                     }
                   },
@@ -223,7 +247,7 @@ class ActivityFormState extends State<ActivityForm> {
         });
       } else {
         if (_selectedAwardFrequency == 'Manual') {
-            setState(() => _selectedAwardFrequency = 'One Time');
+          setState(() => _selectedAwardFrequency = 'One Time');
         }
       }
     });
@@ -248,11 +272,14 @@ class ActivityFormState extends State<ActivityForm> {
       _awardXpCtrl.text = d.awardXp.toString();
       _penaltyXpCtrl.text = d.penaltyXp.toString();
       _selectedAwardType = d.awardType.isNotEmpty ? d.awardType : 'Fixed XP';
-      _selectedAwardFrequency = d.awardFrequency.isNotEmpty ? d.awardFrequency : 'One Time';
+      _selectedAwardFrequency = d.awardFrequency.isNotEmpty
+          ? d.awardFrequency
+          : 'One Time';
       _selectedAwardDays = Set<String>.from(d.awardDays);
       _selectedType = d.type.isNotEmpty ? d.type : 'Individual';
       _selectedEvidence = Set<String>.from(d.evidence);
       _selectedXpCategory = _normalizeXpCategory(d.xpCategory);
+      _selectedSubgroup = d.subgroup;
 
       if (widget.isCc && d.assignmentSummary.isNotEmpty) {
         final assign = d.assignmentSummary.first;
@@ -263,7 +290,7 @@ class ActivityFormState extends State<ActivityForm> {
               'id': 0,
               'fullName': 'Any Faculty',
               'username': 'any',
-              'departmentName': 'Global'
+              'departmentName': 'Global',
             };
           } else {
             try {
@@ -315,18 +342,23 @@ class ActivityFormState extends State<ActivityForm> {
       'id': 0,
       'fullName': 'Any Faculty',
       'username': 'any',
-      'departmentName': 'Global'
+      'departmentName': 'Global',
     };
     if (_teacherSearchQuery.trim().isEmpty) {
       return [virtualAny, ...widget.allTeachers];
     }
     final query = _teacherSearchQuery.toLowerCase();
-    final matchesVirtual = 'any faculty'.contains(query) || 'any'.contains(query) || 'global'.contains(query);
+    final matchesVirtual =
+        'any faculty'.contains(query) ||
+        'any'.contains(query) ||
+        'global'.contains(query);
     final filtered = widget.allTeachers.where((t) {
       final name = (t['fullName'] as String? ?? '').toLowerCase();
       final username = (t['username'] as String? ?? '').toLowerCase();
       final dept = (t['departmentName'] as String? ?? '').toLowerCase();
-      return name.contains(query) || username.contains(query) || dept.contains(query);
+      return name.contains(query) ||
+          username.contains(query) ||
+          dept.contains(query);
     }).toList();
     return matchesVirtual ? [virtualAny, ...filtered] : filtered;
   }
@@ -340,8 +372,10 @@ class ActivityFormState extends State<ActivityForm> {
         final targetSection = _ccSection?.trim().toLowerCase() ?? '';
         final targetDeptId = _ccDeptId;
 
-        final bool sectionMatches = targetSection.isEmpty || sName == targetSection;
-        final bool deptMatches = targetDeptId == null || sDeptId == targetDeptId;
+        final bool sectionMatches =
+            targetSection.isEmpty || sName == targetSection;
+        final bool deptMatches =
+            targetDeptId == null || sDeptId == targetDeptId;
 
         return sectionMatches && deptMatches;
       }).toList();
@@ -355,8 +389,12 @@ class ActivityFormState extends State<ActivityForm> {
       return [
         const Text(
           'No assignments defined for this department.',
-          style: TextStyle(fontSize: 13, color: Colors.grey, fontStyle: FontStyle.italic),
-        )
+          style: TextStyle(
+            fontSize: 13,
+            color: Colors.grey,
+            fontStyle: FontStyle.italic,
+          ),
+        ),
       ];
     }
 
@@ -389,7 +427,9 @@ class ActivityFormState extends State<ActivityForm> {
             ],
             CircleAvatar(
               radius: 12,
-              backgroundColor: isAssigned ? Colors.blue.shade50 : Colors.grey.shade100,
+              backgroundColor: isAssigned
+                  ? Colors.blue.shade50
+                  : Colors.grey.shade100,
               child: Icon(
                 Icons.person_rounded,
                 size: 14,
@@ -417,7 +457,11 @@ class ActivityFormState extends State<ActivityForm> {
                 ),
                 child: const Text(
                   'Not Assigned',
-                  style: TextStyle(color: Colors.grey, fontSize: 10, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                    color: Colors.grey,
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
           ],
@@ -426,16 +470,14 @@ class ActivityFormState extends State<ActivityForm> {
     }).toList();
   }
 
-  InputDecoration _deco(String label, IconData icon,
-      {bool alignHint = false}) {
+  InputDecoration _deco(String label, IconData icon, {bool alignHint = false}) {
     return InputDecoration(
       labelText: label,
       prefixIcon: Icon(icon, color: _primary, size: 20),
       alignLabelWithHint: alignHint,
       filled: true,
       fillColor: _surface,
-      contentPadding:
-          const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
         borderSide: BorderSide(color: Colors.grey.shade300),
@@ -467,14 +509,21 @@ class ActivityFormState extends State<ActivityForm> {
     final formOk = _formKey.currentState?.validate() ?? false;
     final evidOk = _selectedEvidence.isNotEmpty;
     final catOk = _selectedXpCategory != null;
-    final weeklyDaysOk = _selectedAwardFrequency != 'Weekly' || _selectedAwardDays.isNotEmpty;
+    final weeklyDaysOk =
+        _selectedAwardFrequency != 'Weekly' || _selectedAwardDays.isNotEmpty;
+
+    final authProvider = context.read<AuthProvider>();
+    final roles = authProvider.currentUser?['roles'] as List<dynamic>? ?? [];
+    final isSuperAdmin = roles.contains('ROLE_SUPER_ADMIN');
 
     if (!formOk || !evidOk || !catOk || !weeklyDaysOk) {
       return null;
     }
 
     final int cap = int.tryParse(_capCtrl.text.trim()) ?? 1;
-    final bool capLocked = _selectedAwardFrequency == 'One Time' || _selectedAwardFrequency == 'Manual';
+    final bool capLocked =
+        _selectedAwardFrequency == 'One Time' ||
+        _selectedAwardFrequency == 'Manual';
     final bool isEveryPeriod = _selectedAwardFrequency == 'Every Period';
 
     String computedXpType = 'Reward';
@@ -498,16 +547,23 @@ class ActivityFormState extends State<ActivityForm> {
       'xpCategory': _selectedXpCategory,
       'cap': isEveryPeriod ? 8 : (capLocked ? 1 : cap),
       'awardFrequency': _selectedAwardFrequency,
-      'awardDays': _selectedAwardFrequency == 'Weekly' ? _selectedAwardDays.toList() : [],
+      'awardDays': _selectedAwardFrequency == 'Weekly'
+          ? _selectedAwardDays.toList()
+          : [],
       'displayOrder': int.tryParse(_displayOrderCtrl.text.trim()) ?? 0,
       'status': _selectedStatus,
-      'awardXp': _awardEnabled ? (int.tryParse(_awardXpCtrl.text.trim()) ?? 0) : 0,
+      'awardXp': _awardEnabled
+          ? (int.tryParse(_awardXpCtrl.text.trim()) ?? 0)
+          : 0,
       'awardEnabled': _awardEnabled,
       'penaltyEnabled': _penaltyEnabled,
-      'penaltyXp': _penaltyEnabled ? (int.tryParse(_penaltyXpCtrl.text.trim()) ?? 0) : 0,
+      'penaltyXp': _penaltyEnabled
+          ? (int.tryParse(_penaltyXpCtrl.text.trim()) ?? 0)
+          : 0,
       'awardType': _selectedAwardType,
       'xpType': computedXpType,
       'allowStudentRequest': _allowStudentRequest,
+      'subgroup': _selectedSubgroup,
     };
     debugPrint('Award Enabled : ${payload['awardEnabled']}');
     debugPrint('Award XP : ${payload['awardXp']}');
@@ -516,11 +572,12 @@ class ActivityFormState extends State<ActivityForm> {
     return payload;
   }
 
-
-
   Map<String, dynamic>? buildCcAssignmentBody() {
     setState(() => _submitted = true);
     final hasSections = _filteredSections.isNotEmpty;
+    _selectedSection = null;
+
+    if (widget.initialData != null) {}
     if (_selectedTeacher == null || (hasSections && _selectedSection == null)) {
       return null;
     }
@@ -571,6 +628,13 @@ class ActivityFormState extends State<ActivityForm> {
                           setState(() => _selectedStatus = val);
                         }
                       },
+                      isEdit: widget.initialData != null,
+                      selectedSubgroup: _selectedSubgroup,
+                      onSubgroupChanged: (val) {
+                        if (val != null) {
+                          setState(() => _selectedSubgroup = val);
+                        }
+                      },
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -593,7 +657,8 @@ class ActivityFormState extends State<ActivityForm> {
                             setState(() => _penaltyEnabled = val);
                           },
                           onAwardTypeChanged: (val) {
-                            if (val != null) setState(() => _selectedAwardType = val);
+                            if (val != null)
+                              setState(() => _selectedAwardType = val);
                           },
                         ),
                         const SizedBox(height: 16),
@@ -607,22 +672,33 @@ class ActivityFormState extends State<ActivityForm> {
                             if (val != null) {
                               setState(() {
                                 _selectedAwardFrequency = val;
-                                final customMatch = widget.provider.customFrequencies.where((f) => f['name'] == val).toList();
+                                final customMatch = widget
+                                    .provider
+                                    .customFrequencies
+                                    .where((f) => f['name'] == val)
+                                    .toList();
                                 if (customMatch.isNotEmpty) {
-                                    final cf = customMatch.first;
-                                    if (cf['capType'] == 'UNLIMITED') {
-                                        _capCtrl.text = '1';
-                                    } else {
-                                        _capCtrl.text = cf['defaultCap'].toString();
-                                    }
+                                  final cf = customMatch.first;
+                                  if (cf['capType'] == 'UNLIMITED') {
+                                    _capCtrl.text = '1';
+                                  } else {
+                                    _capCtrl.text = cf['defaultCap'].toString();
+                                  }
                                 } else if (val == 'One Time') {
                                   _capCtrl.text = '1';
                                   _selectedAwardDays = {};
                                 } else if (val == 'Per Assignment') {
                                   _capCtrl.text = 'Unlimited';
                                   _selectedAwardDays = {};
-                                } else if (val == 'Weekly' && _selectedAwardDays.isEmpty) {
-                                  _selectedAwardDays = {'Monday','Tuesday','Wednesday','Thursday','Friday'};
+                                } else if (val == 'Weekly' &&
+                                    _selectedAwardDays.isEmpty) {
+                                  _selectedAwardDays = {
+                                    'Monday',
+                                    'Tuesday',
+                                    'Wednesday',
+                                    'Thursday',
+                                    'Friday',
+                                  };
                                   if (_capCtrl.text == '1') _capCtrl.text = '5';
                                 } else if (val == 'Every Period') {
                                   _capCtrl.text = '8';
@@ -633,7 +709,8 @@ class ActivityFormState extends State<ActivityForm> {
                               });
                             }
                           },
-                          onShowCustomFrequencyDialog: _showCustomFrequencyDialog,
+                          onShowCustomFrequencyDialog:
+                              _showCustomFrequencyDialog,
                           onDaysChanged: (val) {
                             setState(() => _selectedAwardDays = val);
                           },
@@ -647,7 +724,8 @@ class ActivityFormState extends State<ActivityForm> {
                     title: 'Evidence',
                     child: EvidenceSelector(
                       selected: _selectedEvidence,
-                      onChanged: (next) => setState(() => _selectedEvidence = next),
+                      onChanged: (next) =>
+                          setState(() => _selectedEvidence = next),
                       showError: _submitted,
                     ),
                   ),
@@ -668,15 +746,29 @@ class ActivityFormState extends State<ActivityForm> {
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(color: Colors.grey.shade200),
                       boxShadow: [
-                        BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10, offset: const Offset(0, 4))
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.02),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
                       ],
                     ),
                     child: SwitchListTile(
-                      title: const Text('Allow Student Request', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16)),
-                      subtitle: const Text('Students can submit a completion request for this activity.', style: TextStyle(color: Colors.grey)),
+                      title: const Text(
+                        'Allow Student Request',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 16,
+                        ),
+                      ),
+                      subtitle: const Text(
+                        'Students can submit a completion request for this activity.',
+                        style: TextStyle(color: Colors.grey),
+                      ),
                       value: _allowStudentRequest,
                       activeColor: _primary,
-                      onChanged: (val) => setState(() => _allowStudentRequest = val),
+                      onChanged: (val) =>
+                          setState(() => _allowStudentRequest = val),
                       contentPadding: EdgeInsets.zero,
                     ),
                   ),
@@ -687,17 +779,39 @@ class ActivityFormState extends State<ActivityForm> {
                     child: TextFormField(
                       controller: _justCtrl,
                       maxLines: 3,
-                      style: const TextStyle(color: Color(0xFF1E293B), fontSize: 15),
+                      style: const TextStyle(
+                        color: Color(0xFF1E293B),
+                        fontSize: 15,
+                      ),
                       decoration: InputDecoration(
                         labelText: 'Justification',
-                        prefixIcon: const Icon(Icons.notes_rounded, color: Color(0xFFEA4335), size: 20),
+                        prefixIcon: const Icon(
+                          Icons.notes_rounded,
+                          color: Color(0xFFEA4335),
+                          size: 20,
+                        ),
                         alignLabelWithHint: true,
                         filled: true,
                         fillColor: const Color(0xFFF8FAFC),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: Colors.grey.shade300)),
-                        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: Colors.grey.shade300)),
-                        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: Color(0xFFEA4335), width: 2)),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 14,
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(14),
+                          borderSide: BorderSide(color: Colors.grey.shade300),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(14),
+                          borderSide: BorderSide(color: Colors.grey.shade300),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(14),
+                          borderSide: const BorderSide(
+                            color: Color(0xFFEA4335),
+                            width: 2,
+                          ),
+                        ),
                       ),
                     ),
                   ),
@@ -720,9 +834,12 @@ class ActivityFormState extends State<ActivityForm> {
                 hasSections: hasSections,
                 submitted: _submitted,
                 initialData: widget.initialData,
-                onSectionChanged: (val) => setState(() => _selectedSection = val),
-                onTeacherChanged: (val) => setState(() => _selectedTeacher = val),
-                onTeacherSearchQueryChanged: (val) => setState(() => _teacherSearchQuery = val),
+                onSectionChanged: (val) =>
+                    setState(() => _selectedSection = val),
+                onTeacherChanged: (val) =>
+                    setState(() => _selectedTeacher = val),
+                onTeacherSearchQueryChanged: (val) =>
+                    setState(() => _teacherSearchQuery = val),
                 onClearTeacher: () => setState(() => _selectedTeacher = null),
               ),
             ),

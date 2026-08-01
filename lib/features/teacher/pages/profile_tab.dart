@@ -1,17 +1,17 @@
-import 'package:spdms_app/features/auth/providers/auth_provider.dart';
+import 'package:pragatix/features/auth/providers/auth_provider.dart';
 import 'package:provider/provider.dart';
-import 'package:spdms_app/core/config/api_config.dart';
+import 'package:pragatix/core/config/api_config.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:spdms_app/features/teacher/services/teacher_proxy_service.dart';
-import 'package:spdms_app/shared/widgets/profile_header.dart';
-import 'package:spdms_app/shared/widgets/shared_profile_card.dart';
-import 'package:spdms_app/shared/widgets/shared_logout_button.dart';
-import 'package:spdms_app/core/di/service_locator.dart';
-import 'package:spdms_app/features/badge/pages/cc_badge_requests_page.dart';
+import 'package:pragatix/features/teacher/services/teacher_proxy_service.dart';
+import 'package:pragatix/shared/widgets/profile_header.dart';
+import 'package:pragatix/shared/widgets/shared_profile_card.dart';
+import 'package:pragatix/shared/widgets/shared_logout_button.dart';
+import 'package:pragatix/core/di/service_locator.dart';
+import 'package:pragatix/features/badge/pages/cc_badge_requests_page.dart';
 
 class ProfileTab extends StatefulWidget {
-  const ProfileTab({super.key, });
+  const ProfileTab({super.key});
 
   @override
   State<ProfileTab> createState() => _ProfileTabState();
@@ -34,7 +34,9 @@ class _ProfileTabState extends State<ProfileTab> {
     try {
       final response = await getIt<TeacherProxyService>().get(
         Uri.parse('${ApiConfig.baseUrl}/api/v1/auth/me'),
-        headers: {'Authorization': 'Bearer ${context.read<AuthProvider>().token!}'},
+        headers: {
+          'Authorization': 'Bearer ${context.read<AuthProvider>().token!}',
+        },
       );
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -59,8 +61,12 @@ class _ProfileTabState extends State<ProfileTab> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
-        title: const Text('Profile Summary', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+        title: const Text(
+          'Profile Summary',
+          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+        ),
         backgroundColor: const Color(0xFF1E293B),
         elevation: 0,
       ),
@@ -88,12 +94,21 @@ class _ProfileTabState extends State<ProfileTab> {
                     padding: const EdgeInsets.symmetric(horizontal: 24.0),
                     child: SharedProfileCard(
                       children: [
-                        SharedProfileRow(label: 'Role', value: _role.replaceAll('ROLE_', '')),
+                        SharedProfileRow(
+                          label: 'Role',
+                          value: _role.replaceAll('ROLE_', ''),
+                        ),
                         const Divider(height: 24),
-                        const SharedProfileRow(label: 'Active System Session', value: 'Yes'),
+                        const SharedProfileRow(
+                          label: 'Active System Session',
+                          value: 'Yes',
+                        ),
                         if (_department.isNotEmpty) ...[
                           const Divider(height: 24),
-                          SharedProfileRow(label: 'Department', value: _department),
+                          SharedProfileRow(
+                            label: 'Department',
+                            value: _department,
+                          ),
                         ],
                       ],
                     ),
@@ -108,15 +123,26 @@ class _ProfileTabState extends State<ProfileTab> {
                           onPressed: () {
                             Navigator.push(
                               context,
-                              MaterialPageRoute(builder: (context) => const CCBadgeRequestsPage()),
+                              MaterialPageRoute(
+                                builder: (context) =>
+                                    const CCBadgeRequestsPage(),
+                              ),
                             );
                           },
                           icon: const Icon(Icons.badge, color: Colors.white),
-                          label: const Text('Manage Class Badge Requests', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                          label: const Text(
+                            'Manage Class Badge Requests',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.blueAccent,
                             padding: const EdgeInsets.symmetric(vertical: 14),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
                           ),
                         ),
                       ),
@@ -124,7 +150,9 @@ class _ProfileTabState extends State<ProfileTab> {
                   const Spacer(),
                   const Padding(
                     padding: EdgeInsets.all(24.0),
-                    child: SharedLogoutButton(backgroundColor: Color(0xFF11998e)),
+                    child: SharedLogoutButton(
+                      backgroundColor: Color(0xFF11998e),
+                    ),
                   ),
                   const SizedBox(height: 20),
                 ],

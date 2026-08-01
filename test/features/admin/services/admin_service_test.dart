@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:spdms_app/features/admin/services/admin_service.dart';
+import 'package:pragatix/features/admin/services/admin_service.dart';
 import '../../../helpers/mocks.dart';
 
 void main() {

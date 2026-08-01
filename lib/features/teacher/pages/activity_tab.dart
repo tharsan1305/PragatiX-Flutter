@@ -1,15 +1,15 @@
-import 'package:spdms_app/features/auth/providers/auth_provider.dart';
+import 'package:pragatix/features/auth/providers/auth_provider.dart';
 import 'package:provider/provider.dart';
-import 'package:spdms_app/core/config/api_config.dart';
+import 'package:pragatix/core/config/api_config.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:spdms_app/features/teacher/services/teacher_proxy_service.dart';
-import 'package:spdms_app/features/activity/pages/activity_list_page.dart';
-import 'package:spdms_app/core/di/service_locator.dart';
-import 'package:spdms_app/core/utils/string_utils.dart';
+import 'package:pragatix/features/teacher/services/teacher_proxy_service.dart';
+import 'package:pragatix/features/activity/pages/activity_list_page.dart';
+import 'package:pragatix/core/di/service_locator.dart';
+import 'package:pragatix/core/utils/string_utils.dart';
 
 class ActivityTab extends StatefulWidget {
-  const ActivityTab({super.key, });
+  const ActivityTab({super.key});
 
   @override
   State<ActivityTab> createState() => _ActivityTabState();
@@ -31,7 +31,9 @@ class _ActivityTabState extends State<ActivityTab> {
     try {
       final response = await getIt<TeacherProxyService>().get(
         Uri.parse('${ApiConfig.baseUrl}/api/v1/auth/me'),
-        headers: {'Authorization': 'Bearer ${context.read<AuthProvider>().token!}'},
+        headers: {
+          'Authorization': 'Bearer ${context.read<AuthProvider>().token!}',
+        },
       );
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -40,7 +42,7 @@ class _ActivityTabState extends State<ActivityTab> {
           final subs = d['subRoles'] as List<dynamic>? ?? [];
           final mainRoles = d['roles'] as List<dynamic>? ?? [];
           final combined = [...subs, ...mainRoles];
-          
+
           setState(() {
             isCc = combined.any((e) {
               final r = e.toString().toLowerCase();
@@ -84,9 +86,9 @@ class _ActivityTabState extends State<ActivityTab> {
           'subgroups': [
             {'id': 1, 'name': 'must (individual)', 'threshold': 30},
             {'id': 2, 'name': 'individual', 'threshold': 20},
-            {'id': 3, 'name': 'groups', 'threshold': 50}
-          ]
-        }
+            {'id': 3, 'name': 'groups', 'threshold': 50},
+          ],
+        },
       ];
       isLoading = false;
     });
@@ -95,12 +97,11 @@ class _ActivityTabState extends State<ActivityTab> {
   @override
   Widget build(BuildContext context) {
     if (isLoading) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
+      return const Scaffold(backgroundColor: Colors.transparent, body: Center(child: CircularProgressIndicator()));
     }
 
     return Scaffold(
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
         title: const Text(
           'Department Activities',
@@ -117,9 +118,10 @@ class _ActivityTabState extends State<ActivityTab> {
             const Text(
               'System Stages configured by Admin',
               style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF1E293B)),
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF1E293B),
+              ),
             ),
             const SizedBox(height: 16),
             Expanded(
@@ -134,7 +136,8 @@ class _ActivityTabState extends State<ActivityTab> {
                   return Card(
                     elevation: 3,
                     shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16)),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
                     margin: const EdgeInsets.only(bottom: 20),
                     child: Padding(
                       padding: const EdgeInsets.all(16.0),
@@ -144,27 +147,32 @@ class _ActivityTabState extends State<ActivityTab> {
                           Text(
                             name,
                             style: const TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFF1E293B)),
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF1E293B),
+                            ),
                           ),
                           const SizedBox(height: 4),
                           Text(
                             desc,
                             style: TextStyle(
-                                fontSize: 13, color: Colors.grey.shade600),
+                              fontSize: 13,
+                              color: Colors.grey.shade600,
+                            ),
                           ),
                           const Divider(height: 24),
                           if (subgroups.isEmpty)
                             Padding(
                               padding: const EdgeInsets.symmetric(
-                                  vertical: 8.0),
+                                vertical: 8.0,
+                              ),
                               child: Text(
                                 'No subgroups configured for this stage.',
                                 style: TextStyle(
-                                    fontSize: 13,
-                                    fontStyle: FontStyle.italic,
-                                    color: Colors.grey.shade500),
+                                  fontSize: 13,
+                                  fontStyle: FontStyle.italic,
+                                  color: Colors.grey.shade500,
+                                ),
                               ),
                             )
                           else
@@ -175,7 +183,9 @@ class _ActivityTabState extends State<ActivityTab> {
                               itemBuilder: (context, subIndex) {
                                 final sub = subgroups[subIndex];
                                 final String rawSubName = sub['name'] ?? '';
-                                final String subName = StringUtils.toTitleCase(rawSubName);
+                                final String subName = StringUtils.toTitleCase(
+                                  rawSubName,
+                                );
                                 final int threshold = sub['threshold'] ?? 0;
 
                                 return InkWell(
@@ -184,7 +194,6 @@ class _ActivityTabState extends State<ActivityTab> {
                                       context,
                                       MaterialPageRoute(
                                         builder: (_) => ActivityListPage(
-                                          
                                           subgroupId: sub['id'] as int,
                                           subgroupName: rawSubName,
                                           subgroupCategory: name,
@@ -199,7 +208,9 @@ class _ActivityTabState extends State<ActivityTab> {
                                   borderRadius: BorderRadius.circular(10),
                                   child: Container(
                                     padding: const EdgeInsets.symmetric(
-                                        vertical: 8, horizontal: 12),
+                                      vertical: 8,
+                                      horizontal: 12,
+                                    ),
                                     margin: const EdgeInsets.only(bottom: 8),
                                     decoration: BoxDecoration(
                                       color: Colors.grey.shade100,
@@ -210,22 +221,29 @@ class _ActivityTabState extends State<ActivityTab> {
                                           MainAxisAlignment.spaceBetween,
                                       children: [
                                         Expanded(
-                                          child: Text(subName,
-                                              style: const TextStyle(
-                                                  fontWeight: FontWeight.w600,
-                                                  fontSize: 14)),
+                                          child: Text(
+                                            subName,
+                                            style: const TextStyle(
+                                              fontWeight: FontWeight.w600,
+                                              fontSize: 14,
+                                            ),
+                                          ),
                                         ),
                                         Row(
                                           children: [
                                             Text(
                                               'Threshold: $threshold pts',
                                               style: const TextStyle(
-                                                  fontWeight: FontWeight.bold,
-                                                  color: Color(0xFF11998e)),
+                                                fontWeight: FontWeight.bold,
+                                                color: Color(0xFF11998e),
+                                              ),
                                             ),
                                             const SizedBox(width: 8),
-                                            const Icon(Icons.chevron_right,
-                                                size: 18, color: Colors.grey),
+                                            const Icon(
+                                              Icons.chevron_right,
+                                              size: 18,
+                                              color: Colors.grey,
+                                            ),
                                           ],
                                         ),
                                       ],

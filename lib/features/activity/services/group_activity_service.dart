@@ -1,9 +1,8 @@
-
 import 'dart:convert';
-import 'package:spdms_app/core/utils/api_client.dart' as http;
-import 'package:spdms_app/core/config/api_config.dart';
-import 'package:spdms_app/features/team/models/team.dart';
-import 'package:spdms_app/features/auth/providers/auth_provider.dart';
+import 'package:pragatix/core/utils/api_client.dart' as http;
+import 'package:pragatix/core/config/api_config.dart';
+import 'package:pragatix/features/team/models/team.dart';
+import 'package:pragatix/features/auth/providers/auth_provider.dart';
 
 class GroupActivityService {
   final AuthProvider authProvider;
@@ -14,7 +13,9 @@ class GroupActivityService {
 
   Future<List<Team>> getTeamsForAssignment(int assignmentId) async {
     final response = await http.get(
-      Uri.parse('${ApiConfig.baseUrl}/api/v1/group-activities/assignments/$assignmentId/teams'),
+      Uri.parse(
+        '${ApiConfig.baseUrl}/api/v1/group-activities/assignments/$assignmentId/teams',
+      ),
       headers: {
         'Authorization': 'Bearer $token',
         'Content-Type': 'application/json',
@@ -51,7 +52,9 @@ class GroupActivityService {
     };
 
     final response = await http.post(
-      Uri.parse('${ApiConfig.baseUrl}/api/v1/group-activities/teams/$teamId/award-xp'),
+      Uri.parse(
+        '${ApiConfig.baseUrl}/api/v1/group-activities/teams/$teamId/award-xp',
+      ),
       headers: {
         'Authorization': 'Bearer $token',
         'Content-Type': 'application/json',
@@ -83,16 +86,25 @@ class GroupActivityService {
       if (!jsonResponse['success']) {
         throw Exception(jsonResponse['message']);
       }
-    } else if (response.statusCode == 400 || response.statusCode == 403 || response.statusCode == 409) {
+    } else if (response.statusCode == 400 ||
+        response.statusCode == 403 ||
+        response.statusCode == 409) {
       final jsonResponse = jsonDecode(response.body);
       throw Exception(jsonResponse['message']);
     } else {
       throw Exception('Failed to delete team');
     }
   }
-  Future<http.Response> searchStudents(String keyword, int page, int size) async {
+
+  Future<http.Response> searchStudents(
+    String keyword,
+    int page,
+    int size,
+  ) async {
     return http.get(
-      Uri.parse('${ApiConfig.baseUrl}/api/v1/students/search?keyword=${Uri.encodeComponent(keyword)}&page=$page&size=$size'),
+      Uri.parse(
+        '${ApiConfig.baseUrl}/api/v1/students/search?keyword=${Uri.encodeComponent(keyword)}&page=$page&size=$size',
+      ),
       headers: {'Authorization': 'Bearer $token'},
     );
   }

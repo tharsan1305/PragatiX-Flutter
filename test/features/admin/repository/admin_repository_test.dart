@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:http/http.dart' as http;
-import 'package:spdms_app/features/admin/repository/admin_repository.dart';
+import 'package:pragatix/features/admin/repository/admin_repository.dart';
 import '../../../helpers/mocks.dart';
 
 void main() {

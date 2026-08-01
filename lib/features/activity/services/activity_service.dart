@@ -1,9 +1,8 @@
-
 import 'package:flutter/foundation.dart';
 import 'dart:convert';
-import 'package:spdms_app/core/utils/api_client.dart' as http;
-import 'package:spdms_app/features/activity/utils/constants.dart';
-import 'package:spdms_app/features/auth/providers/auth_provider.dart';
+import 'package:pragatix/core/utils/api_client.dart' as http;
+import 'package:pragatix/features/activity/utils/constants.dart';
+import 'package:pragatix/features/auth/providers/auth_provider.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Activity module – HTTP layer.
@@ -17,32 +16,30 @@ class ActivityService {
 
   String get token => authProvider.token ?? '';
 
-  Map<String, String> get _authHeaders => {
-        'Authorization': 'Bearer $token',
-      };
+  Map<String, String> get _authHeaders => {'Authorization': 'Bearer $token'};
 
   Map<String, String> get _jsonHeaders => {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer $token',
-      };
+    'Content-Type': 'application/json',
+    'Authorization': 'Bearer $token',
+  };
 
-  Future<List<dynamic>> fetchActivities({int? stageId, String? subgroupName, String? academicYear}) async {
+  Future<List<dynamic>> fetchActivities({
+    int? stageId,
+    String? subgroupName,
+    String? academicYear,
+  }) async {
     String url = stageId != null
         ? '${ActivityConstants.baseUrl}/stages/$stageId/activities'
         : '${ActivityConstants.baseUrl}/activities';
-    
+
     List<String> queryParams = [];
     if (subgroupName != null) queryParams.add('subgroup=$subgroupName');
-    if (academicYear != null) queryParams.add('academicYear=$academicYear');
-    
+
     if (queryParams.isNotEmpty) {
       url += '?${queryParams.join('&')}';
     }
     try {
-      final response = await http.get(
-        Uri.parse(url),
-        headers: _authHeaders,
-      );
+      final response = await http.get(Uri.parse(url), headers: _authHeaders);
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body) as Map<String, dynamic>;
         if (data['success'] == true) {
@@ -53,7 +50,9 @@ class ActivityService {
       } else if (response.statusCode == 500) {
         throw Exception('Unable to load activities.');
       }
-      throw Exception('Failed to fetch activities (status ${response.statusCode})');
+      throw Exception(
+        'Failed to fetch activities (status ${response.statusCode})',
+      );
     } catch (e) {
       if (e is Exception && !e.toString().contains('SocketException')) {
         rethrow;
@@ -62,28 +61,38 @@ class ActivityService {
     }
   }
 
-  Future<List<dynamic>> fetchGroupedActivities({String? subgroupName, String? academicYear}) async {
+  Future<List<dynamic>> fetchGroupedActivities({
+    int? stageId,
+    String? subgroupName,
+    String? academicYear,
+  }) async {
     String url = '${ActivityConstants.baseUrl}/activities/grouped';
-    
+
     List<String> queryParams = [];
-    if (subgroupName != null && subgroupName.isNotEmpty) queryParams.add('subgroup=$subgroupName');
-    if (academicYear != null) queryParams.add('academicYear=$academicYear');
-    
+    if (stageId != null) {
+      queryParams.add('stageId=$stageId');
+    }
+    if (subgroupName != null && subgroupName.isNotEmpty) {
+      queryParams.add('subgroup=$subgroupName');
+    }
+    if (academicYear != null && academicYear.isNotEmpty) {
+      queryParams.add('academicYear=$academicYear');
+    }
+
     if (queryParams.isNotEmpty) {
       url += '?${queryParams.join('&')}';
     }
     try {
-      final response = await http.get(
-        Uri.parse(url),
-        headers: _authHeaders,
-      );
+      final response = await http.get(Uri.parse(url), headers: _authHeaders);
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body) as Map<String, dynamic>;
         if (data['success'] == true) {
           return (data['data'] as List?) ?? [];
         }
       }
-      throw Exception('Failed to fetch grouped activities (status ${response.statusCode})');
+      throw Exception(
+        'Failed to fetch grouped activities (status ${response.statusCode})',
+      );
     } catch (e) {
       if (e is Exception && !e.toString().contains('SocketException')) {
         rethrow;
@@ -103,7 +112,9 @@ class ActivityService {
         return (data['data'] as List?) ?? [];
       }
     }
-    throw Exception('Failed to fetch departments (status ${response.statusCode})');
+    throw Exception(
+      'Failed to fetch departments (status ${response.statusCode})',
+    );
   }
 
   Future<List<dynamic>> fetchUsers() async {
@@ -131,7 +142,9 @@ class ActivityService {
         return (data['data'] as List?) ?? [];
       }
     }
-    throw Exception('Failed to fetch class coordinators (status ${response.statusCode})');
+    throw Exception(
+      'Failed to fetch class coordinators (status ${response.statusCode})',
+    );
   }
 
   Future<List<dynamic>> fetchCustomFrequencies() async {
@@ -145,10 +158,14 @@ class ActivityService {
         return (data['data'] as List?) ?? [];
       }
     }
-    throw Exception('Failed to fetch custom frequencies (status ${response.statusCode})');
+    throw Exception(
+      'Failed to fetch custom frequencies (status ${response.statusCode})',
+    );
   }
 
-  Future<Map<String, dynamic>> createCustomFrequency(Map<String, dynamic> body) async {
+  Future<Map<String, dynamic>> createCustomFrequency(
+    Map<String, dynamic> body,
+  ) async {
     final response = await http.post(
       Uri.parse('${ActivityConstants.baseUrl}/frequencies/custom'),
       headers: _jsonHeaders,
@@ -162,7 +179,10 @@ class ActivityService {
       throw Exception(data['message'] ?? 'Failed to create custom frequency');
     }
     final data = jsonDecode(response.body) as Map<String, dynamic>;
-    throw Exception(data['message'] ?? 'Failed to create custom frequency (status ${response.statusCode})');
+    throw Exception(
+      data['message'] ??
+          'Failed to create custom frequency (status ${response.statusCode})',
+    );
   }
 
   Future<Map<String, dynamic>> createActivity(Map<String, dynamic> body) async {
@@ -179,7 +199,9 @@ class ActivityService {
   }
 
   Future<Map<String, dynamic>> updateActivity(
-      int activityId, Map<String, dynamic> body) async {
+    int activityId,
+    Map<String, dynamic> body,
+  ) async {
     final response = await http.put(
       Uri.parse('${ActivityConstants.baseUrl}/activities/$activityId'),
       headers: _jsonHeaders,
@@ -192,9 +214,15 @@ class ActivityService {
     throw Exception(data['message'] ?? 'Failed to update activity');
   }
 
-  Future<void> mapActivityToStage(int stageId, int activityId, String subgroup) async {
+  Future<void> mapActivityToStage(
+    int stageId,
+    int activityId,
+    String subgroup,
+  ) async {
     final response = await http.post(
-      Uri.parse('${ActivityConstants.baseUrl}/stages/$stageId/activities/$activityId?subgroup=$subgroup'),
+      Uri.parse(
+        '${ActivityConstants.baseUrl}/stages/$stageId/activities/$activityId?subgroup=$subgroup',
+      ),
       headers: _authHeaders,
     );
     if (response.statusCode != 200 && response.statusCode != 201) {
@@ -205,7 +233,9 @@ class ActivityService {
 
   Future<void> unmapActivityFromStage(int stageId, int activityId) async {
     final response = await http.delete(
-      Uri.parse('${ActivityConstants.baseUrl}/stages/$stageId/activities/$activityId'),
+      Uri.parse(
+        '${ActivityConstants.baseUrl}/stages/$stageId/activities/$activityId',
+      ),
       headers: _authHeaders,
     );
     if (response.statusCode != 200 && response.statusCode != 204) {
@@ -215,17 +245,19 @@ class ActivityService {
   }
 
   Future<void> deleteActivity(int activityId, {bool force = false}) async {
-    final response = await http.delete(
-      Uri.parse('${ActivityConstants.baseUrl}/activities/$activityId?force=$force'),
-      headers: _authHeaders,
-    );
+    String url =
+        '${ActivityConstants.baseUrl}/activities/$activityId?force=$force';
+
+    final response = await http.delete(Uri.parse(url), headers: _authHeaders);
     if (response.statusCode != 200) {
       String message = 'Failed to delete activity';
       try {
         final data = jsonDecode(response.body);
         message = data['message'] ?? message;
       } catch (_) {}
-      throw Exception('${response.statusCode}:$message'); // We pack status code to avoid importing ApiException if it causes cyclic imports or just throw a custom formatted exception
+      throw Exception(
+        '${response.statusCode}:$message',
+      ); // We pack status code to avoid importing ApiException if it causes cyclic imports or just throw a custom formatted exception
     }
   }
 
@@ -234,7 +266,9 @@ class ActivityService {
       Uri.parse('${ActivityConstants.baseUrl}/sections'),
       headers: _authHeaders,
     );
-    debugPrint('DEBUG_LOG: fetchSections API Response status: ${response.statusCode}');
+    debugPrint(
+      'DEBUG_LOG: fetchSections API Response status: ${response.statusCode}',
+    );
     debugPrint('DEBUG_LOG: fetchSections API Response body: ${response.body}');
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body) as Map<String, dynamic>;
@@ -245,9 +279,12 @@ class ActivityService {
     throw Exception('Failed to fetch sections (status ${response.statusCode})');
   }
 
-  Future<List<dynamic>> fetchAssignments(int activityId) async {
+  Future<List<dynamic>> fetchAssignments(int activityId, [int? stageId]) async {
+    final url = stageId != null
+        ? '${ActivityConstants.baseUrl}/activities/$activityId/assignments?stageId=$stageId'
+        : '${ActivityConstants.baseUrl}/activities/$activityId/assignments';
     final response = await http.get(
-      Uri.parse('${ActivityConstants.baseUrl}/activities/$activityId/assignments'),
+      Uri.parse(url),
       headers: _authHeaders,
     );
     if (response.statusCode == 200) {
@@ -260,18 +297,46 @@ class ActivityService {
   }
 
   Future<Map<String, dynamic>> addAssignment(
-      int activityId, int departmentId, String year, int? sectionId, int? teacherId, String scope) async {
+    int activityId,
+    int departmentId,
+    String year,
+    int? sectionId,
+    int? teacherId,
+    String scope, [
+    int? stageId,
+  ]) async {
+    final url = stageId != null
+        ? '${ActivityConstants.baseUrl}/activities/$activityId/assignments?stageId=$stageId'
+        : '${ActivityConstants.baseUrl}/activities/$activityId/assignments';
+    final payload = {
+      'stageId': stageId,
+      'departmentId': departmentId,
+      'year': year,
+      'sectionId': sectionId,
+      'teacherId': teacherId,
+      'scope': scope,
+    };
+    
+    print('========================');
+    print('SAVE REQUEST');
+    print('activityId=$activityId');
+    print('stageId=$stageId');
+    print('stageActivityMappingId=?');
+    print('teacherId=$teacherId');
+    print('departmentId=$departmentId');
+    print('sectionId=$sectionId');
+    print('assignmentType=$scope');
+    print('assignmentMode=UNKNOWN'); // Need to fetch from somewhere, not in method args
+    print('URL=$url');
+    print('Payload=$payload');
+    print('========================');
+
     final response = await http.post(
-      Uri.parse('${ActivityConstants.baseUrl}/activities/$activityId/assignments'),
+      Uri.parse(url),
       headers: _jsonHeaders,
-      body: jsonEncode({
-        'departmentId': departmentId,
-        'year': year,
-        'sectionId': sectionId,
-        'teacherId': teacherId,
-        'scope': scope,
-      }),
+      body: jsonEncode(payload),
     );
+    print('SAVE RESPONSE BODY: ${response.body}');
     if (response.statusCode == 200 || response.statusCode == 201) {
       return jsonDecode(response.body) as Map<String, dynamic>;
     }
@@ -281,7 +346,9 @@ class ActivityService {
 
   Future<void> removeAssignment(int assignmentId) async {
     final response = await http.delete(
-      Uri.parse('${ActivityConstants.baseUrl}/activities/assignments/$assignmentId'),
+      Uri.parse(
+        '${ActivityConstants.baseUrl}/activities/assignments/$assignmentId',
+      ),
       headers: _authHeaders,
     );
     if (response.statusCode != 200) {
@@ -290,9 +357,12 @@ class ActivityService {
     }
   }
 
-  Future<void> clearAllAssignments(int activityId) async {
+  Future<void> clearAllAssignments(int activityId, [int? stageId]) async {
+    final url = stageId != null
+        ? '${ActivityConstants.baseUrl}/activities/$activityId/assignments/clear?stageId=$stageId'
+        : '${ActivityConstants.baseUrl}/activities/$activityId/assignments/clear';
     final response = await http.delete(
-      Uri.parse('${ActivityConstants.baseUrl}/activities/$activityId/assignments/clear'),
+      Uri.parse(url),
       headers: _authHeaders,
     );
     if (response.statusCode != 200) {
@@ -301,11 +371,21 @@ class ActivityService {
     }
   }
 
-  Future<void> assignActivity(int activityId, bool ccEnabled, bool globalEnabled, [List<Map<String, dynamic>>? assignments]) async {
+  Future<void> assignActivity(
+    int activityId,
+    bool ccEnabled,
+    bool globalEnabled, [
+    List<Map<String, dynamic>>? assignments,
+    int? stageId,
+  ]) async {
+    final url = stageId != null
+        ? '${ActivityConstants.baseUrl}/activities/$activityId/assign?stageId=$stageId'
+        : '${ActivityConstants.baseUrl}/activities/$activityId/assign';
     final response = await http.post(
-      Uri.parse('${ActivityConstants.baseUrl}/activities/$activityId/assign'),
+      Uri.parse(url),
       headers: _jsonHeaders,
       body: jsonEncode({
+        'stageId': stageId,
         'ccEnabled': ccEnabled,
         'globalEnabled': globalEnabled,
         'assignments': assignments ?? [],
@@ -313,7 +393,9 @@ class ActivityService {
     );
     if (response.statusCode != 200) {
       final data = jsonDecode(response.body) as Map<String, dynamic>;
-      throw Exception(data['message'] ?? 'Failed to update global assignment config');
+      throw Exception(
+        data['message'] ?? 'Failed to update global assignment config',
+      );
     }
   }
 
@@ -328,24 +410,31 @@ class ActivityService {
         return (data['data'] as List?) ?? [];
       }
     }
-    throw Exception('Failed to fetch my activities (status ${response.statusCode})');
+    throw Exception(
+      'Failed to fetch my activities (status ${response.statusCode})',
+    );
   }
 
-  Future<Map<String, dynamic>> fetchExecutionStudents(int activityId, {String? year, int? departmentId, int? sectionId}) async {
+  Future<Map<String, dynamic>> fetchExecutionStudents(
+    int activityId, {
+    String? year,
+    int? departmentId,
+    int? sectionId,
+  }) async {
     final rootUrl = ActivityConstants.baseUrl.replaceAll('/admin', '');
-    
+
     // Build query parameters
     final Map<String, String> queryParams = {};
     if (year != null && year.isNotEmpty) queryParams['year'] = year;
-    if (departmentId != null) queryParams['departmentId'] = departmentId.toString();
+    if (departmentId != null)
+      queryParams['departmentId'] = departmentId.toString();
     if (sectionId != null) queryParams['sectionId'] = sectionId.toString();
-    
-    final uri = Uri.parse('$rootUrl/my-activities/$activityId/students').replace(queryParameters: queryParams);
-    
-    final response = await http.get(
-      uri,
-      headers: _authHeaders,
-    );
+
+    final uri = Uri.parse(
+      '$rootUrl/my-activities/$activityId/students',
+    ).replace(queryParameters: queryParams);
+
+    final response = await http.get(uri, headers: _authHeaders);
     final data = jsonDecode(response.body) as Map<String, dynamic>;
     if (response.statusCode == 200 && data['success'] == true) {
       return data['data'] as Map<String, dynamic>;

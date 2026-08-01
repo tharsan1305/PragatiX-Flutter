@@ -24,10 +24,16 @@ class AdminAttendanceSummary {
       totalAbsent: json['totalAbsent'] as int,
       attendancePercentage: (json['attendancePercentage'] as num).toDouble(),
       presentStudents: (json['presentStudents'] as List)
-          .map((e) => StudentAttendanceListItem.fromJson(e as Map<String, dynamic>))
+          .map(
+            (e) =>
+                StudentAttendanceListItem.fromJson(e as Map<String, dynamic>),
+          )
           .toList(),
       absentStudents: (json['absentStudents'] as List)
-          .map((e) => StudentAttendanceListItem.fromJson(e as Map<String, dynamic>))
+          .map(
+            (e) =>
+                StudentAttendanceListItem.fromJson(e as Map<String, dynamic>),
+          )
           .toList(),
     );
   }

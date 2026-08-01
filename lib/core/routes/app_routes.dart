@@ -25,7 +25,7 @@ abstract final class AppRoutes {
   static const String captainDashboard = '/captain/dashboard';
 
   // ── Activity ──────────────────────────────────────────────────────────────
-  static const String activityList   = '/activity/list';
+  static const String activityList = '/activity/list';
   static const String activityCreate = '/activity/create';
-  static const String activityEdit   = '/activity/edit';
+  static const String activityEdit = '/activity/edit';
 }

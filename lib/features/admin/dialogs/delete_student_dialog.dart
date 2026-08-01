@@ -16,7 +16,10 @@ class DeleteStudentDialog extends StatelessWidget {
       title: const Text('Delete Student'),
       content: Text('Are you sure you want to delete student $studentName?'),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancel'),
+        ),
         TextButton(
           onPressed: () {
             Navigator.pop(context);

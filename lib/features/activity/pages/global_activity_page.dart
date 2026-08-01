@@ -6,8 +6,8 @@ import 'edit_activity_page.dart';
 import 'assign_staff_page.dart';
 import '../../../core/utils/error_handler.dart';
 import '../../../core/di/service_locator.dart';
-import 'package:spdms_app/core/theme/app_colors.dart';
-import 'package:spdms_app/features/auth/providers/auth_provider.dart';
+import 'package:pragatix/core/theme/app_colors.dart';
+import 'package:pragatix/features/auth/providers/auth_provider.dart';
 
 class GlobalActivityPage extends StatefulWidget {
   final String? selectedYear;
@@ -17,7 +17,8 @@ class GlobalActivityPage extends StatefulWidget {
   State<GlobalActivityPage> createState() => _GlobalActivityPageState();
 }
 
-class _GlobalActivityPageState extends State<GlobalActivityPage> with SingleTickerProviderStateMixin {
+class _GlobalActivityPageState extends State<GlobalActivityPage>
+    with SingleTickerProviderStateMixin {
   late ActivityProvider _provider;
   late TabController _tabController;
 
@@ -46,10 +47,10 @@ class _GlobalActivityPageState extends State<GlobalActivityPage> with SingleTick
 
   List<ActivityModel> get _filteredActivities {
     if (_provider.activities.isEmpty) return [];
-    
+
     // Tab 0: All
     // Tab 1: Unassigned (mappedStages is empty)
-    
+
     return _provider.activities.where((a) {
       if (_tabController.index == 1) {
         return a.mappedStages.isEmpty;
@@ -58,14 +59,19 @@ class _GlobalActivityPageState extends State<GlobalActivityPage> with SingleTick
     }).toList();
   }
 
-  Future<void> _handleDelete(ActivityModel activity, {bool force = false}) async {
+  Future<void> _handleDelete(
+    ActivityModel activity, {
+    bool force = false,
+  }) async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         title: Text(force ? 'Force Delete Activity' : 'Delete Activity'),
-        content: Text(force 
-          ? 'Are you sure you want to FORCE delete this activity? This will permanently wipe all history and XP.'
-          : 'Are you sure you want to delete this activity?'),
+        content: Text(
+          force
+              ? 'Are you sure you want to FORCE delete this activity? This will permanently wipe all history and XP.'
+              : 'Are you sure you want to delete this activity?',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
@@ -129,34 +135,51 @@ class _GlobalActivityPageState extends State<GlobalActivityPage> with SingleTick
   String? _selectedYear;
 
   bool get _isSuperAdmin {
-    final role = getIt<AuthProvider>().role;
-    return role == 'ROLE_SUPER_ADMIN';
+    final roles = getIt<AuthProvider>().currentUser?['roles'] as List<dynamic>? ?? [];
+    return roles.contains('ROLE_SUPER_ADMIN');
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
         title: const Text('Activity Management'),
         backgroundColor: AppColors.adminPrimary,
         foregroundColor: Colors.white,
         actions: [
-          if (_isSuperAdmin && false) // Hide the dropdown as we now use YearSelectionPage
+          if (_isSuperAdmin &&
+              false) // Hide the dropdown as we now use YearSelectionPage
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
               child: DropdownButton<String>(
                 value: _selectedYear,
-                hint: const Text('Select Year', style: TextStyle(color: Colors.white70)),
+                hint: const Text(
+                  'Select Year',
+                  style: TextStyle(color: Colors.white70),
+                ),
                 dropdownColor: AppColors.adminPrimary,
                 style: const TextStyle(color: Colors.white),
                 icon: const Icon(Icons.arrow_drop_down, color: Colors.white),
                 underline: Container(),
                 items: const [
                   DropdownMenuItem(value: null, child: Text('All Years')),
-                  DropdownMenuItem(value: 'FIRST_YEAR', child: Text('1st Year')),
-                  DropdownMenuItem(value: 'SECOND_YEAR', child: Text('2nd Year')),
-                  DropdownMenuItem(value: 'THIRD_YEAR', child: Text('3rd Year')),
-                  DropdownMenuItem(value: 'FOURTH_YEAR', child: Text('4th Year')),
+                  DropdownMenuItem(
+                    value: 'FIRST_YEAR',
+                    child: Text('1st Year'),
+                  ),
+                  DropdownMenuItem(
+                    value: 'SECOND_YEAR',
+                    child: Text('2nd Year'),
+                  ),
+                  DropdownMenuItem(
+                    value: 'THIRD_YEAR',
+                    child: Text('3rd Year'),
+                  ),
+                  DropdownMenuItem(
+                    value: 'FOURTH_YEAR',
+                    child: Text('4th Year'),
+                  ),
                 ],
                 onChanged: (val) {
                   setState(() {
@@ -192,7 +215,10 @@ class _GlobalActivityPageState extends State<GlobalActivityPage> with SingleTick
                 children: [
                   const Icon(Icons.error_outline, size: 48, color: Colors.red),
                   const SizedBox(height: 16),
-                  Text(_provider.error!, style: const TextStyle(color: Colors.red)),
+                  Text(
+                    _provider.error!,
+                    style: const TextStyle(color: Colors.red),
+                  ),
                   TextButton(
                     onPressed: () => _provider.loadActivities(),
                     child: const Text('Retry'),
@@ -219,7 +245,8 @@ class _GlobalActivityPageState extends State<GlobalActivityPage> with SingleTick
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (_) => EditActivityPage(provider: _provider, activity: act),
+                      builder: (_) =>
+                          EditActivityPage(provider: _provider, activity: act),
                     ),
                   ).then((value) {
                     if (value == true) _provider.loadActivities();
@@ -233,7 +260,8 @@ class _GlobalActivityPageState extends State<GlobalActivityPage> with SingleTick
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (_) => AssignStaffPage(provider: _provider, activity: act),
+                      builder: (_) =>
+                          AssignStaffPage(provider: _provider, activity: act),
                     ),
                   );
                 },

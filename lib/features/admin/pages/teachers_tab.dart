@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:spdms_app/core/utils/error_handler.dart';
-import 'package:spdms_app/features/admin/repository/admin_repository.dart';
-import 'package:spdms_app/core/di/service_locator.dart';
+import 'package:pragatix/core/utils/error_handler.dart';
+import 'package:pragatix/features/admin/repository/admin_repository.dart';
+import 'package:pragatix/core/di/service_locator.dart';
 
 Future<List<dynamic>> _apiGetDepartments(String token) async {
   try {
@@ -36,7 +36,7 @@ Future<List<dynamic>> _apiGetSubjects(String token) async {
 }
 
 class TeachersTab extends StatefulWidget {
-  const TeachersTab({super.key, });
+  const TeachersTab({super.key});
 
   @override
   State<TeachersTab> createState() => _TeachersTabState();
@@ -66,7 +66,10 @@ class _TeachersTabState extends State<TeachersTab> {
   bool isLoadingSections = false;
   int? lastFetchedDeptId;
 
-  Future<void> _fetchSectionsForDept(int? deptId, void Function(void Function()) setDialogState) async {
+  Future<void> _fetchSectionsForDept(
+    int? deptId,
+    void Function(void Function()) setDialogState,
+  ) async {
     if (deptId == null) {
       setDialogState(() {
         dialogSections = [];
@@ -124,7 +127,8 @@ class _TeachersTabState extends State<TeachersTab> {
       setState(() {
         usersList = allUsers.where((u) {
           final List<dynamic> roles = u['roles'] ?? [];
-          return roles.contains('ROLE_TEACHER') || roles.contains('ROLE_TRANSPORT');
+          return roles.contains('ROLE_TEACHER') ||
+              roles.contains('ROLE_TRANSPORT');
         }).toList();
         isLoading = false;
       });
@@ -151,9 +155,12 @@ class _TeachersTabState extends State<TeachersTab> {
       return;
     }
 
-    if (selectedSubRoles.contains('CC') && (selectedYear == null || selectedYear!.isEmpty)) {
+    if (selectedSubRoles.contains('CC') &&
+        (selectedYear == null || selectedYear!.isEmpty)) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select a Year for Class Coordinator (CC).')),
+        const SnackBar(
+          content: Text('Please select a Year for Class Coordinator (CC).'),
+        ),
       );
       return;
     }
@@ -168,13 +175,16 @@ class _TeachersTabState extends State<TeachersTab> {
         'roles': [selectedMainRole],
         'subRoles': selectedSubRoles.toList(),
         'sectionId': selectedSubRoles.contains('CC') ? selectedSectionId : null,
-        'year': selectedSubRoles.contains('CC') ? selectedYear : null
+        'year': selectedSubRoles.contains('CC') ? selectedYear : null,
       });
 
       if (!mounted) return;
-      
+
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('User added successfully!'), backgroundColor: Colors.green),
+        const SnackBar(
+          content: Text('User added successfully!'),
+          backgroundColor: Colors.green,
+        ),
       );
       _clearControllers();
       Navigator.pop(context);
@@ -193,9 +203,12 @@ class _TeachersTabState extends State<TeachersTab> {
       );
       return;
     }
-    if (selectedSubRoles.contains('CC') && (selectedYear == null || selectedYear!.isEmpty)) {
+    if (selectedSubRoles.contains('CC') &&
+        (selectedYear == null || selectedYear!.isEmpty)) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select a Year for Class Coordinator (CC).')),
+        const SnackBar(
+          content: Text('Please select a Year for Class Coordinator (CC).'),
+        ),
       );
       return;
     }
@@ -208,11 +221,14 @@ class _TeachersTabState extends State<TeachersTab> {
         'subRoles': selectedSubRoles.toList(),
         'sectionId': selectedSubRoles.contains('CC') ? selectedSectionId : null,
         'year': selectedSubRoles.contains('CC') ? selectedYear : null,
-        'active': true
+        'active': true,
       });
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('User updated successfully!'), backgroundColor: Colors.green),
+        const SnackBar(
+          content: Text('User updated successfully!'),
+          backgroundColor: Colors.green,
+        ),
       );
       _clearControllers();
       Navigator.pop(context);
@@ -229,7 +245,10 @@ class _TeachersTabState extends State<TeachersTab> {
       await getIt<AdminRepository>().deleteUser(id);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('User deleted successfully!'), backgroundColor: Colors.green),
+        const SnackBar(
+          content: Text('User deleted successfully!'),
+          backgroundColor: Colors.green,
+        ),
       );
       setState(() => isLoading = true);
       _fetchTeachers();
@@ -245,7 +264,10 @@ class _TeachersTabState extends State<TeachersTab> {
       await getIt<AdminRepository>().addSubject(name.trim());
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Subject created successfully!'), backgroundColor: Colors.green),
+        const SnackBar(
+          content: Text('Subject created successfully!'),
+          backgroundColor: Colors.green,
+        ),
       );
       _loadMetadata();
     } catch (e) {
@@ -259,7 +281,10 @@ class _TeachersTabState extends State<TeachersTab> {
       await getIt<AdminRepository>().deleteSubject(id);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Subject deleted successfully!'), backgroundColor: Colors.green),
+        const SnackBar(
+          content: Text('Subject deleted successfully!'),
+          backgroundColor: Colors.green,
+        ),
       );
       _loadMetadata();
     } catch (e) {
@@ -276,7 +301,10 @@ class _TeachersTabState extends State<TeachersTab> {
         return StatefulBuilder(
           builder: (context, setDialogState) {
             return AlertDialog(
-              title: const Text('Manage Subjects', style: TextStyle(fontWeight: FontWeight.bold)),
+              title: const Text(
+                'Manage Subjects',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
               content: SizedBox(
                 width: double.maxFinite,
                 height: 350,
@@ -301,25 +329,42 @@ class _TeachersTabState extends State<TeachersTab> {
                             await _addSubject(subjectController.text.trim());
                             subjectController.clear();
                             if (!mounted) return;
-                            final freshSubjects = await getIt<AdminRepository>().getSubjects();
+                            final freshSubjects = await getIt<AdminRepository>()
+                                .getSubjects();
                             setDialogState(() {
                               subjectsList = freshSubjects;
                             });
                           },
-                          style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFEA4335)),
-                          child: const Text('Add', style: TextStyle(color: Colors.white)),
-                        )
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFFEA4335),
+                          ),
+                          child: const Text(
+                            'Add',
+                            style: TextStyle(color: Colors.white),
+                          ),
+                        ),
                       ],
                     ),
                     const SizedBox(height: 16),
                     const Align(
                       alignment: Alignment.centerLeft,
-                      child: Text('Configured Subjects:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                      child: Text(
+                        'Configured Subjects:',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
+                      ),
                     ),
                     const SizedBox(height: 8),
                     Expanded(
                       child: subjectsList.isEmpty
-                          ? const Center(child: Text('No subjects created yet.', style: TextStyle(fontStyle: FontStyle.italic)))
+                          ? const Center(
+                              child: Text(
+                                'No subjects created yet.',
+                                style: TextStyle(fontStyle: FontStyle.italic),
+                              ),
+                            )
                           : ListView.builder(
                               itemCount: subjectsList.length,
                               itemBuilder: (context, index) {
@@ -327,11 +372,16 @@ class _TeachersTabState extends State<TeachersTab> {
                                 return ListTile(
                                   title: Text(s['name'] ?? ''),
                                   trailing: IconButton(
-                                    icon: const Icon(Icons.delete_outline, color: Colors.red),
+                                    icon: const Icon(
+                                      Icons.delete_outline,
+                                      color: Colors.red,
+                                    ),
                                     onPressed: () async {
                                       await _deleteSubject(s['id']);
                                       if (!mounted) return;
-                                      final freshSubjects = await getIt<AdminRepository>().getSubjects();
+                                      final freshSubjects =
+                                          await getIt<AdminRepository>()
+                                              .getSubjects();
                                       setDialogState(() {
                                         subjectsList = freshSubjects;
                                       });
@@ -348,7 +398,7 @@ class _TeachersTabState extends State<TeachersTab> {
                 TextButton(
                   onPressed: () => Navigator.pop(context),
                   child: const Text('Close'),
-                )
+                ),
               ],
             );
           },
@@ -380,32 +430,72 @@ class _TeachersTabState extends State<TeachersTab> {
         return StatefulBuilder(
           builder: (context, setDialogState) {
             if (lastFetchedDeptId != selectedDeptId) {
-              Future.microtask(() => _fetchSectionsForDept(selectedDeptId, setDialogState));
+              Future.microtask(
+                () => _fetchSectionsForDept(selectedDeptId, setDialogState),
+              );
             }
             return AlertDialog(
-              title: const Text('Add New Staff / User', style: TextStyle(fontWeight: FontWeight.bold)),
+              title: const Text(
+                'Add New Staff / User',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
               content: SingleChildScrollView(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    TextField(controller: usernameController, decoration: const InputDecoration(labelText: 'Username *')),
-                    TextField(controller: nameController, decoration: const InputDecoration(labelText: 'Full Name *')),
-                    TextField(controller: emailController, decoration: const InputDecoration(labelText: 'Email *')),
-                    TextField(controller: passwordController, obscureText: true, decoration: const InputDecoration(labelText: 'Password *')),
+                    TextField(
+                      controller: usernameController,
+                      decoration: const InputDecoration(
+                        labelText: 'Username *',
+                      ),
+                    ),
+                    TextField(
+                      controller: nameController,
+                      decoration: const InputDecoration(
+                        labelText: 'Full Name *',
+                      ),
+                    ),
+                    TextField(
+                      controller: emailController,
+                      decoration: const InputDecoration(labelText: 'Email *'),
+                    ),
+                    TextField(
+                      controller: passwordController,
+                      obscureText: true,
+                      decoration: const InputDecoration(
+                        labelText: 'Password *',
+                      ),
+                    ),
                     const SizedBox(height: 15),
                     DropdownButtonFormField<int?>(
-                      initialValue: departments.any((d) => (d['id'] != null ? int.tryParse(d['id'].toString()) : null) == selectedDeptId) ? selectedDeptId : null,
-                      decoration: const InputDecoration(labelText: 'Department'),
-                      items: departments
-                          .where((d) => d['id'] != null)
-                          .map((d) {
-                            final dId = int.tryParse(d['id'].toString());
-                            return DropdownMenuItem<int?>(
-                              value: dId,
-                              child: Text((d['code'] ?? d['name'] ?? d['deptCode'] ?? d['deptName'] ?? '').toString()),
-                            );
-                          }).toList(),
+                      initialValue:
+                          departments.any(
+                            (d) =>
+                                (d['id'] != null
+                                    ? int.tryParse(d['id'].toString())
+                                    : null) ==
+                                selectedDeptId,
+                          )
+                          ? selectedDeptId
+                          : null,
+                      decoration: const InputDecoration(
+                        labelText: 'Department',
+                      ),
+                      items: departments.where((d) => d['id'] != null).map((d) {
+                        final dId = int.tryParse(d['id'].toString());
+                        return DropdownMenuItem<int?>(
+                          value: dId,
+                          child: Text(
+                            (d['code'] ??
+                                    d['name'] ??
+                                    d['deptCode'] ??
+                                    d['deptName'] ??
+                                    '')
+                                .toString(),
+                          ),
+                        );
+                      }).toList(),
                       onChanged: (value) {
                         setDialogState(() {
                           selectedDeptId = value;
@@ -416,10 +506,18 @@ class _TeachersTabState extends State<TeachersTab> {
                     const SizedBox(height: 15),
                     DropdownButtonFormField<String>(
                       initialValue: selectedMainRole,
-                      decoration: const InputDecoration(labelText: 'System Role *'),
+                      decoration: const InputDecoration(
+                        labelText: 'System Role *',
+                      ),
                       items: const [
-                        DropdownMenuItem(value: 'ROLE_TEACHER', child: Text('Teacher')),
-                        DropdownMenuItem(value: 'ROLE_TRANSPORT', child: Text('Transport')),
+                        DropdownMenuItem(
+                          value: 'ROLE_TEACHER',
+                          child: Text('Teacher'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'ROLE_TRANSPORT',
+                          child: Text('Transport'),
+                        ),
                       ],
                       onChanged: (value) {
                         setDialogState(() {
@@ -429,9 +527,21 @@ class _TeachersTabState extends State<TeachersTab> {
                     ),
                     if (selectedMainRole == 'ROLE_TEACHER') ...[
                       const SizedBox(height: 15),
-                      const Text('Teacher Sub-Roles:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                      const Text(
+                        'Teacher Sub-Roles:',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
+                      ),
                       const SizedBox(height: 8),
-                      ...['HOD', 'CC', 'Discipline Commitee', 'Lab instructor', 'PET'].map((subRole) {
+                      ...[
+                        'HOD',
+                        'CC',
+                        'Discipline Commitee',
+                        'Lab instructor',
+                        'PET',
+                      ].map((subRole) {
                         return CheckboxListTile(
                           title: Text(subRole),
                           value: selectedSubRoles.contains(subRole),
@@ -440,7 +550,7 @@ class _TeachersTabState extends State<TeachersTab> {
                           onChanged: (bool? checked) {
                             setDialogState(() {
                               if (checked == true) {
-                                  selectedSubRoles.add(subRole);
+                                selectedSubRoles.add(subRole);
                               } else {
                                 selectedSubRoles.remove(subRole);
                                 if (subRole == 'CC') {
@@ -455,16 +565,28 @@ class _TeachersTabState extends State<TeachersTab> {
                       if (selectedSubRoles.contains('CC')) ...[
                         const SizedBox(height: 8),
                         DropdownButtonFormField<String?>(
-                          initialValue: ['I', 'II', 'III', 'IV'].contains(selectedYear) ? selectedYear : null,
+                          initialValue:
+                              ['I', 'II', 'III', 'IV'].contains(selectedYear)
+                              ? selectedYear
+                              : null,
                           decoration: const InputDecoration(
                             labelText: 'Coordinator Year *',
                             border: OutlineInputBorder(),
                           ),
                           items: const [
                             DropdownMenuItem(value: 'I', child: Text('I Year')),
-                            DropdownMenuItem(value: 'II', child: Text('II Year')),
-                            DropdownMenuItem(value: 'III', child: Text('III Year')),
-                            DropdownMenuItem(value: 'IV', child: Text('IV Year')),
+                            DropdownMenuItem(
+                              value: 'II',
+                              child: Text('II Year'),
+                            ),
+                            DropdownMenuItem(
+                              value: 'III',
+                              child: Text('III Year'),
+                            ),
+                            DropdownMenuItem(
+                              value: 'IV',
+                              child: Text('IV Year'),
+                            ),
                           ],
                           onChanged: (value) {
                             setDialogState(() {
@@ -479,7 +601,12 @@ class _TeachersTabState extends State<TeachersTab> {
                             final hasSecs = filteredSections.isNotEmpty;
 
                             return DropdownButtonFormField<int?>(
-                              initialValue: filteredSections.any((sec) => sec['id'] == selectedSectionId) ? selectedSectionId : null,
+                              initialValue:
+                                  filteredSections.any(
+                                    (sec) => sec['id'] == selectedSectionId,
+                                  )
+                                  ? selectedSectionId
+                                  : null,
                               decoration: const InputDecoration(
                                 labelText: 'Coordinator Section *',
                                 border: OutlineInputBorder(),
@@ -487,14 +614,20 @@ class _TeachersTabState extends State<TeachersTab> {
                               items: [
                                 DropdownMenuItem<int?>(
                                   value: null,
-                                  child: Text(hasSecs ? 'Select Section' : 'No Sections Available'),
+                                  child: Text(
+                                    hasSecs
+                                        ? 'Select Section'
+                                        : 'No Sections Available',
+                                  ),
                                 ),
                                 ...filteredSections.map((sec) {
                                   return DropdownMenuItem<int?>(
                                     value: sec['id'],
-                                    child: Text("Section ${sec["sectionName"] ?? ""}"),
+                                    child: Text(
+                                      "Section ${sec["sectionName"] ?? ""}",
+                                    ),
                                   );
-                                })
+                                }),
                               ],
                               onChanged: (value) {
                                 setDialogState(() {
@@ -502,15 +635,31 @@ class _TeachersTabState extends State<TeachersTab> {
                                 });
                               },
                             );
-                          }
+                          },
                         ),
                       ],
                       const SizedBox(height: 10),
-                      const Text('Subject Specialization:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.grey)),
+                      const Text(
+                        'Subject Specialization:',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13,
+                          color: Colors.grey,
+                        ),
+                      ),
                       if (subjectsList.isEmpty)
                         const Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-                          child: Text("No subjects configured. Add subjects under 'Manage Subjects'.", style: TextStyle(fontSize: 12, fontStyle: FontStyle.italic)),
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 16.0,
+                            vertical: 8.0,
+                          ),
+                          child: Text(
+                            "No subjects configured. Add subjects under 'Manage Subjects'.",
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontStyle: FontStyle.italic,
+                            ),
+                          ),
                         )
                       else
                         ...subjectsList.map((subject) {
@@ -532,16 +681,24 @@ class _TeachersTabState extends State<TeachersTab> {
                             },
                           );
                         }),
-                    ]
+                    ],
                   ],
                 ),
               ),
               actions: [
-                TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Cancel'),
+                ),
                 ElevatedButton(
                   onPressed: _addTeacher,
-                  style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFEA4335)),
-                  child: const Text('Create', style: TextStyle(color: Colors.white)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFEA4335),
+                  ),
+                  child: const Text(
+                    'Create',
+                    style: TextStyle(color: Colors.white),
+                  ),
                 ),
               ],
             );
@@ -554,8 +711,10 @@ class _TeachersTabState extends State<TeachersTab> {
   void _showEditTeacherDialog(Map<String, dynamic> teacher) {
     nameController.text = teacher['fullName'] ?? '';
     emailController.text = teacher['email'] ?? '';
-    selectedDeptId = teacher['departmentId'] != null ? int.tryParse(teacher['departmentId'].toString()) : null;
-    
+    selectedDeptId = teacher['departmentId'] != null
+        ? int.tryParse(teacher['departmentId'].toString())
+        : null;
+
     final List<dynamic> rolesList = teacher['roles'] ?? [];
     if (rolesList.isNotEmpty) {
       selectedMainRole = rolesList.first.toString();
@@ -565,11 +724,19 @@ class _TeachersTabState extends State<TeachersTab> {
 
     final List<dynamic> subRolesList = teacher['subRoles'] ?? [];
     selectedSubRoles = subRolesList.map((e) => e.toString()).toSet();
-    selectedSectionId = teacher['sectionId'] != null ? int.tryParse(teacher['sectionId'].toString()) : null;
-    if (selectedSectionId == null && teacher['section'] != null && selectedDeptId != null) {
+    selectedSectionId = teacher['sectionId'] != null
+        ? int.tryParse(teacher['sectionId'].toString())
+        : null;
+    if (selectedSectionId == null &&
+        teacher['section'] != null &&
+        selectedDeptId != null) {
       final match = sections.firstWhere((sec) {
-        final depId = sec['department'] != null ? sec['department']['id'] : sec['departmentId'];
-        return depId == selectedDeptId && sec['sectionName']?.toString().trim().toLowerCase() == teacher['section'].toString().trim().toLowerCase();
+        final depId = sec['department'] != null
+            ? sec['department']['id']
+            : sec['departmentId'];
+        return depId == selectedDeptId &&
+            sec['sectionName']?.toString().trim().toLowerCase() ==
+                teacher['section'].toString().trim().toLowerCase();
       }, orElse: () => null);
       if (match != null) {
         selectedSectionId = match['id'];
@@ -594,30 +761,59 @@ class _TeachersTabState extends State<TeachersTab> {
         return StatefulBuilder(
           builder: (context, setDialogState) {
             if (lastFetchedDeptId != selectedDeptId) {
-              Future.microtask(() => _fetchSectionsForDept(selectedDeptId, setDialogState));
+              Future.microtask(
+                () => _fetchSectionsForDept(selectedDeptId, setDialogState),
+              );
             }
             return AlertDialog(
-              title: Text("Edit User: ${teacher["username"]}", style: const TextStyle(fontWeight: FontWeight.bold)),
+              title: Text(
+                "Edit User: ${teacher["username"]}",
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
               content: SingleChildScrollView(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    TextField(controller: nameController, decoration: const InputDecoration(labelText: 'Full Name *')),
-                    TextField(controller: emailController, decoration: const InputDecoration(labelText: 'Email *')),
+                    TextField(
+                      controller: nameController,
+                      decoration: const InputDecoration(
+                        labelText: 'Full Name *',
+                      ),
+                    ),
+                    TextField(
+                      controller: emailController,
+                      decoration: const InputDecoration(labelText: 'Email *'),
+                    ),
                     const SizedBox(height: 15),
                     DropdownButtonFormField<int?>(
-                      initialValue: departments.any((d) => (d['id'] != null ? int.tryParse(d['id'].toString()) : null) == selectedDeptId) ? selectedDeptId : null,
-                      decoration: const InputDecoration(labelText: 'Department'),
-                      items: departments
-                          .where((d) => d['id'] != null)
-                          .map((d) {
-                            final dId = int.tryParse(d['id'].toString());
-                            return DropdownMenuItem<int?>(
-                              value: dId,
-                              child: Text((d['code'] ?? d['name'] ?? d['deptCode'] ?? d['deptName'] ?? '').toString()),
-                            );
-                          }).toList(),
+                      initialValue:
+                          departments.any(
+                            (d) =>
+                                (d['id'] != null
+                                    ? int.tryParse(d['id'].toString())
+                                    : null) ==
+                                selectedDeptId,
+                          )
+                          ? selectedDeptId
+                          : null,
+                      decoration: const InputDecoration(
+                        labelText: 'Department',
+                      ),
+                      items: departments.where((d) => d['id'] != null).map((d) {
+                        final dId = int.tryParse(d['id'].toString());
+                        return DropdownMenuItem<int?>(
+                          value: dId,
+                          child: Text(
+                            (d['code'] ??
+                                    d['name'] ??
+                                    d['deptCode'] ??
+                                    d['deptName'] ??
+                                    '')
+                                .toString(),
+                          ),
+                        );
+                      }).toList(),
                       onChanged: (value) {
                         setDialogState(() {
                           selectedDeptId = value;
@@ -628,10 +824,18 @@ class _TeachersTabState extends State<TeachersTab> {
                     const SizedBox(height: 15),
                     DropdownButtonFormField<String>(
                       initialValue: selectedMainRole,
-                      decoration: const InputDecoration(labelText: 'System Role *'),
+                      decoration: const InputDecoration(
+                        labelText: 'System Role *',
+                      ),
                       items: const [
-                        DropdownMenuItem(value: 'ROLE_TEACHER', child: Text('Teacher')),
-                        DropdownMenuItem(value: 'ROLE_TRANSPORT', child: Text('Transport')),
+                        DropdownMenuItem(
+                          value: 'ROLE_TEACHER',
+                          child: Text('Teacher'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'ROLE_TRANSPORT',
+                          child: Text('Transport'),
+                        ),
                       ],
                       onChanged: (value) {
                         setDialogState(() {
@@ -641,9 +845,21 @@ class _TeachersTabState extends State<TeachersTab> {
                     ),
                     if (selectedMainRole == 'ROLE_TEACHER') ...[
                       const SizedBox(height: 15),
-                      const Text('Teacher Sub-Roles:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                      const Text(
+                        'Teacher Sub-Roles:',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
+                      ),
                       const SizedBox(height: 8),
-                      ...['HOD', 'CC', 'Discipline Commitee', 'Lab instructor', 'PET'].map((subRole) {
+                      ...[
+                        'HOD',
+                        'CC',
+                        'Discipline Commitee',
+                        'Lab instructor',
+                        'PET',
+                      ].map((subRole) {
                         return CheckboxListTile(
                           title: Text(subRole),
                           value: selectedSubRoles.contains(subRole),
@@ -667,16 +883,28 @@ class _TeachersTabState extends State<TeachersTab> {
                       if (selectedSubRoles.contains('CC')) ...[
                         const SizedBox(height: 8),
                         DropdownButtonFormField<String?>(
-                          initialValue: ['I', 'II', 'III', 'IV'].contains(selectedYear) ? selectedYear : null,
+                          initialValue:
+                              ['I', 'II', 'III', 'IV'].contains(selectedYear)
+                              ? selectedYear
+                              : null,
                           decoration: const InputDecoration(
                             labelText: 'Coordinator Year *',
                             border: OutlineInputBorder(),
                           ),
                           items: const [
                             DropdownMenuItem(value: 'I', child: Text('I Year')),
-                            DropdownMenuItem(value: 'II', child: Text('II Year')),
-                            DropdownMenuItem(value: 'III', child: Text('III Year')),
-                            DropdownMenuItem(value: 'IV', child: Text('IV Year')),
+                            DropdownMenuItem(
+                              value: 'II',
+                              child: Text('II Year'),
+                            ),
+                            DropdownMenuItem(
+                              value: 'III',
+                              child: Text('III Year'),
+                            ),
+                            DropdownMenuItem(
+                              value: 'IV',
+                              child: Text('IV Year'),
+                            ),
                           ],
                           onChanged: (value) {
                             setDialogState(() {
@@ -691,7 +919,12 @@ class _TeachersTabState extends State<TeachersTab> {
                             final hasSecs = filteredSections.isNotEmpty;
 
                             return DropdownButtonFormField<int?>(
-                              initialValue: filteredSections.any((sec) => sec['id'] == selectedSectionId) ? selectedSectionId : null,
+                              initialValue:
+                                  filteredSections.any(
+                                    (sec) => sec['id'] == selectedSectionId,
+                                  )
+                                  ? selectedSectionId
+                                  : null,
                               decoration: const InputDecoration(
                                 labelText: 'Coordinator Section *',
                                 border: OutlineInputBorder(),
@@ -699,14 +932,20 @@ class _TeachersTabState extends State<TeachersTab> {
                               items: [
                                 DropdownMenuItem<int?>(
                                   value: null,
-                                  child: Text(hasSecs ? 'Select Section' : 'No Sections Available'),
+                                  child: Text(
+                                    hasSecs
+                                        ? 'Select Section'
+                                        : 'No Sections Available',
+                                  ),
                                 ),
                                 ...filteredSections.map((sec) {
                                   return DropdownMenuItem<int?>(
                                     value: sec['id'],
-                                    child: Text("Section ${sec["sectionName"] ?? ""}"),
+                                    child: Text(
+                                      "Section ${sec["sectionName"] ?? ""}",
+                                    ),
                                   );
-                                })
+                                }),
                               ],
                               onChanged: (value) {
                                 setDialogState(() {
@@ -714,15 +953,31 @@ class _TeachersTabState extends State<TeachersTab> {
                                 });
                               },
                             );
-                          }
+                          },
                         ),
                       ],
                       const SizedBox(height: 10),
-                      const Text('Subject Specialization:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.grey)),
+                      const Text(
+                        'Subject Specialization:',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13,
+                          color: Colors.grey,
+                        ),
+                      ),
                       if (subjectsList.isEmpty)
                         const Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-                          child: Text("No subjects configured. Add subjects under 'Manage Subjects'.", style: TextStyle(fontSize: 12, fontStyle: FontStyle.italic)),
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 16.0,
+                            vertical: 8.0,
+                          ),
+                          child: Text(
+                            "No subjects configured. Add subjects under 'Manage Subjects'.",
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontStyle: FontStyle.italic,
+                            ),
+                          ),
                         )
                       else
                         ...subjectsList.map((subject) {
@@ -744,16 +999,24 @@ class _TeachersTabState extends State<TeachersTab> {
                             },
                           );
                         }),
-                    ]
+                    ],
                   ],
                 ),
               ),
               actions: [
-                TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Cancel'),
+                ),
                 ElevatedButton(
                   onPressed: () => _editTeacher(teacher['id']),
-                  style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFEA4335)),
-                  child: const Text('Save Changes', style: TextStyle(color: Colors.white)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFEA4335),
+                  ),
+                  child: const Text(
+                    'Save Changes',
+                    style: TextStyle(color: Colors.white),
+                  ),
                 ),
               ],
             );
@@ -767,7 +1030,10 @@ class _TeachersTabState extends State<TeachersTab> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Teacher Directory', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+        title: const Text(
+          'Teacher Directory',
+          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+        ),
         backgroundColor: const Color(0xFF1E293B),
         elevation: 0,
         actions: [
@@ -777,7 +1043,7 @@ class _TeachersTabState extends State<TeachersTab> {
               setState(() => isLoading = true);
               _fetchTeachers();
             },
-          )
+          ),
         ],
       ),
       body: isLoading
@@ -791,15 +1057,33 @@ class _TeachersTabState extends State<TeachersTab> {
                     children: [
                       ElevatedButton.icon(
                         onPressed: _showManageSubjectsDialog,
-                        icon: const Icon(Icons.book_outlined, color: Colors.white, size: 18),
-                        label: const Text('Manage Subjects', style: TextStyle(color: Colors.white)),
-                        style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF1E293B)),
+                        icon: const Icon(
+                          Icons.book_outlined,
+                          color: Colors.white,
+                          size: 18,
+                        ),
+                        label: const Text(
+                          'Manage Subjects',
+                          style: TextStyle(color: Colors.white),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF1E293B),
+                        ),
                       ),
                       ElevatedButton.icon(
                         onPressed: _showAddTeacherDialog,
-                        icon: const Icon(Icons.add, color: Colors.white, size: 18),
-                        label: const Text('Add Teacher', style: TextStyle(color: Colors.white)),
-                        style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFEA4335)),
+                        icon: const Icon(
+                          Icons.add,
+                          color: Colors.white,
+                          size: 18,
+                        ),
+                        label: const Text(
+                          'Add Teacher',
+                          style: TextStyle(color: Colors.white),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFEA4335),
+                        ),
                       ),
                     ],
                   ),
@@ -812,9 +1096,12 @@ class _TeachersTabState extends State<TeachersTab> {
                         final String name = t['fullName'] ?? '';
                         final String username = t['username'] ?? '';
                         final String email = t['email'] ?? '';
-                        final String deptName = t['departmentName'] ?? 'No Department';
+                        final String deptName =
+                            t['departmentName'] ?? 'No Department';
                         final List<dynamic> rolesList = t['roles'] ?? [];
-                        final rolesStr = rolesList.map((e) => e.toString().replaceAll('ROLE_', '')).join(', ');
+                        final rolesStr = rolesList
+                            .map((e) => e.toString().replaceAll('ROLE_', ''))
+                            .join(', ');
                         final List<dynamic> subRolesList = t['subRoles'] ?? [];
                         String subRolesStr = '';
                         if (subRolesList.isNotEmpty) {
@@ -823,10 +1110,12 @@ class _TeachersTabState extends State<TeachersTab> {
                             if (r.toString() == 'CC') {
                               String ccDetails = 'CC';
                               final List<String> ccParts = [];
-                              if (t['year'] != null && t['year'].toString().isNotEmpty) {
+                              if (t['year'] != null &&
+                                  t['year'].toString().isNotEmpty) {
                                 ccParts.add("Year: ${t["year"]}");
                               }
-                              if (t['section'] != null && t['section'].toString().isNotEmpty) {
+                              if (t['section'] != null &&
+                                  t['section'].toString().isNotEmpty) {
                                 ccParts.add("Section: ${t["section"]}");
                               }
                               if (ccParts.isNotEmpty) {
@@ -837,43 +1126,75 @@ class _TeachersTabState extends State<TeachersTab> {
                               mappedSubs.add(r.toString());
                             }
                           }
-                          subRolesStr = " | Sub-roles: ${mappedSubs.join(", ")}";
+                          subRolesStr =
+                              " | Sub-roles: ${mappedSubs.join(", ")}";
                         }
 
                         return Card(
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                           margin: const EdgeInsets.only(bottom: 12),
                           elevation: 2,
                           child: ListTile(
                             leading: CircleAvatar(
-                              backgroundColor: Colors.green.withValues(alpha: 0.1),
-                              child: const Icon(Icons.assignment_ind, color: Colors.green),
+                              backgroundColor: Colors.green.withValues(
+                                alpha: 0.1,
+                              ),
+                              child: const Icon(
+                                Icons.assignment_ind,
+                                color: Colors.green,
+                              ),
                             ),
-                            title: Text(name, style: const TextStyle(fontWeight: FontWeight.bold)),
-                            subtitle: Text('Username: $username\nEmail: $email\nDept: $deptName\nRole: $rolesStr$subRolesStr'),
+                            title: Text(
+                              name,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            subtitle: Text(
+                              'Username: $username\nEmail: $email\nDept: $deptName\nRole: $rolesStr$subRolesStr',
+                            ),
                             trailing: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 IconButton(
-                                  icon: const Icon(Icons.edit_outlined, color: Colors.blue),
+                                  icon: const Icon(
+                                    Icons.edit_outlined,
+                                    color: Colors.blue,
+                                  ),
                                   onPressed: () => _showEditTeacherDialog(t),
                                 ),
                                 IconButton(
-                                  icon: const Icon(Icons.delete_outline, color: Colors.red),
+                                  icon: const Icon(
+                                    Icons.delete_outline,
+                                    color: Colors.red,
+                                  ),
                                   onPressed: () {
                                     showDialog(
                                       context: context,
                                       builder: (context) => AlertDialog(
                                         title: const Text('Delete Teacher'),
-                                        content: Text('Are you sure you want to delete teacher $name?'),
+                                        content: Text(
+                                          'Are you sure you want to delete teacher $name?',
+                                        ),
                                         actions: [
-                                          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+                                          TextButton(
+                                            onPressed: () =>
+                                                Navigator.pop(context),
+                                            child: const Text('Cancel'),
+                                          ),
                                           TextButton(
                                             onPressed: () {
                                               Navigator.pop(context);
                                               _deleteTeacher(t['id']);
                                             },
-                                            child: const Text('Delete', style: TextStyle(color: Colors.red)),
+                                            child: const Text(
+                                              'Delete',
+                                              style: TextStyle(
+                                                color: Colors.red,
+                                              ),
+                                            ),
                                           ),
                                         ],
                                       ),

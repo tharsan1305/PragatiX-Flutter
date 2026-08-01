@@ -1,8 +1,8 @@
 import 'dart:convert';
-import 'package:spdms_app/core/utils/api_client.dart' as http;
-import 'package:spdms_app/core/config/api_config.dart';
-import 'package:spdms_app/core/di/service_locator.dart';
-import 'package:spdms_app/features/auth/providers/auth_provider.dart';
+import 'package:pragatix/core/utils/api_client.dart' as http;
+import 'package:pragatix/core/config/api_config.dart';
+import 'package:pragatix/core/di/service_locator.dart';
+import 'package:pragatix/features/auth/providers/auth_provider.dart';
 import '../models/student_attendance_summary.dart';
 import '../models/student_attendance_history.dart';
 import '../models/student_attendance_list_item.dart';
@@ -21,13 +21,22 @@ class AttendanceService {
 
   // Teacher Endpoints
   Future<List<StudentAttendanceListItem>> getStudentsWithAttendance(
-      String date, int period, int yearId, int departmentId, {int? sectionId}) async {
-    String url = '$_baseUrl/api/teacher/attendance/students?date=$date&period=$period&yearId=$yearId&departmentId=$departmentId';
+    String date,
+    int period,
+    int yearId,
+    int departmentId, {
+    int? sectionId,
+  }) async {
+    String url =
+        '$_baseUrl/api/teacher/attendance/students?date=$date&period=$period&yearId=$yearId&departmentId=$departmentId';
     if (sectionId != null) {
       url += '&sectionId=$sectionId';
     }
 
-    final response = await http.get(Uri.parse(url), headers: await _getHeaders());
+    final response = await http.get(
+      Uri.parse(url),
+      headers: await _getHeaders(),
+    );
 
     if (response.statusCode == 200) {
       final jsonResponse = jsonDecode(response.body);
@@ -40,8 +49,14 @@ class AttendanceService {
   }
 
   Future<void> saveAttendance(
-      String date, int period, int academicYearId, int yearId, int departmentId, int? sectionId, List<StudentAttendanceListItem> records) async {
-    
+    String date,
+    int period,
+    int academicYearId,
+    int yearId,
+    int departmentId,
+    int? sectionId,
+    List<StudentAttendanceListItem> records,
+  ) async {
     final payload = {
       'date': date,
       'period': period,
@@ -65,13 +80,22 @@ class AttendanceService {
 
   // Admin Endpoints
   Future<AdminAttendanceSummary> getAdminSummary(
-      String date, int period, int yearId, int departmentId, {int? sectionId}) async {
-    String url = '$_baseUrl/api/admin/attendance/summary?date=$date&period=$period&yearId=$yearId&departmentId=$departmentId';
+    String date,
+    int period,
+    int yearId,
+    int departmentId, {
+    int? sectionId,
+  }) async {
+    String url =
+        '$_baseUrl/api/admin/attendance/summary?date=$date&period=$period&yearId=$yearId&departmentId=$departmentId';
     if (sectionId != null) {
       url += '&sectionId=$sectionId';
     }
 
-    final response = await http.get(Uri.parse(url), headers: await _getHeaders());
+    final response = await http.get(
+      Uri.parse(url),
+      headers: await _getHeaders(),
+    );
 
     if (response.statusCode == 200) {
       final jsonResponse = jsonDecode(response.body);

@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
-import 'package:spdms_app/features/activity/models/activity_model.dart';
-import 'package:spdms_app/features/activity/models/my_activity_model.dart';
-import 'package:spdms_app/features/activity/repository/activity_repository.dart';
+import 'package:pragatix/features/activity/models/activity_model.dart';
+import 'package:pragatix/features/activity/models/my_activity_model.dart';
+import 'package:pragatix/features/activity/repository/activity_repository.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Activity module – state management (ChangeNotifier).
@@ -43,6 +43,9 @@ class ActivityProvider extends ChangeNotifier {
   bool isSaving = false;
   String? error;
 
+  // ── Assignment state ──────────────────────────────────────────────────────
+  List<dynamic> currentAssignments = [];
+  
   // ── Load my activities ────────────────────────────────────────────────────
   Future<void> loadMyActivities() async {
     isLoadingActivities = true;
@@ -60,12 +63,20 @@ class ActivityProvider extends ChangeNotifier {
   }
 
   // ── Load activities ───────────────────────────────────────────────────────
-  Future<void> loadActivities({int? stageId, String? subgroupName, String? academicYear}) async {
+  Future<void> loadActivities({
+    int? stageId,
+    String? subgroupName,
+    String? academicYear,
+  }) async {
     isLoadingActivities = true;
     error = null;
     _safeNotify();
     try {
-      activities = await _repository.getActivities(stageId: stageId, subgroupName: subgroupName, academicYear: academicYear);
+      activities = await _repository.getActivities(
+        stageId: stageId,
+        subgroupName: subgroupName,
+        academicYear: academicYear,
+      );
     } catch (e) {
       error = e.toString().replaceAll('Exception: ', '');
       activities = [];
@@ -91,14 +102,18 @@ class ActivityProvider extends ChangeNotifier {
     }
     try {
       sections = await _repository.getSections();
-      debugPrint('DEBUG_LOG: Provider loaded sections count: ${sections.length}, data: $sections');
+      debugPrint(
+        'DEBUG_LOG: Provider loaded sections count: ${sections.length}, data: $sections',
+      );
     } catch (e) {
       debugPrint('DEBUG_LOG: Provider failed to load sections: $e');
       sections = [];
     }
     try {
       classCoordinators = await _repository.getClassCoordinators();
-      debugPrint('DEBUG_LOG: Provider loaded class coordinators count: ${classCoordinators.length}');
+      debugPrint(
+        'DEBUG_LOG: Provider loaded class coordinators count: ${classCoordinators.length}',
+      );
     } catch (e) {
       debugPrint('DEBUG_LOG: Provider failed to load class coordinators: $e');
       classCoordinators = [];
@@ -113,12 +128,20 @@ class ActivityProvider extends ChangeNotifier {
   }
 
   // ── CRUD ──────────────────────────────────────────────────────────────────
-  Future<bool> createActivity(Map<String, dynamic> body, {int? stageId, String? subgroupName}) async {
+  Future<bool> createActivity(
+    Map<String, dynamic> body, {
+    int? stageId,
+    String? subgroupName,
+  }) async {
     isSaving = true;
     error = null;
     _safeNotify();
     try {
-      final created = await _repository.create(body, stageId: stageId, subgroupName: subgroupName);
+      final created = await _repository.create(
+        body,
+        stageId: stageId,
+        subgroupName: subgroupName,
+      );
       activities = [...activities, created];
       return true;
     } catch (e) {
@@ -130,7 +153,9 @@ class ActivityProvider extends ChangeNotifier {
     }
   }
 
-  Future<Map<String, dynamic>?> createCustomFrequency(Map<String, dynamic> body) async {
+  Future<Map<String, dynamic>?> createCustomFrequency(
+    Map<String, dynamic> body,
+  ) async {
     error = null;
     _safeNotify();
     try {
@@ -145,8 +170,7 @@ class ActivityProvider extends ChangeNotifier {
     }
   }
 
-  Future<bool> updateActivity(
-      int activityId, Map<String, dynamic> body) async {
+  Future<bool> updateActivity(int activityId, Map<String, dynamic> body) async {
     isSaving = true;
     error = null;
     _safeNotify();
@@ -164,13 +188,18 @@ class ActivityProvider extends ChangeNotifier {
       _safeNotify();
     }
   }
-  Future<bool> mapExistingActivityToStage(int stageId, ActivityModel activity, String subgroupName) async {
+
+  Future<bool> mapExistingActivityToStage(
+    int stageId,
+    ActivityModel activity,
+    String subgroupName,
+  ) async {
     isSaving = true;
     error = null;
     _safeNotify();
     try {
       await _repository.mapActivityToStage(stageId, activity.id, subgroupName);
-      
+
       // Refresh list directly from backend to ensure all properties (like subgroup ids) are updated
       await loadActivities(stageId: stageId, subgroupName: subgroupName);
       return true;
@@ -203,17 +232,44 @@ class ActivityProvider extends ChangeNotifier {
     }
   }
 
-  Future<List<dynamic>> getAssignments(int activityId) async {
-    return await _repository.getAssignments(activityId);
+  Future<List<dynamic>> getAssignments(int activityId, {int? stageId}) async {
+    print('========================');
+    print('FRONTEND LOG: PROVIDER getAssignments()');
+    print('Assignment count before update: ${currentAssignments.length}');
+    
+    final list = await _repository.getAssignments(activityId, stageId);
+    currentAssignments = list;
+    
+    print('Assignment count after update: ${currentAssignments.length}');
+    print('notifyListeners() called from Provider');
+    print('========================');
+    
+    _safeNotify();
+    return list;
   }
 
   Future<void> addAssignment(
-      int activityId, int departmentId, String year, int? sectionId, int? teacherId, String scope) async {
+    int activityId,
+    int departmentId,
+    String year,
+    int? sectionId,
+    int? teacherId,
+    String scope, {
+    int? stageId,
+  }) async {
     isSaving = true;
     error = null;
     _safeNotify();
     try {
-      await _repository.addAssignment(activityId, departmentId, year, sectionId, teacherId, scope);
+      await _repository.addAssignment(
+        activityId,
+        departmentId,
+        year,
+        sectionId,
+        teacherId,
+        scope,
+        stageId,
+      );
     } catch (e) {
       error = e.toString();
       rethrow;
@@ -238,12 +294,12 @@ class ActivityProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> clearAllAssignments(int activityId) async {
+  Future<void> clearAllAssignments(int activityId, {int? stageId}) async {
     isSaving = true;
     error = null;
     _safeNotify();
     try {
-      await _repository.clearAllAssignments(activityId);
+      await _repository.clearAllAssignments(activityId, stageId);
     } catch (e) {
       error = e.toString();
       rethrow;
@@ -253,12 +309,24 @@ class ActivityProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> assignActivity(int activityId, bool ccEnabled, bool globalEnabled, [List<Map<String, dynamic>>? assignments]) async {
+  Future<void> assignActivity(
+    int activityId,
+    bool ccEnabled,
+    bool globalEnabled, [
+    List<Map<String, dynamic>>? assignments,
+    int? stageId,
+  ]) async {
     isSaving = true;
     error = null;
     _safeNotify();
     try {
-      await _repository.assignActivity(activityId, ccEnabled, globalEnabled, assignments);
+      await _repository.assignActivity(
+        activityId,
+        ccEnabled,
+        globalEnabled,
+        assignments,
+        stageId,
+      );
     } catch (e) {
       error = e.toString();
       rethrow;

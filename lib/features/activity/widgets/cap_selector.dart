@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:spdms_app/features/activity/utils/constants.dart';
+import 'package:pragatix/features/activity/utils/constants.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Weekly cap choice chips selector.
@@ -40,7 +40,9 @@ class CapSelector extends StatelessWidget {
             child: Text(
               'Please select a weekly cap.',
               style: TextStyle(
-                  color: Theme.of(context).colorScheme.error, fontSize: 12),
+                color: Theme.of(context).colorScheme.error,
+                fontSize: 12,
+              ),
             ),
           ),
       ],
@@ -68,21 +70,18 @@ class _CapChip extends StatelessWidget {
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        padding:
-            const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
         decoration: BoxDecoration(
           color: selected ? _primary : Colors.white,
           borderRadius: BorderRadius.circular(50),
-          border: Border.all(
-            color: selected ? _primary : Colors.grey.shade300,
-          ),
+          border: Border.all(color: selected ? _primary : Colors.grey.shade300),
           boxShadow: selected
               ? [
                   BoxShadow(
                     color: _primary.withValues(alpha: 0.25),
                     blurRadius: 6,
                     offset: const Offset(0, 2),
-                  )
+                  ),
                 ]
               : [],
         ),
@@ -90,8 +89,7 @@ class _CapChip extends StatelessWidget {
           label,
           style: TextStyle(
             color: selected ? Colors.white : _dark,
-            fontWeight:
-                selected ? FontWeight.w700 : FontWeight.w400,
+            fontWeight: selected ? FontWeight.w700 : FontWeight.w400,
             fontSize: 13,
           ),
         ),

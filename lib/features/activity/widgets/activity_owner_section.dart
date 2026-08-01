@@ -71,10 +71,15 @@ class ActivityOwnerSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (initialData != null && initialData.assignmentSummary.isNotEmpty) ...[
+        if (initialData != null &&
+            initialData.assignmentSummary.isNotEmpty) ...[
           const Text(
             'Current Assignments:',
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: _dark),
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 13,
+              color: _dark,
+            ),
           ),
           const SizedBox(height: 6),
           ...initialData.assignmentSummary.map((assign) {
@@ -88,8 +93,14 @@ class ActivityOwnerSection extends StatelessWidget {
                 borderRadius: BorderRadius.circular(6),
               ),
               child: Text(
-                secName != null ? 'Section $secName → $teachName' : 'Assigned to → $teachName',
-                style: const TextStyle(fontSize: 13, color: Colors.grey, fontWeight: FontWeight.w500),
+                secName != null
+                    ? 'Section $secName → $teachName'
+                    : 'Assigned to → $teachName',
+                style: const TextStyle(
+                  fontSize: 13,
+                  color: Colors.grey,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
             );
           }),
@@ -99,30 +110,44 @@ class ActivityOwnerSection extends StatelessWidget {
         ],
         const Text(
           'New Assignment:',
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: _dark),
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 13,
+            color: _dark,
+          ),
         ),
         const SizedBox(height: 10),
         const SizedBox(height: 16),
         if (hasSections) ...[
           InputDecorator(
             decoration: _deco('Section', Icons.class_outlined).copyWith(
-              errorText: (submitted && selectedSection == null) ? 'Section is required' : null,
+              errorText: (submitted && selectedSection == null)
+                  ? 'Section is required'
+                  : null,
             ),
             child: DropdownButton<dynamic>(
               value: selectedSection != null
                   ? filteredSections.firstWhere(
-                      (s) => s['id'].toString() == selectedSection['id'].toString(),
+                      (s) =>
+                          s['id'].toString() ==
+                          selectedSection['id'].toString(),
                       orElse: () => null,
                     )
                   : null,
               isExpanded: true,
               underline: const SizedBox.shrink(),
               icon: const Icon(Icons.expand_more_rounded, color: _primary),
-              hint: const Text('Select section', style: TextStyle(fontSize: 14)),
+              hint: const Text(
+                'Select section',
+                style: TextStyle(fontSize: 14),
+              ),
               items: filteredSections.map((s) {
                 return DropdownMenuItem<dynamic>(
                   value: s,
-                  child: Text(s['sectionName'].toString(), style: const TextStyle(fontSize: 14, color: _dark)),
+                  child: Text(
+                    s['sectionName'].toString(),
+                    style: const TextStyle(fontSize: 14, color: _dark),
+                  ),
                 );
               }).toList(),
               onChanged: onSectionChanged,
@@ -147,7 +172,11 @@ class ActivityOwnerSection extends StatelessWidget {
                     CircleAvatar(
                       radius: 14,
                       backgroundColor: Colors.blue.shade100,
-                      child: const Icon(Icons.person_rounded, size: 16, color: Colors.blue),
+                      child: const Icon(
+                        Icons.person_rounded,
+                        size: 16,
+                        color: Colors.blue,
+                      ),
                     ),
                     const SizedBox(width: 10),
                     Expanded(
@@ -156,17 +185,28 @@ class ActivityOwnerSection extends StatelessWidget {
                         children: [
                           Text(
                             selectedTeacher['fullName']?.toString() ?? '',
-                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: _dark),
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 13,
+                              color: _dark,
+                            ),
                           ),
                           Text(
                             '${selectedTeacher['username'] ?? ''} • ${selectedTeacher['departmentName'] ?? ''}',
-                            style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: Colors.grey.shade600,
+                            ),
                           ),
                         ],
                       ),
                     ),
                     IconButton(
-                      icon: const Icon(Icons.close_rounded, size: 18, color: Colors.red),
+                      icon: const Icon(
+                        Icons.close_rounded,
+                        size: 18,
+                        color: Colors.red,
+                      ),
                       onPressed: onClearTeacher,
                       tooltip: 'Clear selection',
                       visualDensity: VisualDensity.compact,
@@ -179,17 +219,21 @@ class ActivityOwnerSection extends StatelessWidget {
             TextFormField(
               controller: teacherSearchCtrl,
               style: const TextStyle(color: _dark, fontSize: 14),
-              decoration: _deco('Search Teacher by Name/Dept', Icons.search_rounded).copyWith(
-                suffixIcon: teacherSearchQuery.isNotEmpty
-                    ? IconButton(
-                        icon: const Icon(Icons.clear_rounded, size: 18),
-                        onPressed: () {
-                          teacherSearchCtrl.clear();
-                          onTeacherSearchQueryChanged('');
-                        },
-                      )
-                    : null,
-              ),
+              decoration:
+                  _deco(
+                    'Search Teacher by Name/Dept',
+                    Icons.search_rounded,
+                  ).copyWith(
+                    suffixIcon: teacherSearchQuery.isNotEmpty
+                        ? IconButton(
+                            icon: const Icon(Icons.clear_rounded, size: 18),
+                            onPressed: () {
+                              teacherSearchCtrl.clear();
+                              onTeacherSearchQueryChanged('');
+                            },
+                          )
+                        : null,
+                  ),
               onChanged: onTeacherSearchQueryChanged,
             ),
             const SizedBox(height: 8),
@@ -211,16 +255,27 @@ class ActivityOwnerSection extends StatelessWidget {
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(Icons.search_off_rounded, size: 48, color: Colors.grey.shade400),
+                              Icon(
+                                Icons.search_off_rounded,
+                                size: 48,
+                                color: Colors.grey.shade400,
+                              ),
                               const SizedBox(height: 12),
                               const Text(
                                 'No teachers found',
-                                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: _dark),
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: _dark,
+                                ),
                               ),
                               const SizedBox(height: 4),
                               Text(
                                 'Try another keyword.',
-                                style: TextStyle(fontSize: 13, color: Colors.grey.shade500),
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: Colors.grey.shade500,
+                                ),
                               ),
                             ],
                           ),
@@ -233,7 +288,10 @@ class ActivityOwnerSection extends StatelessWidget {
                       separatorBuilder: (_, _) => const SizedBox(height: 12),
                       itemBuilder: (context, idx) {
                         final t = searchedTeachers[idx];
-                        final isSelected = selectedTeacher != null && selectedTeacher['id']?.toString() == t['id']?.toString();
+                        final isSelected =
+                            selectedTeacher != null &&
+                            selectedTeacher['id']?.toString() ==
+                                t['id']?.toString();
                         final deptName = t['departmentName'] ?? 'No Department';
                         final uName = t['username'] ?? '';
                         final fullName = t['fullName'] ?? '';
@@ -245,11 +303,15 @@ class ActivityOwnerSection extends StatelessWidget {
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(14),
                             side: BorderSide(
-                              color: isSelected ? Colors.blue : Colors.grey.shade200,
+                              color: isSelected
+                                  ? Colors.blue
+                                  : Colors.grey.shade200,
                               width: isSelected ? 1.5 : 1,
                             ),
                           ),
-                          color: isSelected ? Colors.blue.shade50 : Colors.white,
+                          color: isSelected
+                              ? Colors.blue.shade50
+                              : Colors.white,
                           child: InkWell(
                             borderRadius: BorderRadius.circular(14),
                             onTap: () => onTeacherChanged(t),
@@ -259,7 +321,9 @@ class ActivityOwnerSection extends StatelessWidget {
                                 children: [
                                   CircleAvatar(
                                     radius: 24,
-                                    backgroundColor: _primary.withValues(alpha: 0.1),
+                                    backgroundColor: _primary.withValues(
+                                      alpha: 0.1,
+                                    ),
                                     child: const Icon(
                                       Icons.person_rounded,
                                       size: 26,
@@ -269,7 +333,8 @@ class ActivityOwnerSection extends StatelessWidget {
                                   const SizedBox(width: 14),
                                   Expanded(
                                     child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
                                         Text(
                                           fullName,
@@ -310,7 +375,7 @@ class ActivityOwnerSection extends StatelessWidget {
                         );
                       },
                     );
-                  }
+                  },
                 ),
               ),
             ),
@@ -319,7 +384,10 @@ class ActivityOwnerSection extends StatelessWidget {
                 padding: const EdgeInsets.only(top: 4, left: 12),
                 child: Text(
                   'Teacher is required',
-                  style: TextStyle(color: Theme.of(context).colorScheme.error, fontSize: 12),
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.error,
+                    fontSize: 12,
+                  ),
                 ),
               ),
           ],

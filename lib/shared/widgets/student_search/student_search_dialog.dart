@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:spdms_app/features/auth/providers/auth_provider.dart';
-import 'package:spdms_app/shared/providers/student_search_provider.dart';
-import 'package:spdms_app/shared/widgets/student_search/student_tile.dart';
+import 'package:pragatix/features/auth/providers/auth_provider.dart';
+import 'package:pragatix/shared/providers/student_search_provider.dart';
+import 'package:pragatix/shared/widgets/student_search/student_tile.dart';
 
 class StudentSearchDialog extends StatefulWidget {
   const StudentSearchDialog({Key? key}) : super(key: key);
@@ -66,9 +66,7 @@ class _StudentSearchDialogState extends State<StudentSearchDialog> {
 
                     final students = provider.filteredStudents;
                     if (students.isEmpty) {
-                      return const Center(
-                        child: Text('No students found'),
-                      );
+                      return const Center(child: Text('No students found'));
                     }
 
                     return ListView.builder(
@@ -101,10 +99,7 @@ class _StudentSearchDialogState extends State<StudentSearchDialog> {
         children: [
           const Text(
             'Select Student',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-            ),
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
           ),
           IconButton(
             icon: const Icon(Icons.close),
@@ -135,9 +130,7 @@ class _StudentSearchDialogState extends State<StudentSearchDialog> {
                   },
                 )
               : null,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
           filled: true,
           fillColor: Theme.of(context).cardColor,
         ),

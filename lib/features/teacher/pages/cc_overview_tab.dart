@@ -2,17 +2,16 @@ import 'package:flutter/material.dart';
 
 // Import necessary dependencies
 
-import 'package:spdms_app/features/auth/providers/auth_provider.dart';
+import 'package:pragatix/features/auth/providers/auth_provider.dart';
 import 'package:provider/provider.dart';
-import 'package:spdms_app/core/config/api_config.dart';
+import 'package:pragatix/core/config/api_config.dart';
 import 'dart:convert';
-import 'package:spdms_app/features/teacher/services/teacher_proxy_service.dart';
-import 'package:spdms_app/core/di/service_locator.dart';
-import 'package:spdms_app/features/badge/pages/cc_badge_requests_page.dart';
-import 'package:spdms_app/features/teacher/pages/performance_activities_tab.dart';
-import 'package:spdms_app/features/teacher/pages/students_tab.dart';
-import 'package:spdms_app/features/attendance/pages/teacher_attendance_tab.dart';
-
+import 'package:pragatix/features/teacher/services/teacher_proxy_service.dart';
+import 'package:pragatix/core/di/service_locator.dart';
+import 'package:pragatix/features/badge/pages/cc_badge_requests_page.dart';
+import 'package:pragatix/features/teacher/pages/performance_activities_tab.dart';
+import 'package:pragatix/features/teacher/pages/students_tab.dart';
+import 'package:pragatix/features/attendance/pages/teacher_attendance_tab.dart';
 
 class CCOverviewTab extends StatefulWidget {
   final List<String> subRoles;
@@ -53,31 +52,31 @@ class _CCOverviewTabState extends State<CCOverviewTab> {
         });
         return;
       }
-      
+
       final response = await getIt<TeacherProxyService>().get(
         Uri.parse('${ApiConfig.baseUrl}/api/v1/cc/dashboard/stats'),
         headers: {'Authorization': 'Bearer $token'},
       );
-      
+
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data['success'] == true) {
-           final stats = data['data'];
-           setState(() {
-             totalActivities = stats['totalActivities'] ?? 0;
-             totalStudents = stats['totalStudents'] ?? 0;
-             totalAttendance = stats['totalAttendance'] ?? 0;
-             pendingBadgeRequests = stats['pendingBadgeRequests'] ?? 0;
-             isLoading = false;
-           });
+          final stats = data['data'];
+          setState(() {
+            totalActivities = stats['totalActivities'] ?? 0;
+            totalStudents = stats['totalStudents'] ?? 0;
+            totalAttendance = stats['totalAttendance'] ?? 0;
+            pendingBadgeRequests = stats['pendingBadgeRequests'] ?? 0;
+            isLoading = false;
+          });
         } else {
-           setState(() {
+          setState(() {
             hasError = true;
             isLoading = false;
           });
         }
       } else {
-         setState(() {
+        setState(() {
           hasError = true;
           isLoading = false;
         });
@@ -93,8 +92,12 @@ class _CCOverviewTabState extends State<CCOverviewTab> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
-        title: const Text('CC Overview', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+        title: const Text(
+          'CC Overview',
+          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+        ),
         backgroundColor: const Color(0xFF1E293B),
         elevation: 0,
         actions: [
@@ -104,7 +107,7 @@ class _CCOverviewTabState extends State<CCOverviewTab> {
               setState(() => isLoading = true);
               _fetchStats();
             },
-          )
+          ),
         ],
       ),
       body: Container(
@@ -119,22 +122,29 @@ class _CCOverviewTabState extends State<CCOverviewTab> {
         child: isLoading
             ? const Center(child: CircularProgressIndicator())
             : hasError
-                ? Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(Icons.error_outline, color: Colors.red, size: 48),
-                        const SizedBox(height: 16),
-                        const Text('Failed to load dashboard data', style: TextStyle(color: Colors.white, fontSize: 16)),
-                        const SizedBox(height: 16),
-                        ElevatedButton(
-                          onPressed: _fetchStats,
-                          child: const Text('Retry'),
-                        ),
-                      ],
+            ? Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(
+                      Icons.error_outline,
+                      color: Colors.red,
+                      size: 48,
                     ),
-                  )
-                : SingleChildScrollView(
+                    const SizedBox(height: 16),
+                    const Text(
+                      'Failed to load dashboard data',
+                      style: TextStyle(color: Colors.white, fontSize: 16),
+                    ),
+                    const SizedBox(height: 16),
+                    ElevatedButton(
+                      onPressed: _fetchStats,
+                      child: const Text('Retry'),
+                    ),
+                  ],
+                ),
+              )
+            : SingleChildScrollView(
                 padding: const EdgeInsets.all(20),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -150,13 +160,10 @@ class _CCOverviewTabState extends State<CCOverviewTab> {
                     const SizedBox(height: 4),
                     const Text(
                       'Here is a summary of your class metrics.',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: Colors.white70,
-                      ),
+                      style: TextStyle(fontSize: 13, color: Colors.white70),
                     ),
                     const SizedBox(height: 30),
-                    
+
                     // Stat Cards Grid
                     GridView.count(
                       crossAxisCount: 2,
@@ -192,8 +199,12 @@ class _CCOverviewTabState extends State<CCOverviewTab> {
                           count: pendingBadgeRequests.toString(),
                           icon: Icons.badge_rounded,
                           color: const Color(0xFF9C27B0),
-                          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CCBadgeRequestsPage()))
-                                  .then((_) => _fetchStats()),
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const CCBadgeRequestsPage(),
+                            ),
+                          ).then((_) => _fetchStats()),
                         ),
                       ],
                     ),
@@ -220,48 +231,48 @@ class _CCOverviewTabState extends State<CCOverviewTab> {
         borderRadius: BorderRadius.circular(16),
         child: Padding(
           padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: color.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(10),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: color.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Icon(icon, color: color, size: 24),
                   ),
-                  child: Icon(icon, color: color, size: 24),
-                ),
-              ],
-            ),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  count,
-                  style: const TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF1E293B),
+                ],
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    count,
+                    style: const TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF1E293B),
+                    ),
                   ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  title,
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: Colors.grey.shade600,
-                    fontWeight: FontWeight.w500,
+                  const SizedBox(height: 2),
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Colors.grey.shade600,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
-                ),
-              ],
-            ),
-          ],
+                ],
+              ),
+            ],
+          ),
         ),
-      ),
       ),
     );
   }

@@ -1,6 +1,6 @@
-import 'package:spdms_app/core/config/api_config.dart';
-import 'package:spdms_app/features/auth/providers/auth_provider.dart';
-import 'package:spdms_app/core/utils/api_client.dart' as http;
+import 'package:pragatix/core/config/api_config.dart';
+import 'package:pragatix/features/auth/providers/auth_provider.dart';
+import 'package:pragatix/core/utils/api_client.dart' as http;
 
 class TeacherService {
   final AuthProvider authProvider;
@@ -9,9 +9,15 @@ class TeacherService {
   String get token => authProvider.token ?? '';
   static const String baseUrl = ApiConfig.baseUrl;
 
-  Future<http.Response> getRawStudents({int page = 0, int size = 1000, String sortBy = 'fullName'}) async {
+  Future<http.Response> getRawStudents({
+    int page = 0,
+    int size = 1000,
+    String sortBy = 'fullName',
+  }) async {
     return http.get(
-      Uri.parse('$baseUrl/api/v1/students?page=$page&size=$size&sortBy=$sortBy'),
+      Uri.parse(
+        '$baseUrl/api/v1/students?page=$page&size=$size&sortBy=$sortBy',
+      ),
       headers: {'Authorization': 'Bearer $token'},
     );
   }

@@ -1,20 +1,20 @@
-import 'package:spdms_app/features/auth/providers/auth_provider.dart';
-import 'package:spdms_app/core/config/api_config.dart';
+import 'package:pragatix/features/auth/providers/auth_provider.dart';
+import 'package:pragatix/core/config/api_config.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:spdms_app/features/student/services/student_proxy_service.dart';
+import 'package:pragatix/features/student/services/student_proxy_service.dart';
 import 'package:provider/provider.dart';
 import 'package:fl_chart/fl_chart.dart';
-import 'package:spdms_app/features/xp/providers/xp_provider.dart';
-import 'package:spdms_app/features/badge/providers/badge_provider.dart';
-import 'package:spdms_app/features/attendance/providers/attendance_provider.dart';
-import 'package:spdms_app/features/attendance/widgets/fire_streak_icon.dart';
-import 'package:spdms_app/features/captain/pages/student_group_tab.dart';
-import 'package:spdms_app/core/di/service_locator.dart';
-import 'package:spdms_app/features/team/services/team_proxy_service.dart';
+import 'package:pragatix/features/xp/providers/xp_provider.dart';
+import 'package:pragatix/features/badge/providers/badge_provider.dart';
+import 'package:pragatix/features/attendance/providers/attendance_provider.dart';
+import 'package:pragatix/features/attendance/widgets/fire_streak_icon.dart';
+import 'package:pragatix/features/captain/pages/student_group_tab.dart';
+import 'package:pragatix/core/di/service_locator.dart';
+import 'package:pragatix/features/team/services/team_proxy_service.dart';
 
 class DashboardTab extends StatefulWidget {
-  const DashboardTab({super.key, });
+  const DashboardTab({super.key});
 
   @override
   State<DashboardTab> createState() => _DashboardTabState();
@@ -51,7 +51,7 @@ class _DashboardTabState extends State<DashboardTab> {
 
     try {
       await _fetchProfileData(); // This populates regNo
-      
+
       if (regNo.isNotEmpty) {
         debugPrint('Student ID loaded: $regNo');
         debugPrint('Register Number: $regNo');
@@ -86,13 +86,15 @@ class _DashboardTabState extends State<DashboardTab> {
       }
     }
   }
-  
+
   Future<void> _fetchStages() async {
     if (context.read<AuthProvider>().token! == 'debug_token') return;
     try {
       final response = await getIt<StudentProxyService>().get(
         Uri.parse('${ApiConfig.baseUrl}/api/v1/students/stages'),
-        headers: {'Authorization': 'Bearer ${context.read<AuthProvider>().token!}'},
+        headers: {
+          'Authorization': 'Bearer ${context.read<AuthProvider>().token!}',
+        },
       );
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -118,7 +120,9 @@ class _DashboardTabState extends State<DashboardTab> {
     try {
       final response = await getIt<TeamProxyService>().get(
         Uri.parse('${ApiConfig.baseUrl}/api/v1/teams/my-team/details'),
-        headers: {'Authorization': 'Bearer ${context.read<AuthProvider>().token!}'},
+        headers: {
+          'Authorization': 'Bearer ${context.read<AuthProvider>().token!}',
+        },
       );
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -159,7 +163,9 @@ class _DashboardTabState extends State<DashboardTab> {
             year = resData['year'] ?? '';
             department = resData['department'] ?? '';
             score = resData['score'] ?? 0;
-            rank = resData['rank'] != null && resData['rank'] > 0 ? resData['rank'] : 1;
+            rank = resData['rank'] != null && resData['rank'] > 0
+                ? resData['rank']
+                : 1;
             isCaptain = resData['isCaptain'] == true;
             isViceCaptain = resData['isViceCaptain'] == true;
             isMember = resData['isMember'] == true;
@@ -174,8 +180,6 @@ class _DashboardTabState extends State<DashboardTab> {
       debugPrint('Error fetching profile data: $e');
     }
   }
-
-
 
   @override
   Widget build(BuildContext context) {
@@ -194,14 +198,24 @@ class _DashboardTabState extends State<DashboardTab> {
 
     final totalXp = xpProvider.totalXp;
     final progression = xpProvider.progression;
-    final int levelNum = progression != null ? (progression['currentLevel'] ?? 1) : 1;
-    final String levelTitle = progression != null ? (progression['currentLevelName'] ?? 'Explorer') : 'Explorer';
-    final int minXp = progression != null ? (progression['currentLevelMinXp'] ?? 0) : 0;
-    final int maxXp = progression != null ? (progression['currentLevelMaxXp'] ?? 100) : 100;
-    final double levelProgress = progression != null ? ((progression['progressPercentage'] ?? 0.0) / 100.0) : 0.0;
+    final int levelNum = progression != null
+        ? (progression['currentLevel'] ?? 1)
+        : 1;
+    final String levelTitle = progression != null
+        ? (progression['currentLevelName'] ?? 'Explorer')
+        : 'Explorer';
+    final int minXp = progression != null
+        ? (progression['currentLevelMinXp'] ?? 0)
+        : 0;
+    final int maxXp = progression != null
+        ? (progression['currentLevelMaxXp'] ?? 100)
+        : 100;
+    final double levelProgress = progression != null
+        ? ((progression['progressPercentage'] ?? 0.0) / 100.0)
+        : 0.0;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
         title: const Text(
           'Student Dashboard',
@@ -260,334 +274,369 @@ class _DashboardTabState extends State<DashboardTab> {
         },
         color: const Color(0xFF4F46E5),
         child: SingleChildScrollView(
-          physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+          physics: const BouncingScrollPhysics(
+            parent: AlwaysScrollableScrollPhysics(),
+          ),
           child: Padding(
-          padding: const EdgeInsets.all(20.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Welcome Text
-              Text(
-                'Welcome back,',
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Colors.grey.shade600,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Expanded(
-                    child: Text(
-                      studentName,
-                      style: const TextStyle(
-                        fontSize: 26,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF1E293B),
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
+            padding: const EdgeInsets.all(20.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Welcome Text
+                Text(
+                  'Welcome back,',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.grey.shade600,
+                    fontWeight: FontWeight.w500,
                   ),
-                  if (isCaptain) ...[
-                    const SizedBox(width: 10),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFFF59E0B), Color(0xFFD97706)],
-                        ),
-                        borderRadius: BorderRadius.circular(12),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.amber.withValues(alpha: 0.3),
-                            blurRadius: 4,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: const Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.star, color: Colors.white, size: 12),
-                          SizedBox(width: 4),
-                          Text(
-                            'CAPTAIN',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold,
-                              letterSpacing: 0.5,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ] else if (isViceCaptain) ...[
-                    const SizedBox(width: 10),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFF94A3B8), Color(0xFF64748B)],
-                        ),
-                        borderRadius: BorderRadius.circular(12),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.grey.withValues(alpha: 0.3),
-                            blurRadius: 4,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: const Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.shield, color: Colors.white, size: 12),
-                          SizedBox(width: 4),
-                          Text(
-                            'VICE CAPTAIN',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold,
-                              letterSpacing: 0.5,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ] else if (isMember) ...[
-                    const SizedBox(width: 10),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFF3B82F6), Color(0xFF2563EB)],
-                        ),
-                        borderRadius: BorderRadius.circular(12),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.blue.withValues(alpha: 0.3),
-                            blurRadius: 4,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: const Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.person, color: Colors.white, size: 12),
-                          SizedBox(width: 4),
-                          Text(
-                            'MEMBER',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold,
-                              letterSpacing: 0.5,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-              const SizedBox(height: 20),
-
-              // Discipline Score card
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(24.0),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF4F46E5), Color(0xFF6366F1)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(24),
-                  boxShadow: [
-                    BoxShadow(
-                      color: const Color(0xFF4F46E5).withValues(alpha: 0.3),
-                      blurRadius: 15,
-                      offset: const Offset(0, 8),
-                    ),
-                  ],
                 ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                const SizedBox(height: 4),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    const Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Discipline Score',
-                          style: TextStyle(
-                            color: Colors.white70,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w500,
-                          ),
+                    Expanded(
+                      child: Text(
+                        studentName,
+                        style: const TextStyle(
+                          fontSize: 26,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF1E293B),
                         ),
-                        Icon(Icons.shield_rounded, color: Colors.white, size: 24),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      '$totalXp Points',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 36,
-                        fontWeight: FontWeight.bold,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
-                    const SizedBox(height: 20),
-                    const Divider(color: Colors.white24, height: 1),
-                    const SizedBox(height: 16),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text(
-                                'Department',
-                                style: TextStyle(color: Colors.white70, fontSize: 12),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                department,
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 14,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ],
-                          ),
+                    if (isCaptain) ...[
+                      const SizedBox(width: 10),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 4,
                         ),
-                        const SizedBox(width: 16),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            const Text(
-                              'Section & Year',
-                              style: TextStyle(color: Colors.white70, fontSize: 12),
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFFF59E0B), Color(0xFFD97706)],
+                          ),
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.amber.withValues(alpha: 0.3),
+                              blurRadius: 4,
+                              offset: const Offset(0, 2),
                             ),
-                            const SizedBox(height: 4),
-                            if (year.isNotEmpty && section.isNotEmpty)
-                              Text(
-                                '$year Year - Sec $section',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 14,
-                                ),
-                              )
-                            else if (year.isNotEmpty)
-                              Text(
-                                '$year Year',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 14,
-                                ),
-                              ),
                           ],
                         ),
-                      ],
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.star, color: Colors.white, size: 12),
+                            SizedBox(width: 4),
+                            Text(
+                              'CAPTAIN',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ] else if (isViceCaptain) ...[
+                      const SizedBox(width: 10),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFF94A3B8), Color(0xFF64748B)],
+                          ),
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.grey.withValues(alpha: 0.3),
+                              blurRadius: 4,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.shield, color: Colors.white, size: 12),
+                            SizedBox(width: 4),
+                            Text(
+                              'VICE CAPTAIN',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ] else if (isMember) ...[
+                      const SizedBox(width: 10),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFF3B82F6), Color(0xFF2563EB)],
+                          ),
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.blue.withValues(alpha: 0.3),
+                              blurRadius: 4,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.person, color: Colors.white, size: 12),
+                            SizedBox(width: 4),
+                            Text(
+                              'MEMBER',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+                const SizedBox(height: 20),
+
+                // Discipline Score card
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(24.0),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF4F46E5), Color(0xFF6366F1)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(24),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFF4F46E5).withValues(alpha: 0.3),
+                        blurRadius: 15,
+                        offset: const Offset(0, 8),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Discipline Score',
+                            style: TextStyle(
+                              color: Colors.white70,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          Icon(
+                            Icons.shield_rounded,
+                            color: Colors.white,
+                            size: 24,
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        '$totalXp Points',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 36,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      const Divider(color: Colors.white24, height: 1),
+                      const SizedBox(height: 16),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'Department',
+                                  style: TextStyle(
+                                    color: Colors.white70,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  department,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 14,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              const Text(
+                                'Section & Year',
+                                style: TextStyle(
+                                  color: Colors.white70,
+                                  fontSize: 12,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              if (year.isNotEmpty && section.isNotEmpty)
+                                Text(
+                                  '$year Year - Sec $section',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 14,
+                                  ),
+                                )
+                              else if (year.isNotEmpty)
+                                Text(
+                                  '$year Year',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 24),
+
+                // Widget 3: Level Progress Card
+                _buildLevelProgressCard(
+                  levelNum,
+                  levelTitle,
+                  totalXp,
+                  maxXp,
+                  levelProgress,
+                ),
+
+                const SizedBox(height: 20),
+
+                // Widget 4: Stage Progress Banner
+                _buildStageProgressBanner(currentStage, totalXp),
+
+                const SizedBox(height: 24),
+
+                // Metric Cards Row
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildMetricCard(
+                        icon: Icons.emoji_events_rounded,
+                        iconColor: Colors.amber.shade600,
+                        bgColor: Colors.amber.shade50,
+                        title: 'Leaderboard Rank',
+                        value: '#$rank',
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: _buildMetricCard(
+                        icon: Icons.shield_rounded,
+                        iconColor: Colors.teal.shade600,
+                        bgColor: Colors.teal.shade50,
+                        title: 'Active Stage',
+                        value: 'Stage $currentStage',
+                      ),
                     ),
                   ],
                 ),
-              ),
 
-              const SizedBox(height: 24),
+                const SizedBox(height: 24),
 
-              // Widget 3: Level Progress Card
-              _buildLevelProgressCard(levelNum, levelTitle, totalXp, maxXp, levelProgress),
-
-              const SizedBox(height: 20),
-
-              // Widget 4: Stage Progress Banner
-              _buildStageProgressBanner(currentStage, totalXp),
-
-              const SizedBox(height: 24),
-
-              // Metric Cards Row
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildMetricCard(
-                      icon: Icons.emoji_events_rounded,
-                      iconColor: Colors.amber.shade600,
-                      bgColor: Colors.amber.shade50,
-                      title: 'Leaderboard Rank',
-                      value: '#$rank',
-                    ),
+                // Widget 2: Streak Cards Row
+                const Text(
+                  'Active Streaks',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF1E293B),
                   ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: _buildMetricCard(
-                      icon: Icons.shield_rounded,
-                      iconColor: Colors.teal.shade600,
-                      bgColor: Colors.teal.shade50,
-                      title: 'Active Stage',
-                      value: 'Stage $currentStage',
-                    ),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 24),
-
-              // Widget 2: Streak Cards Row
-              const Text(
-                'Active Streaks',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
-              ),
-              const SizedBox(height: 12),
-              _buildStreaksRow(xpProvider.streaks),
-
-              const SizedBox(height: 24),
-              _buildXpSummaryGrid(xpProvider.xpByCategory, totalXp),
-              const SizedBox(height: 24),
-
-              // Widget 1: XP Category Mini Bar Chart
-              const Text(
-                'XP by Category',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
-              ),
-              const SizedBox(height: 12),
-              _buildCategoryBarChart(xpProvider.xpByCategory),
-
-              const SizedBox(height: 24),
-
-              // Widget 6: Group Card
-              _buildGroupCard(),
-
-              const SizedBox(height: 28),
-
-              // Widget 5: Recent Activity Feed
-              const Text(
-                'Recent Point Actions',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF1E293B),
                 ),
-              ),
-              const SizedBox(height: 12),
-              _buildActivityFeed(xpProvider.history),
-            ],
+                const SizedBox(height: 12),
+                _buildStreaksRow(xpProvider.streaks),
+
+                const SizedBox(height: 24),
+                _buildXpSummaryGrid(xpProvider.xpByCategory, totalXp),
+                const SizedBox(height: 24),
+
+                // Widget 1: XP Category Mini Bar Chart
+                const Text(
+                  'XP by Category',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF1E293B),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                _buildCategoryBarChart(xpProvider.xpByCategory),
+
+                const SizedBox(height: 24),
+
+                // Widget 6: Group Card
+                _buildGroupCard(),
+
+                const SizedBox(height: 28),
+
+                // Widget 5: Recent Activity Feed
+                const Text(
+                  'Recent Point Actions',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF1E293B),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                _buildActivityFeed(xpProvider.history),
+              ],
+            ),
           ),
         ),
-      ),
       ),
     );
   }
@@ -597,8 +646,11 @@ class _DashboardTabState extends State<DashboardTab> {
     final double groupXp = (categories['groupXp'] ?? 0).toDouble();
     final double mustXp = (categories['mustXp'] ?? 0).toDouble();
 
-    double maxVal = [individualXp, groupXp, mustXp]
-        .reduce((curr, next) => curr > next ? curr : next);
+    double maxVal = [
+      individualXp,
+      groupXp,
+      mustXp,
+    ].reduce((curr, next) => curr > next ? curr : next);
     if (maxVal < 10) maxVal = 100;
 
     return Container(
@@ -615,9 +667,13 @@ class _DashboardTabState extends State<DashboardTab> {
           maxY: maxVal * 1.15,
           barTouchData: BarTouchData(
             touchCallback: (FlTouchEvent event, barTouchResponse) {
-              if (event is FlTapUpEvent && barTouchResponse != null && barTouchResponse.spot != null) {
+              if (event is FlTapUpEvent &&
+                  barTouchResponse != null &&
+                  barTouchResponse.spot != null) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Redirecting to XP Tracker filtered view...')),
+                  const SnackBar(
+                    content: Text('Redirecting to XP Tracker filtered view...'),
+                  ),
                 );
               }
             },
@@ -629,19 +685,33 @@ class _DashboardTabState extends State<DashboardTab> {
               sideTitles: SideTitles(
                 showTitles: true,
                 getTitlesWidget: (double value, TitleMeta meta) {
-                  const style = TextStyle(color: Color(0xFF64748B), fontWeight: FontWeight.bold, fontSize: 8);
+                  const style = TextStyle(
+                    color: Color(0xFF64748B),
+                    fontWeight: FontWeight.bold,
+                    fontSize: 8,
+                  );
                   switch (value.toInt()) {
-                    case 0: return const Text('Individual', style: style);
-                    case 1: return const Text('Group', style: style);
-                    case 2: return const Text('MUST', style: style);
-                    default: return const Text('', style: style);
+                    case 0:
+                      return const Text('Individual', style: style);
+                    case 1:
+                      return const Text('Group', style: style);
+                    case 2:
+                      return const Text('MUST', style: style);
+                    default:
+                      return const Text('', style: style);
                   }
                 },
               ),
             ),
-            leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-            topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-            rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+            leftTitles: const AxisTitles(
+              sideTitles: SideTitles(showTitles: false),
+            ),
+            topTitles: const AxisTitles(
+              sideTitles: SideTitles(showTitles: false),
+            ),
+            rightTitles: const AxisTitles(
+              sideTitles: SideTitles(showTitles: false),
+            ),
           ),
           gridData: const FlGridData(show: false),
           borderData: FlBorderData(show: false),
@@ -658,9 +728,21 @@ class _DashboardTabState extends State<DashboardTab> {
   Widget _buildXpSummaryGrid(Map<String, int> categories, int totalXp) {
     final list = [
       {'label': 'Total XP', 'value': totalXp, 'color': Colors.blue},
-      {'label': 'Individual XP', 'value': categories['individualXp'] ?? 0, 'color': Colors.purple},
-      {'label': 'Group XP', 'value': categories['groupXp'] ?? 0, 'color': Colors.green},
-      {'label': 'MUST XP', 'value': categories['mustXp'] ?? 0, 'color': Colors.amber},
+      {
+        'label': 'Individual XP',
+        'value': categories['individualXp'] ?? 0,
+        'color': Colors.purple,
+      },
+      {
+        'label': 'Group XP',
+        'value': categories['groupXp'] ?? 0,
+        'color': Colors.green,
+      },
+      {
+        'label': 'MUST XP',
+        'value': categories['mustXp'] ?? 0,
+        'color': Colors.amber,
+      },
     ];
 
     return Container(
@@ -679,7 +761,11 @@ class _DashboardTabState extends State<DashboardTab> {
               SizedBox(width: 8),
               Text(
                 'XP Summary',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF1E293B),
+                ),
               ),
             ],
           ),
@@ -724,7 +810,11 @@ class _DashboardTabState extends State<DashboardTab> {
                         children: [
                           Text(
                             label,
-                            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: Colors.grey),
+                            style: const TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.grey,
+                            ),
                             overflow: TextOverflow.ellipsis,
                             maxLines: 1,
                           ),
@@ -734,12 +824,16 @@ class _DashboardTabState extends State<DashboardTab> {
                             alignment: Alignment.centerLeft,
                             child: Text(
                               '$val XP',
-                              style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: color),
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.bold,
+                                color: color,
+                              ),
                             ),
                           ),
                         ],
                       ),
-                    )
+                    ),
                   ],
                 ),
               );
@@ -753,14 +847,22 @@ class _DashboardTabState extends State<DashboardTab> {
             children: [
               const Text(
                 'Total XP',
-                style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF1E293B),
+                ),
               ),
               Text(
                 '$totalXp XP',
-                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF4F46E5)),
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF4F46E5),
+                ),
               ),
             ],
-          )
+          ),
         ],
       ),
     );
@@ -775,7 +877,7 @@ class _DashboardTabState extends State<DashboardTab> {
           color: color,
           width: 14,
           borderRadius: const BorderRadius.vertical(top: Radius.circular(6)),
-        )
+        ),
       ],
     );
   }
@@ -793,7 +895,10 @@ class _DashboardTabState extends State<DashboardTab> {
         itemCount: streaks.length,
         itemBuilder: (context, index) {
           final streak = streaks[index];
-          final String name = streak['streakType'].toString().replaceFirst('_', ' ');
+          final String name = streak['streakType'].toString().replaceFirst(
+            '_',
+            ' ',
+          );
           final int count = streak['currentStreak'] ?? 0;
           final bool isBroken = streak['isBroken'] ?? false;
 
@@ -819,13 +924,20 @@ class _DashboardTabState extends State<DashboardTab> {
                     Expanded(
                       child: Text(
                         name,
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 10, color: Color(0xFF1E293B)),
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 10,
+                          color: Color(0xFF1E293B),
+                        ),
                         overflow: TextOverflow.ellipsis,
                         maxLines: 1,
                       ),
                     ),
                     const SizedBox(width: 4),
-                    Text(isBroken ? '❄️' : '🔥', style: const TextStyle(fontSize: 12)),
+                    Text(
+                      isBroken ? '❄️' : '🔥',
+                      style: const TextStyle(fontSize: 12),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 6),
@@ -846,7 +958,13 @@ class _DashboardTabState extends State<DashboardTab> {
   }
 
   // Widget 3: Level Progress Card
-  Widget _buildLevelProgressCard(int levelNum, String levelTitle, int totalXp, int maxXp, double progress) {
+  Widget _buildLevelProgressCard(
+    int levelNum,
+    String levelTitle,
+    int totalXp,
+    int maxXp,
+    double progress,
+  ) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
@@ -864,7 +982,11 @@ class _DashboardTabState extends State<DashboardTab> {
               Expanded(
                 child: Text(
                   'Level $levelNum — $levelTitle',
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF1E293B)),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                    color: Color(0xFF1E293B),
+                  ),
                   overflow: TextOverflow.ellipsis,
                   maxLines: 1,
                 ),
@@ -880,14 +1002,20 @@ class _DashboardTabState extends State<DashboardTab> {
               value: progress.clamp(0.0, 1.0),
               minHeight: 8,
               backgroundColor: Colors.grey.shade100,
-              valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF4F46E5)),
+              valueColor: const AlwaysStoppedAnimation<Color>(
+                Color(0xFF4F46E5),
+              ),
             ),
           ),
           const SizedBox(height: 8),
           Text(
             '$totalXp / $maxXp XP to next level',
-            style: TextStyle(color: Colors.grey.shade600, fontSize: 12, fontWeight: FontWeight.w500),
-          )
+            style: TextStyle(
+              color: Colors.grey.shade600,
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
         ],
       ),
     );
@@ -910,7 +1038,11 @@ class _DashboardTabState extends State<DashboardTab> {
             SizedBox(height: 8),
             Text(
               'No Active Stage',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.red),
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+                color: Colors.red,
+              ),
             ),
             SizedBox(height: 4),
             Text(
@@ -926,7 +1058,9 @@ class _DashboardTabState extends State<DashboardTab> {
     final int expectedXp = activeStageDetails?['expectedXp'] ?? 1000;
     final String countdown = activeStageDetails?['countdown'] as String? ?? '';
 
-    final double progress = expectedXp > 0 ? (totalXp / expectedXp).clamp(0.0, 1.0) : 0.0;
+    final double progress = expectedXp > 0
+        ? (totalXp / expectedXp).clamp(0.0, 1.0)
+        : 0.0;
 
     return Container(
       width: double.infinity,
@@ -940,8 +1074,8 @@ class _DashboardTabState extends State<DashboardTab> {
             color: Colors.black.withValues(alpha: 0.02),
             blurRadius: 10,
             offset: const Offset(0, 4),
-          )
-        ]
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -952,7 +1086,11 @@ class _DashboardTabState extends State<DashboardTab> {
               Expanded(
                 child: Text(
                   'Stage $currentStage Progress',
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF1E293B)),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                    color: Color(0xFF1E293B),
+                  ),
                   overflow: TextOverflow.ellipsis,
                   maxLines: 1,
                 ),
@@ -960,7 +1098,10 @@ class _DashboardTabState extends State<DashboardTab> {
               if (countdown.isNotEmpty) ...[
                 const SizedBox(width: 8),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.orange.shade50,
                     borderRadius: BorderRadius.circular(8),
@@ -971,12 +1112,16 @@ class _DashboardTabState extends State<DashboardTab> {
                       const SizedBox(width: 4),
                       Text(
                         countdown,
-                        style: TextStyle(color: Colors.orange.shade800, fontSize: 11, fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                          color: Colors.orange.shade800,
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ],
                   ),
                 ),
-              ]
+              ],
             ],
           ),
           const SizedBox(height: 16),
@@ -986,7 +1131,9 @@ class _DashboardTabState extends State<DashboardTab> {
               value: progress,
               minHeight: 10,
               backgroundColor: Colors.grey.shade100,
-              valueColor: AlwaysStoppedAnimation<Color>(progress >= 1.0 ? Colors.green : const Color(0xFF4F46E5)),
+              valueColor: AlwaysStoppedAnimation<Color>(
+                progress >= 1.0 ? Colors.green : const Color(0xFF4F46E5),
+              ),
             ),
           ),
           const SizedBox(height: 8),
@@ -995,12 +1142,18 @@ class _DashboardTabState extends State<DashboardTab> {
             children: [
               Text(
                 '$totalXp / $expectedXp XP',
-                style: TextStyle(color: Colors.grey.shade700, fontSize: 14, fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  color: Colors.grey.shade700,
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               Text(
                 '${(progress * 100).toInt()}%',
                 style: TextStyle(
-                  color: progress >= 1.0 ? Colors.green : const Color(0xFF4F46E5),
+                  color: progress >= 1.0
+                      ? Colors.green
+                      : const Color(0xFF4F46E5),
                   fontSize: 14,
                   fontWeight: FontWeight.bold,
                 ),
@@ -1049,33 +1202,49 @@ class _DashboardTabState extends State<DashboardTab> {
             border: Border.all(color: Colors.grey.shade100),
           ),
           child: ListTile(
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 4,
+            ),
             leading: CircleAvatar(
-              backgroundColor: isPositive ? Colors.green.shade50 : Colors.red.shade50,
+              backgroundColor: isPositive
+                  ? Colors.green.shade50
+                  : Colors.red.shade50,
               child: Icon(
-                isPositive ? Icons.add_circle_outline_rounded : Icons.remove_circle_outline_rounded,
+                isPositive
+                    ? Icons.add_circle_outline_rounded
+                    : Icons.remove_circle_outline_rounded,
                 color: isPositive ? Colors.green : Colors.red,
               ),
             ),
             title: Text(
               log['activityName'] ?? '',
-              style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1E293B), fontSize: 13),
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF1E293B),
+                fontSize: 13,
+              ),
             ),
             subtitle: Row(
               children: [
                 Text(
-                  log['submittedAt'] != null ? log['submittedAt'].toString().split('T')[0] : '',
+                  log['submittedAt'] != null
+                      ? log['submittedAt'].toString().split('T')[0]
+                      : '',
                   style: TextStyle(color: Colors.grey.shade500, fontSize: 11),
                 ),
                 const SizedBox(width: 8),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 2,
+                  ),
                   decoration: BoxDecoration(
                     color: 'APPROVED'.equalsIgnoreCase(status)
                         ? Colors.green.withValues(alpha: 0.1)
                         : 'REJECTED'.equalsIgnoreCase(status)
-                            ? Colors.red.withValues(alpha: 0.1)
-                            : Colors.orange.withValues(alpha: 0.1),
+                        ? Colors.red.withValues(alpha: 0.1)
+                        : Colors.orange.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: Text(
@@ -1086,8 +1255,8 @@ class _DashboardTabState extends State<DashboardTab> {
                       color: 'APPROVED'.equalsIgnoreCase(status)
                           ? Colors.green
                           : 'REJECTED'.equalsIgnoreCase(status)
-                              ? Colors.red
-                              : Colors.orange,
+                          ? Colors.red
+                          : Colors.orange,
                     ),
                   ),
                 ),
@@ -1122,8 +1291,8 @@ class _DashboardTabState extends State<DashboardTab> {
               color: Colors.black.withValues(alpha: 0.02),
               blurRadius: 10,
               offset: const Offset(0, 4),
-            )
-          ]
+            ),
+          ],
         ),
         child: const Center(
           child: Column(
@@ -1132,7 +1301,11 @@ class _DashboardTabState extends State<DashboardTab> {
               SizedBox(height: 12),
               Text(
                 'No Team Assigned',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.grey),
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                  color: Colors.grey,
+                ),
               ),
             ],
           ),
@@ -1142,13 +1315,17 @@ class _DashboardTabState extends State<DashboardTab> {
 
     final String name = teamDetailsData!['teamName'] ?? 'Unnamed Team';
     final String captain = teamDetailsData!['captainName'] ?? 'Not Assigned';
-    final String viceCaptain = teamDetailsData!['viceCaptainName'] ?? 'Not Assigned';
+    final String viceCaptain =
+        teamDetailsData!['viceCaptainName'] ?? 'Not Assigned';
     final int teamXp = teamDetailsData!['totalTeamXp'] ?? 0;
     final String stage = teamDetailsData!['stage'] ?? 'Stage 1';
     final String dept = teamDetailsData!['department'] ?? 'N/A';
     final String sec = teamDetailsData!['section'] ?? 'N/A';
-    final int memberCount = teamDetailsData!['currentMemberCount'] ?? (teamDetailsData!['members'] as List?)?.length ?? 0;
-    
+    final int memberCount =
+        teamDetailsData!['currentMemberCount'] ??
+        (teamDetailsData!['members'] as List?)?.length ??
+        0;
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
@@ -1161,8 +1338,8 @@ class _DashboardTabState extends State<DashboardTab> {
             color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 10,
             offset: const Offset(0, 4),
-          )
-        ]
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1173,21 +1350,32 @@ class _DashboardTabState extends State<DashboardTab> {
               Expanded(
                 child: Text(
                   'My Group: $name',
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF1E293B)),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                    color: Color(0xFF1E293B),
+                  ),
                   overflow: TextOverflow.ellipsis,
                   maxLines: 1,
                 ),
               ),
               const SizedBox(width: 8),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.indigo.shade50,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
                   stage.toUpperCase(),
-                  style: TextStyle(color: Colors.indigo.shade700, fontSize: 10, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                    color: Colors.indigo.shade700,
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
             ],
@@ -1213,12 +1401,20 @@ class _DashboardTabState extends State<DashboardTab> {
                   children: [
                     Text(
                       'Captain',
-                      style: TextStyle(color: Colors.grey.shade500, fontSize: 11, fontWeight: FontWeight.w600),
+                      style: TextStyle(
+                        color: Colors.grey.shade500,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                     const SizedBox(height: 2),
                     Text(
                       captain,
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF1E293B)),
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 13,
+                        color: Color(0xFF1E293B),
+                      ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -1231,12 +1427,20 @@ class _DashboardTabState extends State<DashboardTab> {
                   children: [
                     Text(
                       'Vice Captain',
-                      style: TextStyle(color: Colors.grey.shade500, fontSize: 11, fontWeight: FontWeight.w600),
+                      style: TextStyle(
+                        color: Colors.grey.shade500,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                     const SizedBox(height: 2),
                     Text(
                       viceCaptain,
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF1E293B)),
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 13,
+                        color: Color(0xFF1E293B),
+                      ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -1260,11 +1464,15 @@ class _DashboardTabState extends State<DashboardTab> {
                 const SizedBox(width: 8),
                 Text(
                   'Group XP: $teamXp XP',
-                  style: TextStyle(color: Colors.green.shade800, fontWeight: FontWeight.bold, fontSize: 14),
+                  style: TextStyle(
+                    color: Colors.green.shade800,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                  ),
                 ),
               ],
             ),
-          )
+          ),
         ],
       ),
     );
@@ -1283,7 +1491,14 @@ class _DashboardTabState extends State<DashboardTab> {
         children: [
           Icon(icon, size: 12, color: Colors.grey.shade600),
           const SizedBox(width: 4),
-          Text(label, style: TextStyle(fontSize: 11, color: Colors.grey.shade700, fontWeight: FontWeight.w500)),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 11,
+              color: Colors.grey.shade700,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
         ],
       ),
     );
@@ -1301,24 +1516,15 @@ class _DashboardTabState extends State<DashboardTab> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: Colors.grey.shade100,
-        ),
+        border: Border.all(color: Colors.grey.shade100),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
             padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: bgColor,
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              icon,
-              color: iconColor,
-              size: 20,
-            ),
+            decoration: BoxDecoration(color: bgColor, shape: BoxShape.circle),
+            child: Icon(icon, color: iconColor, size: 20),
           ),
           const SizedBox(height: 12),
           Text(

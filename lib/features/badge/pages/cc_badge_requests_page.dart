@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:spdms_app/features/auth/providers/auth_provider.dart';
-import 'package:spdms_app/features/badge/providers/badge_provider.dart';
-import 'package:spdms_app/features/badge/models/badge_request.dart';
+import 'package:pragatix/features/auth/providers/auth_provider.dart';
+import 'package:pragatix/features/badge/providers/badge_provider.dart';
+import 'package:pragatix/features/badge/models/badge_request.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -58,13 +58,13 @@ class _CCBadgeRequestsPageState extends State<CCBadgeRequestsPage> {
       body: badgeProvider.isLoading
           ? const Center(child: CircularProgressIndicator())
           : requests.isEmpty
-              ? const Center(child: Text('No requests found.'))
-              : ListView.builder(
-                  itemCount: requests.length,
-                  itemBuilder: (context, index) {
-                    return _buildRequestCard(requests[index]);
-                  },
-                ),
+          ? const Center(child: Text('No requests found.'))
+          : ListView.builder(
+              itemCount: requests.length,
+              itemBuilder: (context, index) {
+                return _buildRequestCard(requests[index]);
+              },
+            ),
     );
   }
 
@@ -92,7 +92,12 @@ class _CCBadgeRequestsPageState extends State<CCBadgeRequestsPage> {
                 if (req.badgeIcon.isNotEmpty)
                   Padding(
                     padding: const EdgeInsets.only(right: 8.0),
-                    child: Image.network(req.badgeIcon, width: 40, height: 40, errorBuilder: (_,__,___) => const Icon(Icons.shield)),
+                    child: Image.network(
+                      req.badgeIcon,
+                      width: 40,
+                      height: 40,
+                      errorBuilder: (_, __, ___) => const Icon(Icons.shield),
+                    ),
                   )
                 else
                   const Padding(
@@ -103,15 +108,27 @@ class _CCBadgeRequestsPageState extends State<CCBadgeRequestsPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(req.badgeName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                      Text('${req.studentName} (${req.regNo})', style: const TextStyle(color: Colors.grey)),
+                      Text(
+                        req.badgeName,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                      Text(
+                        '${req.studentName} (${req.regNo})',
+                        style: const TextStyle(color: Colors.grey),
+                      ),
                     ],
                   ),
                 ),
               ],
             ),
             const SizedBox(height: 12),
-            Text('Requested: ${_formatDate(req.requestedAt)}', style: const TextStyle(fontSize: 12)),
+            Text(
+              'Requested: ${_formatDate(req.requestedAt)}',
+              style: const TextStyle(fontSize: 12),
+            ),
             if (req.proofLink != null && req.proofLink!.isNotEmpty)
               Padding(
                 padding: const EdgeInsets.only(top: 8.0),
@@ -126,14 +143,27 @@ class _CCBadgeRequestsPageState extends State<CCBadgeRequestsPage> {
                           await launchUrl(uri);
                         }
                       },
-                      child: const Text('View Proof Link', style: TextStyle(color: Colors.blue, decoration: TextDecoration.underline, fontSize: 13)),
+                      child: const Text(
+                        'View Proof Link',
+                        style: TextStyle(
+                          color: Colors.blue,
+                          decoration: TextDecoration.underline,
+                          fontSize: 13,
+                        ),
+                      ),
                     ),
                   ],
                 ),
               ),
             if (req.reviewedBy != null) ...[
-              Text('Reviewed By: ${req.reviewedBy}', style: const TextStyle(fontSize: 12)),
-              Text('Reviewed At: ${_formatDate(req.reviewedAt!)}', style: const TextStyle(fontSize: 12)),
+              Text(
+                'Reviewed By: ${req.reviewedBy}',
+                style: const TextStyle(fontSize: 12),
+              ),
+              Text(
+                'Reviewed At: ${_formatDate(req.reviewedAt!)}',
+                style: const TextStyle(fontSize: 12),
+              ),
             ],
             if (req.status == 'PENDING') ...[
               const Divider(),
@@ -142,17 +172,25 @@ class _CCBadgeRequestsPageState extends State<CCBadgeRequestsPage> {
                 children: [
                   TextButton(
                     onPressed: () => _handleReject(req.id),
-                    child: const Text('Reject', style: TextStyle(color: Colors.red)),
+                    child: const Text(
+                      'Reject',
+                      style: TextStyle(color: Colors.red),
+                    ),
                   ),
                   const SizedBox(width: 8),
                   ElevatedButton(
                     onPressed: () => _handleApprove(req.id),
-                    style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
-                    child: const Text('Approve', style: TextStyle(color: Colors.white)),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green,
+                    ),
+                    child: const Text(
+                      'Approve',
+                      style: TextStyle(color: Colors.white),
+                    ),
                   ),
                 ],
               ),
-            ]
+            ],
           ],
         ),
       ),
@@ -161,14 +199,28 @@ class _CCBadgeRequestsPageState extends State<CCBadgeRequestsPage> {
 
   void _handleApprove(int id) async {
     final token = context.read<AuthProvider>().token;
-    final res = await context.read<BadgeProvider>().approveBadgeWorkflow(token!, id, 'CC');
-    if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(res['message'])));
+    final res = await context.read<BadgeProvider>().approveBadgeWorkflow(
+      token!,
+      id,
+      'CC',
+    );
+    if (mounted)
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(res['message'])));
   }
 
   void _handleReject(int id) async {
     final token = context.read<AuthProvider>().token;
-    final res = await context.read<BadgeProvider>().rejectBadgeWorkflow(token!, id, 'CC');
-    if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(res['message'])));
+    final res = await context.read<BadgeProvider>().rejectBadgeWorkflow(
+      token!,
+      id,
+      'CC',
+    );
+    if (mounted)
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(res['message'])));
   }
 
   String _formatDate(String dateStr) {

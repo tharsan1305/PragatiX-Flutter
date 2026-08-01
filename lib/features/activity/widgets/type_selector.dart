@@ -54,7 +54,7 @@ class TypeSelector extends StatelessWidget {
                             color: _primary.withValues(alpha: 0.25),
                             blurRadius: 10,
                             offset: const Offset(0, 4),
-                          )
+                          ),
                         ]
                       : [],
                 ),
@@ -62,9 +62,7 @@ class TypeSelector extends StatelessWidget {
                   children: [
                     Icon(
                       icon,
-                      color: isSelected
-                          ? Colors.white
-                          : Colors.grey.shade500,
+                      color: isSelected ? Colors.white : Colors.grey.shade500,
                       size: 26,
                     ),
                     const SizedBox(height: 6),

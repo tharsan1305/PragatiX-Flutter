@@ -1,13 +1,13 @@
-import 'package:spdms_app/features/auth/providers/auth_provider.dart';
+import 'package:pragatix/features/auth/providers/auth_provider.dart';
 import 'package:provider/provider.dart';
-import 'package:spdms_app/core/config/api_config.dart';
+import 'package:pragatix/core/config/api_config.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:spdms_app/features/teacher/services/teacher_proxy_service.dart';
-import 'package:spdms_app/core/di/service_locator.dart';
+import 'package:pragatix/features/teacher/services/teacher_proxy_service.dart';
+import 'package:pragatix/core/di/service_locator.dart';
 
 class HodPerformanceTab extends StatefulWidget {
-  const HodPerformanceTab({super.key, });
+  const HodPerformanceTab({super.key});
 
   @override
   State<HodPerformanceTab> createState() => _HodPerformanceTabState();
@@ -27,8 +27,12 @@ class _HodPerformanceTabState extends State<HodPerformanceTab> {
   Future<void> _fetchPerformance() async {
     try {
       final response = await getIt<TeacherProxyService>().get(
-        Uri.parse('${ApiConfig.baseUrl}/api/v1/students/department-performance'),
-        headers: {'Authorization': 'Bearer ${context.read<AuthProvider>().token!}'},
+        Uri.parse(
+          '${ApiConfig.baseUrl}/api/v1/students/department-performance',
+        ),
+        headers: {
+          'Authorization': 'Bearer ${context.read<AuthProvider>().token!}',
+        },
       );
       final data = jsonDecode(response.body);
       if (response.statusCode == 200 && data['success'] == true) {
@@ -53,12 +57,16 @@ class _HodPerformanceTabState extends State<HodPerformanceTab> {
   @override
   Widget build(BuildContext context) {
     if (isLoading) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      return const Scaffold(backgroundColor: Colors.transparent, body: Center(child: CircularProgressIndicator()));
     }
     if (errorMessage != null) {
       return Scaffold(
+        backgroundColor: Colors.transparent,
         appBar: AppBar(
-          title: const Text('HOD Performance Dashboard', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+          title: const Text(
+            'HOD Performance Dashboard',
+            style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+          ),
           backgroundColor: const Color(0xFF1E293B),
         ),
         body: Center(
@@ -67,7 +75,11 @@ class _HodPerformanceTabState extends State<HodPerformanceTab> {
             child: Text(
               errorMessage!,
               textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 16, color: Colors.red, fontWeight: FontWeight.bold),
+              style: const TextStyle(
+                fontSize: 16,
+                color: Colors.red,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ),
         ),
@@ -75,13 +87,23 @@ class _HodPerformanceTabState extends State<HodPerformanceTab> {
     }
 
     final String deptName = performanceData['departmentName'] ?? 'Department';
-    final double overallAvg = (performanceData['overallAverage'] as num?)?.toDouble() ?? 100.0;
-    final int totalStudents = (performanceData['totalStudents'] as num?)?.toInt() ?? 0;
-    final Map<String, dynamic> yearAvg = performanceData['yearWiseAverage'] ?? {};
+    final double overallAvg =
+        (performanceData['overallAverage'] as num?)?.toDouble() ?? 100.0;
+    final int totalStudents =
+        (performanceData['totalStudents'] as num?)?.toInt() ?? 0;
+    final Map<String, dynamic> yearAvg =
+        performanceData['yearWiseAverage'] ?? {};
 
     return Scaffold(
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
-        title: Text('$deptName HOD Dashboard', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+        title: Text(
+          '$deptName HOD Dashboard',
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+        ),
         backgroundColor: const Color(0xFF1E293B),
         actions: [
           IconButton(
@@ -90,10 +112,9 @@ class _HodPerformanceTabState extends State<HodPerformanceTab> {
               setState(() => isLoading = true);
               _fetchPerformance();
             },
-          )
+          ),
         ],
       ),
-      backgroundColor: const Color(0xFFF8FAFC),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -101,7 +122,11 @@ class _HodPerformanceTabState extends State<HodPerformanceTab> {
           children: [
             const Text(
               'Department Overview',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF1E293B),
+              ),
             ),
             const SizedBox(height: 12),
             Row(
@@ -114,11 +139,24 @@ class _HodPerformanceTabState extends State<HodPerformanceTab> {
                       padding: const EdgeInsets.all(16.0),
                       child: Column(
                         children: [
-                          const Icon(Icons.people, size: 36, color: Color(0xFF11998e)),
+                          const Icon(
+                            Icons.people,
+                            size: 36,
+                            color: Color(0xFF11998e),
+                          ),
                           const SizedBox(height: 8),
-                          const Text('Total Students', style: TextStyle(fontSize: 13, color: Colors.grey)),
+                          const Text(
+                            'Total Students',
+                            style: TextStyle(fontSize: 13, color: Colors.grey),
+                          ),
                           const SizedBox(height: 4),
-                          Text('$totalStudents', style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+                          Text(
+                            '$totalStudents',
+                            style: const TextStyle(
+                              fontSize: 22,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                         ],
                       ),
                     ),
@@ -133,11 +171,24 @@ class _HodPerformanceTabState extends State<HodPerformanceTab> {
                       padding: const EdgeInsets.all(16.0),
                       child: Column(
                         children: [
-                          const Icon(Icons.stars, size: 36, color: Colors.amber),
+                          const Icon(
+                            Icons.stars,
+                            size: 36,
+                            color: Colors.amber,
+                          ),
                           const SizedBox(height: 8),
-                          const Text('Overall Avg Score', style: TextStyle(fontSize: 13, color: Colors.grey)),
+                          const Text(
+                            'Overall Avg Score',
+                            style: TextStyle(fontSize: 13, color: Colors.grey),
+                          ),
                           const SizedBox(height: 4),
-                          Text(overallAvg.toStringAsFixed(1), style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+                          Text(
+                            overallAvg.toStringAsFixed(1),
+                            style: const TextStyle(
+                              fontSize: 22,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                         ],
                       ),
                     ),
@@ -148,25 +199,32 @@ class _HodPerformanceTabState extends State<HodPerformanceTab> {
             const SizedBox(height: 24),
             const Text(
               'Year-wise Average Discipline Score',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF1E293B),
+              ),
             ),
             const SizedBox(height: 12),
             if (yearAvg.isEmpty)
               const Card(
                 child: Padding(
                   padding: EdgeInsets.all(16.0),
-                  child: Text('No student records found in this department.', style: TextStyle(fontStyle: FontStyle.italic)),
+                  child: Text(
+                    'No student records found in this department.',
+                    style: TextStyle(fontStyle: FontStyle.italic),
+                  ),
                 ),
               )
             else
               ...yearAvg.entries.map((entry) {
                 final double score = (entry.value as num).toDouble();
                 Color barColor = const Color(0xFF11998e);
-                  if (score < 50) {
-                    barColor = Colors.redAccent;
-                  } else if (score < 80) {
-                    barColor = Colors.orangeAccent;
-                  }
+                if (score < 50) {
+                  barColor = Colors.redAccent;
+                } else if (score < 80) {
+                  barColor = Colors.orangeAccent;
+                }
 
                 return Card(
                   color: Colors.white,
@@ -179,8 +237,20 @@ class _HodPerformanceTabState extends State<HodPerformanceTab> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text(entry.key, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-                            Text('${score.toStringAsFixed(1)} / 100', style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
+                            Text(
+                              entry.key,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 15,
+                              ),
+                            ),
+                            Text(
+                              '${score.toStringAsFixed(1)} / 100',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF1E293B),
+                              ),
+                            ),
                           ],
                         ),
                         const SizedBox(height: 8),
@@ -192,7 +262,7 @@ class _HodPerformanceTabState extends State<HodPerformanceTab> {
                             backgroundColor: Colors.grey.shade200,
                             valueColor: AlwaysStoppedAnimation<Color>(barColor),
                           ),
-                        )
+                        ),
                       ],
                     ),
                   ),

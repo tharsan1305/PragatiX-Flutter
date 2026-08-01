@@ -3,8 +3,8 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 
-import 'package:spdms_app/features/admin/repository/admin_repository.dart';
-import 'package:spdms_app/core/di/service_locator.dart';
+import 'package:pragatix/features/admin/repository/admin_repository.dart';
+import 'package:pragatix/core/di/service_locator.dart';
 
 
 

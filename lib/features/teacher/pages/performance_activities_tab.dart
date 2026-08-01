@@ -1,21 +1,23 @@
-import 'package:spdms_app/features/auth/providers/auth_provider.dart';
+import 'package:pragatix/features/auth/providers/auth_provider.dart';
 import 'package:provider/provider.dart';
-import 'package:spdms_app/core/config/api_config.dart';
+import 'package:pragatix/core/config/api_config.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:spdms_app/features/teacher/services/teacher_proxy_service.dart';
-import 'package:spdms_app/features/teacher/pages/students_tab.dart';
-import 'package:spdms_app/features/activity/pages/group_activity_year_page.dart';
-import 'package:spdms_app/core/di/service_locator.dart';
-import 'package:spdms_app/features/badge/pages/cc_badge_requests_page.dart';
-import 'package:spdms_app/features/penalty/pages/penalty_requests_page.dart' as spdms_penalty;
+import 'package:pragatix/features/teacher/services/teacher_proxy_service.dart';
+import 'package:pragatix/features/teacher/pages/students_tab.dart';
+import 'package:pragatix/features/activity/pages/group_activity_year_page.dart';
+import 'package:pragatix/core/di/service_locator.dart';
+import 'package:pragatix/features/badge/pages/cc_badge_requests_page.dart';
+import 'package:pragatix/features/penalty/pages/penalty_requests_page.dart'
+    as spdms_penalty;
 
 class PerformanceActivitiesTab extends StatefulWidget {
   final List<String> subRoles;
-  const PerformanceActivitiesTab({super.key,  required this.subRoles});
+  const PerformanceActivitiesTab({super.key, required this.subRoles});
 
   @override
-  State<PerformanceActivitiesTab> createState() => _PerformanceActivitiesTabState();
+  State<PerformanceActivitiesTab> createState() =>
+      _PerformanceActivitiesTabState();
 }
 
 class _PerformanceActivitiesTabState extends State<PerformanceActivitiesTab> {
@@ -68,23 +70,68 @@ class _PerformanceActivitiesTabState extends State<PerformanceActivitiesTab> {
   ];
 
   final Map<String, Map<String, dynamic>> _categoryStyles = {
-    'ACADEMIC': {'color': Colors.blue, 'icon': Icons.school_rounded, 'label': 'Academic'},
-    'COMMUNICATION': {'color': Colors.indigo, 'icon': Icons.chat_bubble_rounded, 'label': 'Communication'},
-    'LEADERSHIP': {'color': Colors.amber, 'icon': Icons.gavel_rounded, 'label': 'Leadership'},
-    'INNOVATION': {'color': Colors.orange, 'icon': Icons.lightbulb_rounded, 'label': 'Innovation'},
-    'PLACEMENT': {'color': Colors.green, 'icon': Icons.work_rounded, 'label': 'Placement'},
-    'DISCIPLINE': {'color': Colors.red, 'icon': Icons.verified_user_rounded, 'label': 'Discipline'},
-    'SPORTS': {'color': Colors.pink, 'icon': Icons.sports_soccer_rounded, 'label': 'Sports'},
-    'COMMUNITY': {'color': Colors.teal, 'icon': Icons.people_rounded, 'label': 'Community'},
-    'SKILL': {'color': Colors.purple, 'icon': Icons.psychology_rounded, 'label': 'Skill'},
-    'CULTURAL': {'color': Colors.cyan, 'icon': Icons.music_note_rounded, 'label': 'Cultural'},
+    'ACADEMIC': {
+      'color': Colors.blue,
+      'icon': Icons.school_rounded,
+      'label': 'Academic',
+    },
+    'COMMUNICATION': {
+      'color': Colors.indigo,
+      'icon': Icons.chat_bubble_rounded,
+      'label': 'Communication',
+    },
+    'LEADERSHIP': {
+      'color': Colors.amber,
+      'icon': Icons.gavel_rounded,
+      'label': 'Leadership',
+    },
+    'INNOVATION': {
+      'color': Colors.orange,
+      'icon': Icons.lightbulb_rounded,
+      'label': 'Innovation',
+    },
+    'PLACEMENT': {
+      'color': Colors.green,
+      'icon': Icons.work_rounded,
+      'label': 'Placement',
+    },
+    'DISCIPLINE': {
+      'color': Colors.red,
+      'icon': Icons.verified_user_rounded,
+      'label': 'Discipline',
+    },
+    'SPORTS': {
+      'color': Colors.pink,
+      'icon': Icons.sports_soccer_rounded,
+      'label': 'Sports',
+    },
+    'COMMUNITY': {
+      'color': Colors.teal,
+      'icon': Icons.people_rounded,
+      'label': 'Community',
+    },
+    'SKILL': {
+      'color': Colors.purple,
+      'icon': Icons.psychology_rounded,
+      'label': 'Skill',
+    },
+    'CULTURAL': {
+      'color': Colors.cyan,
+      'icon': Icons.music_note_rounded,
+      'label': 'Cultural',
+    },
   };
 
   @override
   void initState() {
     super.initState();
     _fetchMyActivities();
-    if (widget.subRoles.any((r) => r.toUpperCase() == 'CC' || r.toUpperCase() == 'CLASS_COORDINATOR' || r.toUpperCase() == 'ROLE_CC')) {
+    if (widget.subRoles.any(
+      (r) =>
+          r.toUpperCase() == 'CC' ||
+          r.toUpperCase() == 'CLASS_COORDINATOR' ||
+          r.toUpperCase() == 'ROLE_CC',
+    )) {
       _fetchPendingBadges();
     }
   }
@@ -100,9 +147,9 @@ class _PerformanceActivitiesTabState extends State<PerformanceActivitiesTab> {
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data['success'] == true && mounted) {
-           setState(() {
-             _pendingBadgeRequests = data['data']['pendingBadgeRequests'] ?? 0;
-           });
+          setState(() {
+            _pendingBadgeRequests = data['data']['pendingBadgeRequests'] ?? 0;
+          });
         }
       }
     } catch (e) {
@@ -118,7 +165,8 @@ class _PerformanceActivitiesTabState extends State<PerformanceActivitiesTab> {
 
   List<String> _getYearAliases(dynamic selectedYear) {
     if (selectedYear == null) return [];
-    final yearName = selectedYear['yearName']?.toString().trim().toLowerCase() ?? '';
+    final yearName =
+        selectedYear['yearName']?.toString().trim().toLowerCase() ?? '';
     final yearNo = (selectedYear['yearNo'] as num?)?.toInt() ?? -1;
 
     final List<String> aliases = [];
@@ -161,7 +209,7 @@ class _PerformanceActivitiesTabState extends State<PerformanceActivitiesTab> {
   List<Map<String, dynamic>> get _availableDepartments {
     if (_selectedYear == null) return [];
     final yearAliases = _getYearAliases(_selectedYear);
-    
+
     final deptNames = _rawEligibleStudents
         .where((s) {
           final sYear = s['year']?.toString().trim().toLowerCase() ?? '';
@@ -175,7 +223,9 @@ class _PerformanceActivitiesTabState extends State<PerformanceActivitiesTab> {
     final list = deptNames.map((name) => {'name': name}).toList();
     if (_deptSearchQuery.trim().isEmpty) return list;
     final query = _deptSearchQuery.toLowerCase();
-    return list.where((d) => d['name'].toString().toLowerCase().contains(query)).toList();
+    return list
+        .where((d) => d['name'].toString().toLowerCase().contains(query))
+        .toList();
   }
 
   List<dynamic> get _filteredStudentsList {
@@ -198,7 +248,9 @@ class _PerformanceActivitiesTabState extends State<PerformanceActivitiesTab> {
     try {
       final response = await getIt<TeacherProxyService>().get(
         Uri.parse(url),
-        headers: {'Authorization': 'Bearer ${context.read<AuthProvider>().token!}'},
+        headers: {
+          'Authorization': 'Bearer ${context.read<AuthProvider>().token!}',
+        },
       );
       debugPrint('Response status: ${response.statusCode}');
       debugPrint('Response body: ${response.body}');
@@ -228,8 +280,12 @@ class _PerformanceActivitiesTabState extends State<PerformanceActivitiesTab> {
     try {
       final activityId = event['activityId'];
       final response = await getIt<TeacherProxyService>().get(
-        Uri.parse('${ApiConfig.baseUrl}/api/v1/my-activities/$activityId/years'),
-        headers: {'Authorization': 'Bearer ${context.read<AuthProvider>().token!}'},
+        Uri.parse(
+          '${ApiConfig.baseUrl}/api/v1/my-activities/$activityId/years',
+        ),
+        headers: {
+          'Authorization': 'Bearer ${context.read<AuthProvider>().token!}',
+        },
       );
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -238,7 +294,9 @@ class _PerformanceActivitiesTabState extends State<PerformanceActivitiesTab> {
           setState(() {
             _availableYearsList = _fixedYears.where((fy) {
               final aliases = _getYearAliases(fy);
-              return yrs.any((y) => aliases.contains(y.toString().toLowerCase().trim()));
+              return yrs.any(
+                (y) => aliases.contains(y.toString().toLowerCase().trim()),
+              );
             }).toList();
           });
         }
@@ -266,8 +324,12 @@ class _PerformanceActivitiesTabState extends State<PerformanceActivitiesTab> {
       if (yearNo == 4) yearParam = 'IV';
 
       final response = await getIt<TeacherProxyService>().get(
-        Uri.parse('${ApiConfig.baseUrl}/api/v1/my-activities/$activityId/departments?year=$yearParam'),
-        headers: {'Authorization': 'Bearer ${context.read<AuthProvider>().token!}'},
+        Uri.parse(
+          '${ApiConfig.baseUrl}/api/v1/my-activities/$activityId/departments?year=$yearParam',
+        ),
+        headers: {
+          'Authorization': 'Bearer ${context.read<AuthProvider>().token!}',
+        },
       );
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -301,8 +363,12 @@ class _PerformanceActivitiesTabState extends State<PerformanceActivitiesTab> {
       final deptId = dept['id'];
 
       final response = await getIt<TeacherProxyService>().get(
-        Uri.parse('${ApiConfig.baseUrl}/api/v1/my-activities/$activityId/sections?year=$yearParam&departmentId=$deptId'),
-        headers: {'Authorization': 'Bearer ${context.read<AuthProvider>().token!}'},
+        Uri.parse(
+          '${ApiConfig.baseUrl}/api/v1/my-activities/$activityId/sections?year=$yearParam&departmentId=$deptId',
+        ),
+        headers: {
+          'Authorization': 'Bearer ${context.read<AuthProvider>().token!}',
+        },
       );
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -340,7 +406,8 @@ class _PerformanceActivitiesTabState extends State<PerformanceActivitiesTab> {
       if (yearNo == 4) yearParam = 'IV';
       final deptId = _selectedDept['id'];
 
-      String url = '${ApiConfig.baseUrl}/api/v1/my-activities/$activityId/students?year=$yearParam&departmentId=$deptId';
+      String url =
+          '${ApiConfig.baseUrl}/api/v1/my-activities/$activityId/students?year=$yearParam&departmentId=$deptId';
       if (section != null) {
         final secId = section['id'];
         url += '&sectionId=$secId';
@@ -348,7 +415,9 @@ class _PerformanceActivitiesTabState extends State<PerformanceActivitiesTab> {
 
       final response = await getIt<TeacherProxyService>().get(
         Uri.parse(url),
-        headers: {'Authorization': 'Bearer ${context.read<AuthProvider>().token!}'},
+        headers: {
+          'Authorization': 'Bearer ${context.read<AuthProvider>().token!}',
+        },
       );
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -356,7 +425,9 @@ class _PerformanceActivitiesTabState extends State<PerformanceActivitiesTab> {
           setState(() {
             _eligibleStudents = data['data']['students'] ?? [];
             final assignData = data['data']['assignment'];
-            _assignmentId = assignData != null ? (assignData['id'] as num?)?.toInt() : null;
+            _assignmentId = assignData != null
+                ? (assignData['id'] as num?)?.toInt()
+                : null;
           });
         }
       }
@@ -388,17 +459,19 @@ class _PerformanceActivitiesTabState extends State<PerformanceActivitiesTab> {
       final body = {
         'studentIds': _selectedStudentIds.toList(),
         'activityId': _selectedEvent['activityId'],
-        'assignmentId': _assignmentId ?? _selectedEvent['activityId'], 
+        'assignmentId': _assignmentId ?? _selectedEvent['activityId'],
         'remarks': _remarksController.text.trim(),
       };
 
-      debugPrint('FLUTTER DEBUG: Selected studentId: ${_selectedStudentIds.toList()}');
+      debugPrint(
+        'FLUTTER DEBUG: Selected studentId: ${_selectedStudentIds.toList()}',
+      );
 
       final response = await getIt<TeacherProxyService>().post(
         Uri.parse('${ApiConfig.baseUrl}/api/v1/student-xp/award/batch'),
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'Bearer ${context.read<AuthProvider>().token!}'
+          'Authorization': 'Bearer ${context.read<AuthProvider>().token!}',
         },
         body: jsonEncode(body),
       );
@@ -421,7 +494,7 @@ class _PerformanceActivitiesTabState extends State<PerformanceActivitiesTab> {
           return;
         }
       }
-      
+
       if (!mounted) return;
       final errorData = jsonDecode(response.body);
       ScaffoldMessenger.of(context).showSnackBar(
@@ -431,13 +504,13 @@ class _PerformanceActivitiesTabState extends State<PerformanceActivitiesTab> {
         ),
       );
     } catch (e) {
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(e.toString()),
-            backgroundColor: Colors.redAccent,
-          ),
-        );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e.toString()),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
     } finally {
       setState(() {
         _isAwarding = false;
@@ -459,9 +532,8 @@ class _PerformanceActivitiesTabState extends State<PerformanceActivitiesTab> {
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => GroupActivityYearPage(
-            activityId: event['activityId'],
-          ),
+          builder: (context) =>
+              GroupActivityYearPage(activityId: event['activityId']),
         ),
       );
       return;
@@ -530,7 +602,9 @@ class _PerformanceActivitiesTabState extends State<PerformanceActivitiesTab> {
   List<dynamic> get _filteredDepts {
     if (_deptSearchQuery.trim().isEmpty) return _availableDeptsList;
     final query = _deptSearchQuery.toLowerCase();
-    return _availableDeptsList.where((d) => d['name'].toString().toLowerCase().contains(query)).toList();
+    return _availableDeptsList
+        .where((d) => d['name'].toString().toLowerCase().contains(query))
+        .toList();
   }
 
   @override
@@ -559,21 +633,28 @@ class _PerformanceActivitiesTabState extends State<PerformanceActivitiesTab> {
             _currentFlowStep == 0
                 ? 'Performance Activities'
                 : (_currentFlowStep == 1
-                    ? "${_categoryStyles[_selectedCategory]?['label']} Events"
-                    : (_currentFlowStep == 2
-                        ? 'Select Year'
-                        : (_currentFlowStep == 3
-                            ? 'Select Department'
-                            : (_currentFlowStep == 4
-                                ? 'Select Section'
-                                : "${_selectedEvent?['name']}")))),
-            style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+                      ? "${_categoryStyles[_selectedCategory]?['label']} Events"
+                      : (_currentFlowStep == 2
+                            ? 'Select Year'
+                            : (_currentFlowStep == 3
+                                  ? 'Select Department'
+                                  : (_currentFlowStep == 4
+                                        ? 'Select Section'
+                                        : "${_selectedEvent?['name']}")))),
+            style: const TextStyle(
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
           ),
           backgroundColor: const Color(0xFF1E293B),
           elevation: 0,
           leading: _currentFlowStep > 0
               ? IconButton(
-                  icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 20),
+                  icon: const Icon(
+                    Icons.arrow_back_ios_new_rounded,
+                    color: Colors.white,
+                    size: 20,
+                  ),
                   onPressed: () {
                     setState(() {
                       if (_currentFlowStep == 5) {
@@ -590,35 +671,50 @@ class _PerformanceActivitiesTabState extends State<PerformanceActivitiesTab> {
                 )
               : null,
           actions: [
-            if (widget.subRoles.any((r) => r.toUpperCase() == 'CC' || r.toUpperCase() == 'CLASS_COORDINATOR' || r.toUpperCase() == 'ROLE_CC') && _currentFlowStep == 0)
+            if (widget.subRoles.any(
+                  (r) =>
+                      r.toUpperCase() == 'CC' ||
+                      r.toUpperCase() == 'CLASS_COORDINATOR' ||
+                      r.toUpperCase() == 'ROLE_CC',
+                ) &&
+                _currentFlowStep == 0)
               Row(
                 children: [
                   IconButton(
                     icon: Badge(
                       isLabelVisible: _pendingBadgeRequests > 0,
-                      label: Text(_pendingBadgeRequests.toString(), style: const TextStyle(color: Colors.white)),
+                      label: Text(
+                        _pendingBadgeRequests.toString(),
+                        style: const TextStyle(color: Colors.white),
+                      ),
                       backgroundColor: Colors.red,
-                      child: const Icon(Icons.notifications, color: Colors.white),
+                      child: const Icon(
+                        Icons.notifications,
+                        color: Colors.white,
+                      ),
                     ),
                     tooltip: 'Badge Requests',
                     onPressed: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => const CCBadgeRequestsPage()),
+                        MaterialPageRoute(
+                          builder: (context) => const CCBadgeRequestsPage(),
+                        ),
                       ).then((_) => _fetchPendingBadges());
                     },
                   ),
                   IconButton(
-                    icon: const Icon(Icons.people_alt_rounded, color: Colors.white),
+                    icon: const Icon(
+                      Icons.people_alt_rounded,
+                      color: Colors.white,
+                    ),
                     tooltip: 'Students Directory',
                     onPressed: () {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => StudentsTab(
-                            
-                            subRoles: widget.subRoles,
-                          ),
+                          builder: (context) =>
+                              StudentsTab(subRoles: widget.subRoles),
                         ),
                       );
                     },
@@ -633,7 +729,12 @@ class _PerformanceActivitiesTabState extends State<PerformanceActivitiesTab> {
                   context,
                   MaterialPageRoute(
                     builder: (context) => spdms_penalty.PenaltyRequestsPage(
-                      isCC: widget.subRoles.any((r) => r.toUpperCase() == 'CC' || r.toUpperCase() == 'CLASS_COORDINATOR' || r.toUpperCase() == 'ROLE_CC'),
+                      isCC: widget.subRoles.any(
+                        (r) =>
+                            r.toUpperCase() == 'CC' ||
+                            r.toUpperCase() == 'CLASS_COORDINATOR' ||
+                            r.toUpperCase() == 'ROLE_CC',
+                      ),
                     ),
                   ),
                 );
@@ -677,7 +778,11 @@ class _PerformanceActivitiesTabState extends State<PerformanceActivitiesTab> {
         children: [
           const Text(
             'Select XP Category to view predefined Events',
-            style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF1E293B),
+            ),
           ),
           const SizedBox(height: 16),
           Expanded(
@@ -696,7 +801,13 @@ class _PerformanceActivitiesTabState extends State<PerformanceActivitiesTab> {
                 final icon = style['icon'] as IconData;
                 final label = style['label'] as String;
 
-                final count = _myActivities.where((a) => (a['xpCategory']?.toString().toUpperCase() ?? '') == key).length;
+                final count = _myActivities
+                    .where(
+                      (a) =>
+                          (a['xpCategory']?.toString().toUpperCase() ?? '') ==
+                          key,
+                    )
+                    .length;
 
                 return InkWell(
                   onTap: () => _onCategorySelected(key),
@@ -712,7 +823,7 @@ class _PerformanceActivitiesTabState extends State<PerformanceActivitiesTab> {
                           color: color.withValues(alpha: 0.04),
                           blurRadius: 10,
                           offset: const Offset(0, 4),
-                        )
+                        ),
                       ],
                     ),
                     child: Column(
@@ -729,12 +840,19 @@ class _PerformanceActivitiesTabState extends State<PerformanceActivitiesTab> {
                         const Spacer(),
                         Text(
                           label,
-                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF1E293B)),
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                            color: Color(0xFF1E293B),
+                          ),
                         ),
                         const SizedBox(height: 2),
                         Text(
                           '$count configured events',
-                          style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Colors.grey.shade500,
+                          ),
                         ),
                       ],
                     ),
@@ -742,7 +860,7 @@ class _PerformanceActivitiesTabState extends State<PerformanceActivitiesTab> {
                 );
               },
             ),
-          )
+          ),
         ],
       ),
     );
@@ -758,7 +876,11 @@ class _PerformanceActivitiesTabState extends State<PerformanceActivitiesTab> {
         children: [
           Text(
             'Select Predefined Event (${list.length} available)',
-            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+            style: const TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF1E293B),
+            ),
           ),
           const SizedBox(height: 16),
           TextFormField(
@@ -767,10 +889,17 @@ class _PerformanceActivitiesTabState extends State<PerformanceActivitiesTab> {
             decoration: InputDecoration(
               hintText: 'Search Event…',
               hintStyle: TextStyle(fontSize: 13, color: Colors.grey.shade400),
-              prefixIcon: const Icon(Icons.search_rounded, size: 20, color: Colors.grey),
+              prefixIcon: const Icon(
+                Icons.search_rounded,
+                size: 20,
+                color: Colors.grey,
+              ),
               filled: true,
               fillColor: Colors.grey.shade50,
-              contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 14,
+                vertical: 12,
+              ),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
                 borderSide: BorderSide(color: Colors.grey.shade200),
@@ -793,11 +922,18 @@ class _PerformanceActivitiesTabState extends State<PerformanceActivitiesTab> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.event_busy_rounded, size: 48, color: Colors.grey.shade400),
+                        Icon(
+                          Icons.event_busy_rounded,
+                          size: 48,
+                          color: Colors.grey.shade400,
+                        ),
                         const SizedBox(height: 12),
                         Text(
                           'No Events found',
-                          style: TextStyle(fontSize: 14, color: Colors.grey.shade500),
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey.shade500,
+                          ),
                         ),
                       ],
                     ),
@@ -807,41 +943,63 @@ class _PerformanceActivitiesTabState extends State<PerformanceActivitiesTab> {
                     itemBuilder: (context, index) {
                       final item = list[index];
                       final String name = item['name'] ?? '';
-                      final String desc = item['description'] ?? 'No description';
+                      final String desc =
+                          item['description'] ?? 'No description';
                       final String xp = item['xp'] ?? '0';
                       final String xpType = item['xpType'] ?? 'Reward';
 
                       return Card(
                         elevation: 2,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
                         margin: const EdgeInsets.only(bottom: 12),
                         child: ListTile(
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 10,
+                          ),
                           title: Text(
                             name,
-                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF1E293B)),
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 15,
+                              color: Color(0xFF1E293B),
+                            ),
                           ),
                           subtitle: Padding(
                             padding: const EdgeInsets.only(top: 6.0),
                             child: Text(
                               desc,
-                              style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey.shade600,
+                              ),
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
                           trailing: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 6,
+                            ),
                             decoration: BoxDecoration(
-                              color: (xpType == 'Penalty' ? Colors.red : const Color(0xFF11998e)).withValues(alpha: 0.1),
+                              color:
+                                  (xpType == 'Penalty'
+                                          ? Colors.red
+                                          : const Color(0xFF11998e))
+                                      .withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Text(
                               '$xp XP',
                               style: TextStyle(
-                                fontWeight: FontWeight.bold, 
-                                color: xpType == 'Penalty' ? Colors.red : const Color(0xFF11998e), 
-                                fontSize: 13
+                                fontWeight: FontWeight.bold,
+                                color: xpType == 'Penalty'
+                                    ? Colors.red
+                                    : const Color(0xFF11998e),
+                                fontSize: 13,
                               ),
                             ),
                           ),
@@ -870,7 +1028,11 @@ class _PerformanceActivitiesTabState extends State<PerformanceActivitiesTab> {
         children: [
           const Text(
             'Select Year',
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF1E293B)),
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 16,
+              color: Color(0xFF1E293B),
+            ),
           ),
           const SizedBox(height: 16),
           Expanded(
@@ -884,7 +1046,9 @@ class _PerformanceActivitiesTabState extends State<PerformanceActivitiesTab> {
                       return Card(
                         margin: const EdgeInsets.only(bottom: 12),
                         elevation: 1.5,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
                         child: InkWell(
                           borderRadius: BorderRadius.circular(16),
                           onTap: () => _onYearSelected(year),
@@ -893,17 +1057,30 @@ class _PerformanceActivitiesTabState extends State<PerformanceActivitiesTab> {
                             child: Row(
                               children: [
                                 CircleAvatar(
-                                  backgroundColor: Colors.blue.withValues(alpha: 0.1),
-                                  child: const Icon(Icons.calendar_today, color: Colors.blue),
+                                  backgroundColor: Colors.blue.withValues(
+                                    alpha: 0.1,
+                                  ),
+                                  child: const Icon(
+                                    Icons.calendar_today,
+                                    color: Colors.blue,
+                                  ),
                                 ),
                                 const SizedBox(width: 16),
                                 Expanded(
                                   child: Text(
                                     yearName,
-                                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF1E293B)),
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 15,
+                                      color: Color(0xFF1E293B),
+                                    ),
                                   ),
                                 ),
-                                const Icon(Icons.arrow_forward_ios_rounded, size: 16, color: Colors.grey),
+                                const Icon(
+                                  Icons.arrow_forward_ios_rounded,
+                                  size: 16,
+                                  color: Colors.grey,
+                                ),
                               ],
                             ),
                           ),
@@ -927,7 +1104,11 @@ class _PerformanceActivitiesTabState extends State<PerformanceActivitiesTab> {
         children: [
           const Text(
             'Select Department',
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF1E293B)),
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 16,
+              color: Color(0xFF1E293B),
+            ),
           ),
           const SizedBox(height: 16),
           TextFormField(
@@ -936,10 +1117,17 @@ class _PerformanceActivitiesTabState extends State<PerformanceActivitiesTab> {
             decoration: InputDecoration(
               hintText: 'Search Department…',
               hintStyle: TextStyle(fontSize: 13, color: Colors.grey.shade400),
-              prefixIcon: const Icon(Icons.search_rounded, size: 20, color: Colors.grey),
+              prefixIcon: const Icon(
+                Icons.search_rounded,
+                size: 20,
+                color: Colors.grey,
+              ),
               filled: true,
               fillColor: Colors.grey.shade50,
-              contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 14,
+                vertical: 12,
+              ),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
                 borderSide: BorderSide(color: Colors.grey.shade200),
@@ -967,7 +1155,9 @@ class _PerformanceActivitiesTabState extends State<PerformanceActivitiesTab> {
                       return Card(
                         margin: const EdgeInsets.only(bottom: 12),
                         elevation: 1.5,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
                         child: InkWell(
                           borderRadius: BorderRadius.circular(16),
                           onTap: () => _onDeptSelected(dept),
@@ -976,17 +1166,30 @@ class _PerformanceActivitiesTabState extends State<PerformanceActivitiesTab> {
                             child: Row(
                               children: [
                                 CircleAvatar(
-                                  backgroundColor: Colors.indigo.withValues(alpha: 0.1),
-                                  child: const Icon(Icons.business, color: Colors.indigo),
+                                  backgroundColor: Colors.indigo.withValues(
+                                    alpha: 0.1,
+                                  ),
+                                  child: const Icon(
+                                    Icons.business,
+                                    color: Colors.indigo,
+                                  ),
                                 ),
                                 const SizedBox(width: 16),
                                 Expanded(
                                   child: Text(
                                     name,
-                                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF1E293B)),
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 14,
+                                      color: Color(0xFF1E293B),
+                                    ),
                                   ),
                                 ),
-                                const Icon(Icons.arrow_forward_ios_rounded, size: 16, color: Colors.grey),
+                                const Icon(
+                                  Icons.arrow_forward_ios_rounded,
+                                  size: 16,
+                                  color: Colors.grey,
+                                ),
                               ],
                             ),
                           ),
@@ -1010,7 +1213,11 @@ class _PerformanceActivitiesTabState extends State<PerformanceActivitiesTab> {
         children: [
           const Text(
             'Select Section',
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF1E293B)),
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 16,
+              color: Color(0xFF1E293B),
+            ),
           ),
           const SizedBox(height: 16),
           Expanded(
@@ -1022,7 +1229,9 @@ class _PerformanceActivitiesTabState extends State<PerformanceActivitiesTab> {
                 return Card(
                   margin: const EdgeInsets.only(bottom: 12),
                   elevation: 1.5,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
                   child: InkWell(
                     borderRadius: BorderRadius.circular(16),
                     onTap: () => _onSectionSelected(sec),
@@ -1032,16 +1241,27 @@ class _PerformanceActivitiesTabState extends State<PerformanceActivitiesTab> {
                         children: [
                           CircleAvatar(
                             backgroundColor: Colors.teal.withValues(alpha: 0.1),
-                            child: const Icon(Icons.class_rounded, color: Colors.teal),
+                            child: const Icon(
+                              Icons.class_rounded,
+                              color: Colors.teal,
+                            ),
                           ),
                           const SizedBox(width: 16),
                           Expanded(
                             child: Text(
                               'Section $secName',
-                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF1E293B)),
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 15,
+                                color: Color(0xFF1E293B),
+                              ),
                             ),
                           ),
-                          const Icon(Icons.arrow_forward_ios_rounded, size: 16, color: Colors.grey),
+                          const Icon(
+                            Icons.arrow_forward_ios_rounded,
+                            size: 16,
+                            color: Colors.grey,
+                          ),
                         ],
                       ),
                     ),
@@ -1076,24 +1296,38 @@ class _PerformanceActivitiesTabState extends State<PerformanceActivitiesTab> {
                 children: [
                   const Text(
                     'Select Students',
-                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF1E293B),
+                    ),
                   ),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
                     decoration: BoxDecoration(
-                      color: (xpType == 'Penalty' ? Colors.red : Colors.orange).shade50,
+                      color: (xpType == 'Penalty' ? Colors.red : Colors.orange)
+                          .shade50,
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: (xpType == 'Penalty' ? Colors.red : Colors.orange).shade200),
+                      border: Border.all(
+                        color:
+                            (xpType == 'Penalty' ? Colors.red : Colors.orange)
+                                .shade200,
+                      ),
                     ),
                     child: Text(
                       "${xpType == 'Penalty' ? 'Penalty' : 'Award'}: $xpValue XP",
                       style: TextStyle(
-                        fontWeight: FontWeight.bold, 
-                        color: (xpType == 'Penalty' ? Colors.red : Colors.orange).shade800, 
-                        fontSize: 13
+                        fontWeight: FontWeight.bold,
+                        color:
+                            (xpType == 'Penalty' ? Colors.red : Colors.orange)
+                                .shade800,
+                        fontSize: 13,
                       ),
                     ),
-                  )
+                  ),
                 ],
               ),
               const SizedBox(height: 12),
@@ -1102,11 +1336,21 @@ class _PerformanceActivitiesTabState extends State<PerformanceActivitiesTab> {
                 style: const TextStyle(color: Color(0xFF1E293B), fontSize: 14),
                 decoration: InputDecoration(
                   hintText: 'Search Student by Name/ID…',
-                  hintStyle: TextStyle(fontSize: 13, color: Colors.grey.shade400),
-                  prefixIcon: const Icon(Icons.search_rounded, size: 20, color: Colors.grey),
+                  hintStyle: TextStyle(
+                    fontSize: 13,
+                    color: Colors.grey.shade400,
+                  ),
+                  prefixIcon: const Icon(
+                    Icons.search_rounded,
+                    size: 20,
+                    color: Colors.grey,
+                  ),
                   filled: true,
                   fillColor: Colors.grey.shade50,
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 12,
+                  ),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide: BorderSide(color: Colors.grey.shade200),
@@ -1130,12 +1374,16 @@ class _PerformanceActivitiesTabState extends State<PerformanceActivitiesTab> {
                   style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                 ),
                 value: _selectAll,
-                activeColor: xpType == 'Penalty' ? Colors.red : const Color(0xFF11998e),
+                activeColor: xpType == 'Penalty'
+                    ? Colors.red
+                    : const Color(0xFF11998e),
                 onChanged: (val) {
                   setState(() {
                     _selectAll = val ?? false;
                     if (_selectAll) {
-                      _selectedStudentIds.addAll(showStudents.map((s) => s['id'] as int));
+                      _selectedStudentIds.addAll(
+                        showStudents.map((s) => s['id'] as int),
+                      );
                     } else {
                       _selectedStudentIds.clear();
                     }
@@ -1160,14 +1408,23 @@ class _PerformanceActivitiesTabState extends State<PerformanceActivitiesTab> {
 
                     return CheckboxListTile(
                       value: isChecked,
-                      activeColor: xpType == 'Penalty' ? Colors.red : const Color(0xFF11998e),
+                      activeColor: xpType == 'Penalty'
+                          ? Colors.red
+                          : const Color(0xFF11998e),
                       title: Text(
                         name,
-                        style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: Color(0xFF1E293B)),
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 14,
+                          color: Color(0xFF1E293B),
+                        ),
                       ),
                       subtitle: Text(
                         studentIdStr,
-                        style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: Colors.grey.shade500,
+                        ),
                       ),
                       onChanged: (val) {
                         setState(() {
@@ -1192,7 +1449,7 @@ class _PerformanceActivitiesTabState extends State<PerformanceActivitiesTab> {
                 color: Colors.black.withValues(alpha: 0.05),
                 blurRadius: 10,
                 offset: const Offset(0, -4),
-              )
+              ),
             ],
           ),
           child: Column(
@@ -1202,8 +1459,14 @@ class _PerformanceActivitiesTabState extends State<PerformanceActivitiesTab> {
                 controller: _remarksController,
                 decoration: InputDecoration(
                   hintText: 'Add optional description/remarks…',
-                  hintStyle: TextStyle(fontSize: 13, color: Colors.grey.shade400),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  hintStyle: TextStyle(
+                    fontSize: 13,
+                    color: Colors.grey.shade400,
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 12,
+                  ),
                   filled: true,
                   fillColor: Colors.grey.shade50,
                   border: OutlineInputBorder(
@@ -1222,27 +1485,36 @@ class _PerformanceActivitiesTabState extends State<PerformanceActivitiesTab> {
                 height: 48,
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: xpType == 'Penalty' ? Colors.red : const Color(0xFF11998e),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    backgroundColor: xpType == 'Penalty'
+                        ? Colors.red
+                        : const Color(0xFF11998e),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
                   onPressed: _isAwarding ? null : _submitAward,
                   child: _isAwarding
                       ? const SizedBox(
                           width: 20,
                           height: 20,
-                          child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2,
+                          ),
                         )
                       : Text(
                           "${xpType == 'Penalty' ? 'Deduct XP from' : 'Award XP to'} ${_selectedStudentIds.length} Students",
-                          style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
                         ),
                 ),
               ),
             ],
           ),
-        )
+        ),
       ],
     );
   }
 }
-

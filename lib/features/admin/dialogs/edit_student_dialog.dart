@@ -35,7 +35,8 @@ class EditStudentDialog extends StatefulWidget {
     required String address,
     required bool active,
     required String password,
-  }) onEditStudent;
+  })
+  onEditStudent;
   final VoidCallback clearControllers;
 
   const EditStudentDialog({
@@ -79,7 +80,12 @@ class _EditStudentDialogState extends State<EditStudentDialog> {
   List<dynamic> dialogSections = [];
   bool isActive = true;
   final TextEditingController passwordController = TextEditingController();
-  final List<String> guardianRelations = ['Father', 'Mother', 'Guardian', 'Parent'];
+  final List<String> guardianRelations = [
+    'Father',
+    'Mother',
+    'Guardian',
+    'Parent',
+  ];
   String? selectedGuardianRel;
   bool isFetchingSections = false;
 
@@ -106,7 +112,7 @@ class _EditStudentDialogState extends State<EditStudentDialog> {
   void initState() {
     super.initState();
     widget.clearControllers();
-    
+
     final s = widget.student;
     widget.regNoController.text = s['regNo'] ?? '';
     widget.nameController.text = s['fullName'] ?? '';
@@ -120,7 +126,7 @@ class _EditStudentDialogState extends State<EditStudentDialog> {
     final g = s['guardian'];
     if (g != null) {
       widget.guardianNameController.text = g['guardianName'] ?? '';
-      
+
       String relStr = g['relationship'] ?? '';
       // Map 'FATHER' to 'Father'
       if (relStr.isNotEmpty) {
@@ -153,41 +159,50 @@ class _EditStudentDialogState extends State<EditStudentDialog> {
 
     final uniqueDepartments = _deduplicate(widget.departments);
     selectedDeptId = s['departmentId'];
-    if (selectedDeptId != null && !uniqueDepartments.any((d) => d['id'] == selectedDeptId)) {
+    if (selectedDeptId != null &&
+        !uniqueDepartments.any((d) => d['id'] == selectedDeptId)) {
       selectedDeptId = null;
     }
 
     final uniqueAcademicYears = _deduplicate(widget.academicYears);
     selectedAcademicYearId = s['academicYearId'];
-    if (selectedAcademicYearId != null && !uniqueAcademicYears.any((ay) => ay['id'] == selectedAcademicYearId)) {
+    if (selectedAcademicYearId != null &&
+        !uniqueAcademicYears.any((ay) => ay['id'] == selectedAcademicYearId)) {
       selectedAcademicYearId = null;
     }
 
     final uniqueYears = _deduplicate(widget.years);
     selectedYearId = s['yearId'];
-    if (selectedYearId != null && !uniqueYears.any((y) => y['id'] == selectedYearId)) {
+    if (selectedYearId != null &&
+        !uniqueYears.any((y) => y['id'] == selectedYearId)) {
       selectedYearId = null;
     }
 
     final uniqueSemesters = _deduplicate(widget.semesters);
     selectedSemesterId = s['semesterId'];
-    if (selectedSemesterId != null && !uniqueSemesters.any((sem) => sem['id'] == selectedSemesterId)) {
+    if (selectedSemesterId != null &&
+        !uniqueSemesters.any((sem) => sem['id'] == selectedSemesterId)) {
       selectedSemesterId = null;
     }
 
     final uniqueGenders = _deduplicate(widget.genders);
     selectedGenderId = s['genderId'];
     if (selectedGenderId == null && s['gender'] != null) {
-      final match = uniqueGenders.firstWhere((g) => g['genderName'] == s['gender'], orElse: () => null);
+      final match = uniqueGenders.firstWhere(
+        (g) => g['genderName'] == s['gender'],
+        orElse: () => null,
+      );
       if (match != null) selectedGenderId = match['id'];
     }
-    if (selectedGenderId != null && !uniqueGenders.any((g) => g['id'] == selectedGenderId)) {
+    if (selectedGenderId != null &&
+        !uniqueGenders.any((g) => g['id'] == selectedGenderId)) {
       selectedGenderId = null;
     }
 
     final uniqueGroups = _deduplicate(widget.groups);
     selectedGroupId = s['teamId'];
-    if (selectedGroupId != null && !uniqueGroups.any((g) => g['id'] == selectedGroupId)) {
+    if (selectedGroupId != null &&
+        !uniqueGroups.any((g) => g['id'] == selectedGroupId)) {
       selectedGroupId = null;
     }
 
@@ -205,7 +220,14 @@ class _EditStudentDialogState extends State<EditStudentDialog> {
   Widget _buildSectionTitle(String title) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12.0),
-      child: Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.blueGrey)),
+      child: Text(
+        title,
+        style: const TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.bold,
+          color: Colors.blueGrey,
+        ),
+      ),
     );
   }
 
@@ -220,7 +242,8 @@ class _EditStudentDialogState extends State<EditStudentDialog> {
             dialogSections = list;
             isFetchingSections = false;
             // Also validate selected section immediately
-            if (selectedSectionId != null && !list.any((sec) => sec['id'] == selectedSectionId)) {
+            if (selectedSectionId != null &&
+                !list.any((sec) => sec['id'] == selectedSectionId)) {
               selectedSectionId = null;
             }
           });
@@ -237,20 +260,37 @@ class _EditStudentDialogState extends State<EditStudentDialog> {
     final uniqueGroups = _deduplicate(widget.groups);
     final uniqueSections = _deduplicate(dialogSections);
 
-    if (selectedDeptId != null && !uniqueDepartments.any((d) => d['id'] == selectedDeptId)) selectedDeptId = null;
-    if (selectedAcademicYearId != null && !uniqueAcademicYears.any((ay) => ay['id'] == selectedAcademicYearId)) selectedAcademicYearId = null;
-    if (selectedYearId != null && !uniqueYears.any((y) => y['id'] == selectedYearId)) selectedYearId = null;
-    if (selectedSemesterId != null && !uniqueSemesters.any((sem) => sem['id'] == selectedSemesterId)) selectedSemesterId = null;
-    if (selectedGenderId != null && !uniqueGenders.any((g) => g['id'] == selectedGenderId)) selectedGenderId = null;
-    if (selectedGroupId != null && !uniqueGroups.any((g) => g['id'] == selectedGroupId)) selectedGroupId = null;
-    if (!isFetchingSections && selectedSectionId != null && !uniqueSections.any((sec) => sec['id'] == selectedSectionId)) selectedSectionId = null;
-    if (selectedGuardianRel != null && !guardianRelations.contains(selectedGuardianRel)) selectedGuardianRel = null;
+    if (selectedDeptId != null &&
+        !uniqueDepartments.any((d) => d['id'] == selectedDeptId))
+      selectedDeptId = null;
+    if (selectedAcademicYearId != null &&
+        !uniqueAcademicYears.any((ay) => ay['id'] == selectedAcademicYearId))
+      selectedAcademicYearId = null;
+    if (selectedYearId != null &&
+        !uniqueYears.any((y) => y['id'] == selectedYearId))
+      selectedYearId = null;
+    if (selectedSemesterId != null &&
+        !uniqueSemesters.any((sem) => sem['id'] == selectedSemesterId))
+      selectedSemesterId = null;
+    if (selectedGenderId != null &&
+        !uniqueGenders.any((g) => g['id'] == selectedGenderId))
+      selectedGenderId = null;
+    if (selectedGroupId != null &&
+        !uniqueGroups.any((g) => g['id'] == selectedGroupId))
+      selectedGroupId = null;
+    if (!isFetchingSections &&
+        selectedSectionId != null &&
+        !uniqueSections.any((sec) => sec['id'] == selectedSectionId))
+      selectedSectionId = null;
+    if (selectedGuardianRel != null &&
+        !guardianRelations.contains(selectedGuardianRel))
+      selectedGuardianRel = null;
 
     final inputDecoration = (String label) => InputDecoration(
-          labelText: label,
-          border: const OutlineInputBorder(),
-          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-        );
+      labelText: label,
+      border: const OutlineInputBorder(),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+    );
 
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -263,13 +303,22 @@ class _EditStudentDialogState extends State<EditStudentDialog> {
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: const Color(0xFF1E293B),
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(16),
+                ),
               ),
               child: const Row(
                 children: [
                   Icon(Icons.edit, color: Colors.white),
                   SizedBox(width: 8),
-                  Text('Edit Student', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 18)),
+                  Text(
+                    'Edit Student',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                      fontSize: 18,
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -288,28 +337,55 @@ class _EditStudentDialogState extends State<EditStudentDialog> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             _buildSectionTitle('Personal Information'),
-                            TextField(controller: widget.regNoController, decoration: inputDecoration('Student ID *'), readOnly: true),
+                            TextField(
+                              controller: widget.regNoController,
+                              decoration: inputDecoration('Student ID *'),
+                              readOnly: true,
+                            ),
                             const SizedBox(height: 16),
-                            TextField(controller: widget.nameController, decoration: inputDecoration('Full Name *')),
+                            TextField(
+                              controller: widget.nameController,
+                              decoration: inputDecoration('Full Name *'),
+                            ),
                             const SizedBox(height: 16),
-                            TextField(controller: widget.emailController, decoration: inputDecoration('Email *')),
+                            TextField(
+                              controller: widget.emailController,
+                              decoration: inputDecoration('Email *'),
+                            ),
                             const SizedBox(height: 16),
                             TextField(
                               controller: widget.phoneController,
                               keyboardType: TextInputType.phone,
                               maxLength: 10,
-                              decoration: inputDecoration('Phone').copyWith(counterText: ''),
+                              decoration: inputDecoration(
+                                'Phone',
+                              ).copyWith(counterText: ''),
                             ),
                             const SizedBox(height: 16),
-                            TextField(controller: widget.sprNoController, decoration: inputDecoration('SPR No')),
+                            TextField(
+                              controller: widget.sprNoController,
+                              decoration: inputDecoration('SPR No'),
+                            ),
                             const SizedBox(height: 16),
-                            TextField(controller: addressController, decoration: inputDecoration('Address'), maxLines: 2),
+                            TextField(
+                              controller: addressController,
+                              decoration: inputDecoration('Address'),
+                              maxLines: 2,
+                            ),
                             const SizedBox(height: 16),
                             DropdownButtonFormField<int>(
                               value: selectedGenderId,
                               decoration: inputDecoration('Gender'),
-                              items: uniqueGenders.map((g) => DropdownMenuItem<int>(value: g['id'], child: Text(g['genderName'] ?? ''))).toList(),
-                              onChanged: (val) => setState(() => selectedGenderId = val),
+                              items: uniqueGenders
+                                  .map(
+                                    (g) => DropdownMenuItem<int>(
+                                      value: g['id'],
+                                      child: Text(g['genderName'] ?? ''),
+                                    ),
+                                  )
+                                  .toList(),
+                              onChanged: (val) =>
+                                  setState(() => selectedGenderId = val),
                             ),
                             const SizedBox(height: 16),
                             Row(
@@ -319,13 +395,17 @@ class _EditStudentDialogState extends State<EditStudentDialog> {
                                   selectedDob == null
                                       ? 'Select Date of Birth'
                                       : "DOB: ${selectedDob!.year}-${selectedDob!.month.toString().padLeft(2, '0')}-${selectedDob!.day.toString().padLeft(2, '0')}",
-                                  style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black87),
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.black87,
+                                  ),
                                 ),
                                 TextButton.icon(
                                   onPressed: () async {
                                     final picked = await showDatePicker(
                                       context: context,
-                                      initialDate: selectedDob ?? DateTime(2004),
+                                      initialDate:
+                                          selectedDob ?? DateTime(2004),
                                       firstDate: DateTime(1995),
                                       lastDate: DateTime.now(),
                                     );
@@ -337,7 +417,7 @@ class _EditStudentDialogState extends State<EditStudentDialog> {
                                   },
                                   icon: const Icon(Icons.calendar_month),
                                   label: const Text('Pick'),
-                                )
+                                ),
                               ],
                             ),
                           ],
@@ -353,11 +433,16 @@ class _EditStudentDialogState extends State<EditStudentDialog> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             _buildSectionTitle('Guardian Information'),
-                            TextField(controller: widget.guardianNameController, decoration: inputDecoration('Guardian Name *')),
+                            TextField(
+                              controller: widget.guardianNameController,
+                              decoration: inputDecoration('Guardian Name *'),
+                            ),
                             const SizedBox(height: 16),
                             DropdownButtonFormField<String>(
                               value: selectedGuardianRel,
-                              decoration: inputDecoration('Relationship (e.g. Father, Mother) *'),
+                              decoration: inputDecoration(
+                                'Relationship (e.g. Father, Mother) *',
+                              ),
                               items: guardianRelations.map((rel) {
                                 return DropdownMenuItem<String>(
                                   value: rel,
@@ -367,7 +452,8 @@ class _EditStudentDialogState extends State<EditStudentDialog> {
                               onChanged: (value) {
                                 setState(() {
                                   selectedGuardianRel = value;
-                                  widget.guardianRelController.text = value ?? '';
+                                  widget.guardianRelController.text =
+                                      value ?? '';
                                 });
                               },
                             ),
@@ -376,10 +462,15 @@ class _EditStudentDialogState extends State<EditStudentDialog> {
                               controller: widget.guardianPhoneController,
                               keyboardType: TextInputType.phone,
                               maxLength: 10,
-                              decoration: inputDecoration('Guardian Phone *').copyWith(counterText: ''),
+                              decoration: inputDecoration(
+                                'Guardian Phone *',
+                              ).copyWith(counterText: ''),
                             ),
                             const SizedBox(height: 16),
-                            TextField(controller: widget.guardianEmailController, decoration: inputDecoration('Guardian Email')),
+                            TextField(
+                              controller: widget.guardianEmailController,
+                              decoration: inputDecoration('Guardian Email'),
+                            ),
                           ],
                         ),
                       ),
@@ -396,7 +487,14 @@ class _EditStudentDialogState extends State<EditStudentDialog> {
                             DropdownButtonFormField<int>(
                               value: selectedDeptId,
                               decoration: inputDecoration('Department'),
-                              items: uniqueDepartments.map((d) => DropdownMenuItem<int>(value: d['id'], child: Text(d['code'] ?? d['name']))).toList(),
+                              items: uniqueDepartments
+                                  .map(
+                                    (d) => DropdownMenuItem<int>(
+                                      value: d['id'],
+                                      child: Text(d['code'] ?? d['name']),
+                                    ),
+                                  )
+                                  .toList(),
                               onChanged: (val) => setState(() {
                                 selectedDeptId = val;
                                 selectedSectionId = null;
@@ -406,32 +504,79 @@ class _EditStudentDialogState extends State<EditStudentDialog> {
                             DropdownButtonFormField<int>(
                               value: selectedAcademicYearId,
                               decoration: inputDecoration('Academic Year'),
-                              items: uniqueAcademicYears.map((ay) => DropdownMenuItem<int>(value: ay['id'], child: Text(ay['academicYear'] ?? ''))).toList(),
-                              onChanged: (val) => setState(() => selectedAcademicYearId = val),
+                              items: uniqueAcademicYears
+                                  .map(
+                                    (ay) => DropdownMenuItem<int>(
+                                      value: ay['id'],
+                                      child: Text(ay['academicYear'] ?? ''),
+                                    ),
+                                  )
+                                  .toList(),
+                              onChanged: (val) =>
+                                  setState(() => selectedAcademicYearId = val),
                             ),
                             const SizedBox(height: 16),
                             DropdownButtonFormField<int>(
                               value: selectedYearId,
                               decoration: inputDecoration('Year'),
-                              items: uniqueYears.map((y) => DropdownMenuItem<int>(value: y['id'], child: Text(y['yearNo'] != null ? "Year ${y['yearNo']}" : ''))).toList(),
-                              onChanged: (val) => setState(() => selectedYearId = val),
+                              items: uniqueYears
+                                  .map(
+                                    (y) => DropdownMenuItem<int>(
+                                      value: y['id'],
+                                      child: Text(
+                                        y['yearNo'] != null
+                                            ? "Year ${y['yearNo']}"
+                                            : '',
+                                      ),
+                                    ),
+                                  )
+                                  .toList(),
+                              onChanged: (val) =>
+                                  setState(() => selectedYearId = val),
                             ),
                             const SizedBox(height: 16),
                             DropdownButtonFormField<int>(
                               value: selectedSemesterId,
                               decoration: inputDecoration('Semester'),
-                              items: uniqueSemesters.map((sem) => DropdownMenuItem<int>(value: sem['id'], child: Text(sem['semesterNo'] != null ? "Semester ${sem['semesterNo']}" : ''))).toList(),
-                              onChanged: (val) => setState(() => selectedSemesterId = val),
+                              items: uniqueSemesters
+                                  .map(
+                                    (sem) => DropdownMenuItem<int>(
+                                      value: sem['id'],
+                                      child: Text(
+                                        sem['semesterNo'] != null
+                                            ? "Semester ${sem['semesterNo']}"
+                                            : '',
+                                      ),
+                                    ),
+                                  )
+                                  .toList(),
+                              onChanged: (val) =>
+                                  setState(() => selectedSemesterId = val),
                             ),
                             const SizedBox(height: 16),
-                            isFetchingSections 
-                              ? const Center(child: Padding(padding: EdgeInsets.all(8.0), child: CircularProgressIndicator()))
-                              : DropdownButtonFormField<int>(
-                                  value: selectedSectionId,
-                                  decoration: inputDecoration('Section'),
-                                  items: uniqueSections.map((sec) => DropdownMenuItem<int>(value: sec['id'], child: Text(sec['sectionName'] ?? ''))).toList(),
-                                  onChanged: (val) => setState(() => selectedSectionId = val),
-                                ),
+                            isFetchingSections
+                                ? const Center(
+                                    child: Padding(
+                                      padding: EdgeInsets.all(8.0),
+                                      child: CircularProgressIndicator(),
+                                    ),
+                                  )
+                                : DropdownButtonFormField<int>(
+                                    value: selectedSectionId,
+                                    decoration: inputDecoration('Section'),
+                                    items: uniqueSections
+                                        .map(
+                                          (sec) => DropdownMenuItem<int>(
+                                            value: sec['id'],
+                                            child: Text(
+                                              sec['sectionName'] ?? '',
+                                            ),
+                                          ),
+                                        )
+                                        .toList(),
+                                    onChanged: (val) =>
+                                        setState(() => selectedSectionId = val),
+                                  ),
                           ],
                         ),
                       ),
@@ -447,23 +592,39 @@ class _EditStudentDialogState extends State<EditStudentDialog> {
                             DropdownButtonFormField<int>(
                               value: selectedGroupId,
                               decoration: inputDecoration('Group'),
-                              items: uniqueGroups.map((grp) => DropdownMenuItem<int>(value: grp['id'], child: Text(grp['groupName'] ?? ''))).toList(),
-                              onChanged: (val) => setState(() => selectedGroupId = val),
+                              items: uniqueGroups
+                                  .map(
+                                    (grp) => DropdownMenuItem<int>(
+                                      value: grp['id'],
+                                      child: Text(grp['groupName'] ?? ''),
+                                    ),
+                                  )
+                                  .toList(),
+                              onChanged: (val) =>
+                                  setState(() => selectedGroupId = val),
                             ),
                             const SizedBox(height: 16),
                             TextField(
                               controller: passwordController,
                               obscureText: true,
-                              decoration: inputDecoration('New Password (Optional)').copyWith(
-                                helperText: 'Leave blank to keep current password',
-                              ),
+                              decoration:
+                                  inputDecoration(
+                                    'New Password (Optional)',
+                                  ).copyWith(
+                                    helperText:
+                                        'Leave blank to keep current password',
+                                  ),
                             ),
                             const SizedBox(height: 16),
                             SwitchListTile(
-                              title: const Text('Active Account', style: TextStyle(fontWeight: FontWeight.w600)),
+                              title: const Text(
+                                'Active Account',
+                                style: TextStyle(fontWeight: FontWeight.w600),
+                              ),
                               contentPadding: EdgeInsets.zero,
                               value: isActive,
-                              onChanged: (val) => setState(() => isActive = val),
+                              onChanged: (val) =>
+                                  setState(() => isActive = val),
                             ),
                           ],
                         ),
@@ -485,7 +646,10 @@ class _EditStudentDialogState extends State<EditStudentDialog> {
                   const SizedBox(width: 16),
                   ElevatedButton(
                     style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 12,
+                      ),
                       backgroundColor: const Color(0xFF1E293B),
                       foregroundColor: Colors.white,
                     ),

@@ -87,7 +87,8 @@ class ActivityExecutionDetailModel {
     if (json.containsKey('penaltyEnabled')) {
       parsedPenaltyEnabled = json['penaltyEnabled'] as bool? ?? false;
     }
-    if (!json.containsKey('awardEnabled') && !json.containsKey('penaltyEnabled')) {
+    if (!json.containsKey('awardEnabled') &&
+        !json.containsKey('penaltyEnabled')) {
       final pX = (json['passXp'] as num?)?.toInt() ?? 0;
       final fX = (json['failXp'] as num?)?.toInt() ?? 0;
       if (pX > 0 || fX > 0) {
@@ -157,10 +158,16 @@ class MyActivityStudentsResponseModel {
   factory MyActivityStudentsResponseModel.fromJson(Map<String, dynamic> json) {
     final studentsRaw = json['students'] as List<dynamic>? ?? [];
     return MyActivityStudentsResponseModel(
-      activity: ActivityExecutionDetailModel.fromJson(json['activity'] as Map<String, dynamic>? ?? {}),
-      students: studentsRaw.map((e) => ExecutionStudentModel.fromJson(e as Map<String, dynamic>)).toList(),
+      activity: ActivityExecutionDetailModel.fromJson(
+        json['activity'] as Map<String, dynamic>? ?? {},
+      ),
+      students: studentsRaw
+          .map((e) => ExecutionStudentModel.fromJson(e as Map<String, dynamic>))
+          .toList(),
       xpLimit: json['xpLimit'] as int? ?? 0,
-      assignment: AssignmentExecutionDetailModel.fromJson(json['assignment'] as Map<String, dynamic>? ?? {}),
+      assignment: AssignmentExecutionDetailModel.fromJson(
+        json['assignment'] as Map<String, dynamic>? ?? {},
+      ),
     );
   }
 }

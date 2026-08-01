@@ -32,7 +32,9 @@ class StudentList extends StatelessWidget {
         }
 
         return Card(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
           margin: const EdgeInsets.only(bottom: 12),
           elevation: 2,
           child: ListTile(
@@ -40,8 +42,13 @@ class StudentList extends StatelessWidget {
               backgroundColor: const Color(0xFFEA4335).withValues(alpha: 0.1),
               child: const Icon(Icons.person, color: Color(0xFFEA4335)),
             ),
-            title: Text(name, style: const TextStyle(fontWeight: FontWeight.bold)),
-            subtitle: Text("$sId • $deptName\nSem: ${s["semester"] ?? '1'}${s["year"] != null && s["year"].toString().isNotEmpty ? ' • Year: ${s["year"]}' : ''}${s["section"] != null && s["section"].toString().isNotEmpty ? ' • Section: ${s["section"]}' : ''}"),
+            title: Text(
+              name,
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+            subtitle: Text(
+              "$sId • $deptName\nSem: ${s["semester"] ?? '1'}${s["year"] != null && s["year"].toString().isNotEmpty ? ' • Year: ${s["year"]}' : ''}${s["section"] != null && s["section"].toString().isNotEmpty ? ' • Section: ${s["section"]}' : ''}",
+            ),
             trailing: Row(
               mainAxisSize: MainAxisSize.min,
               children: [

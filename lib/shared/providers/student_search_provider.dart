@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:spdms_app/core/config/api_config.dart';
+import 'package:pragatix/core/config/api_config.dart';
 
 class StudentSearchProvider extends ChangeNotifier {
   List<dynamic> _allStudents = [];
@@ -22,15 +22,17 @@ class StudentSearchProvider extends ChangeNotifier {
 
     try {
       final response = await http.get(
-        Uri.parse('${ApiConfig.baseUrl}/api/v1/students?page=0&size=1000&sortBy=fullName'),
-        headers: {
-          'Authorization': 'Bearer $token',
-        },
+        Uri.parse(
+          '${ApiConfig.baseUrl}/api/v1/students?page=0&size=1000&sortBy=fullName',
+        ),
+        headers: {'Authorization': 'Bearer $token'},
       );
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-        if (data['success'] == true && data['data'] != null && data['data']['content'] != null) {
+        if (data['success'] == true &&
+            data['data'] != null &&
+            data['data']['content'] != null) {
           _allStudents = data['data']['content'];
           _filteredStudents = _allStudents;
         } else {
@@ -49,7 +51,7 @@ class StudentSearchProvider extends ChangeNotifier {
 
   void searchStudents(String query) {
     _searchQuery = query.toLowerCase();
-    
+
     if (_searchQuery.isEmpty) {
       _filteredStudents = _allStudents;
     } else {
@@ -65,7 +67,7 @@ class StudentSearchProvider extends ChangeNotifier {
             email.contains(_searchQuery);
       }).toList();
     }
-    
+
     notifyListeners();
   }
 }

@@ -27,7 +27,8 @@ class AddStudentDialog extends StatefulWidget {
     required int? groupId,
     required String address,
     required DateTime? dob,
-  }) onAddStudent;
+  })
+  onAddStudent;
   final VoidCallback clearControllers;
 
   const AddStudentDialog({
@@ -68,7 +69,12 @@ class _AddStudentDialogState extends State<AddStudentDialog> {
   DateTime? selectedDob;
   final TextEditingController addressController = TextEditingController();
   List<dynamic> dialogSections = [];
-  final List<String> guardianRelations = ['Father', 'Mother', 'Guardian', 'Parent'];
+  final List<String> guardianRelations = [
+    'Father',
+    'Mother',
+    'Guardian',
+    'Parent',
+  ];
   String? selectedGuardianRel;
   bool isFetchingSections = false;
 
@@ -94,10 +100,13 @@ class _AddStudentDialogState extends State<AddStudentDialog> {
     final uniqueSemesters = _deduplicate(widget.semesters);
     final uniqueGenders = _deduplicate(widget.genders);
 
-    if (uniqueDepartments.isNotEmpty) selectedDeptId = uniqueDepartments.first['id'];
-    if (uniqueAcademicYears.isNotEmpty) selectedAcademicYearId = uniqueAcademicYears.first['id'];
+    if (uniqueDepartments.isNotEmpty)
+      selectedDeptId = uniqueDepartments.first['id'];
+    if (uniqueAcademicYears.isNotEmpty)
+      selectedAcademicYearId = uniqueAcademicYears.first['id'];
     if (uniqueYears.isNotEmpty) selectedYearId = uniqueYears.first['id'];
-    if (uniqueSemesters.isNotEmpty) selectedSemesterId = uniqueSemesters.first['id'];
+    if (uniqueSemesters.isNotEmpty)
+      selectedSemesterId = uniqueSemesters.first['id'];
     if (uniqueGenders.isNotEmpty) selectedGenderId = uniqueGenders.first['id'];
   }
 
@@ -131,25 +140,54 @@ class _AddStudentDialogState extends State<AddStudentDialog> {
     final uniqueGroups = _deduplicate(widget.groups);
     final uniqueSections = _deduplicate(dialogSections);
 
-    if (selectedDeptId != null && !uniqueDepartments.any((d) => d['id'] == selectedDeptId)) selectedDeptId = null;
-    if (selectedAcademicYearId != null && !uniqueAcademicYears.any((ay) => ay['id'] == selectedAcademicYearId)) selectedAcademicYearId = null;
-    if (selectedYearId != null && !uniqueYears.any((y) => y['id'] == selectedYearId)) selectedYearId = null;
-    if (selectedSemesterId != null && !uniqueSemesters.any((sem) => sem['id'] == selectedSemesterId)) selectedSemesterId = null;
-    if (selectedGenderId != null && !uniqueGenders.any((g) => g['id'] == selectedGenderId)) selectedGenderId = null;
-    if (selectedGroupId != null && !uniqueGroups.any((g) => g['id'] == selectedGroupId)) selectedGroupId = null;
-    if (!isFetchingSections && selectedSectionId != null && !uniqueSections.any((sec) => sec['id'] == selectedSectionId)) selectedSectionId = null;
+    if (selectedDeptId != null &&
+        !uniqueDepartments.any((d) => d['id'] == selectedDeptId))
+      selectedDeptId = null;
+    if (selectedAcademicYearId != null &&
+        !uniqueAcademicYears.any((ay) => ay['id'] == selectedAcademicYearId))
+      selectedAcademicYearId = null;
+    if (selectedYearId != null &&
+        !uniqueYears.any((y) => y['id'] == selectedYearId))
+      selectedYearId = null;
+    if (selectedSemesterId != null &&
+        !uniqueSemesters.any((sem) => sem['id'] == selectedSemesterId))
+      selectedSemesterId = null;
+    if (selectedGenderId != null &&
+        !uniqueGenders.any((g) => g['id'] == selectedGenderId))
+      selectedGenderId = null;
+    if (selectedGroupId != null &&
+        !uniqueGroups.any((g) => g['id'] == selectedGroupId))
+      selectedGroupId = null;
+    if (!isFetchingSections &&
+        selectedSectionId != null &&
+        !uniqueSections.any((sec) => sec['id'] == selectedSectionId))
+      selectedSectionId = null;
 
-    if (selectedGuardianRel != null && !guardianRelations.contains(selectedGuardianRel)) selectedGuardianRel = null;
+    if (selectedGuardianRel != null &&
+        !guardianRelations.contains(selectedGuardianRel))
+      selectedGuardianRel = null;
 
     return AlertDialog(
-      title: const Text('Register New Student', style: TextStyle(fontWeight: FontWeight.bold)),
+      title: const Text(
+        'Register New Student',
+        style: TextStyle(fontWeight: FontWeight.bold),
+      ),
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            TextField(controller: widget.regNoController, decoration: const InputDecoration(labelText: 'Student ID *')),
-            TextField(controller: widget.nameController, decoration: const InputDecoration(labelText: 'Full Name *')),
-            TextField(controller: widget.emailController, decoration: const InputDecoration(labelText: 'Email *')),
+            TextField(
+              controller: widget.regNoController,
+              decoration: const InputDecoration(labelText: 'Student ID *'),
+            ),
+            TextField(
+              controller: widget.nameController,
+              decoration: const InputDecoration(labelText: 'Full Name *'),
+            ),
+            TextField(
+              controller: widget.emailController,
+              decoration: const InputDecoration(labelText: 'Email *'),
+            ),
             TextField(
               controller: widget.phoneController,
               keyboardType: TextInputType.phone,
@@ -159,22 +197,31 @@ class _AddStudentDialogState extends State<AddStudentDialog> {
                 counterText: '',
               ),
             ),
-            TextField(controller: widget.sprNoController, decoration: const InputDecoration(labelText: 'SPR No')),
-            TextField(controller: addressController, decoration: const InputDecoration(labelText: 'Address')),
+            TextField(
+              controller: widget.sprNoController,
+              decoration: const InputDecoration(labelText: 'SPR No'),
+            ),
+            TextField(
+              controller: addressController,
+              decoration: const InputDecoration(labelText: 'Address'),
+            ),
             const SizedBox(height: 16),
             const Align(
               alignment: Alignment.centerLeft,
-              child: Text('Guardian Details', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+              child: Text(
+                'Guardian Details',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              ),
             ),
-            TextField(controller: widget.guardianNameController, decoration: const InputDecoration(labelText: 'Guardian Name *')),
+            TextField(
+              controller: widget.guardianNameController,
+              decoration: const InputDecoration(labelText: 'Guardian Name *'),
+            ),
             DropdownButtonFormField<String>(
               value: selectedGuardianRel,
               decoration: const InputDecoration(labelText: 'Relationship *'),
               items: guardianRelations.map((rel) {
-                return DropdownMenuItem<String>(
-                  value: rel,
-                  child: Text(rel),
-                );
+                return DropdownMenuItem<String>(value: rel, child: Text(rel));
               }).toList(),
               onChanged: (value) {
                 setState(() {
@@ -192,7 +239,10 @@ class _AddStudentDialogState extends State<AddStudentDialog> {
                 counterText: '',
               ),
             ),
-            TextField(controller: widget.guardianEmailController, decoration: const InputDecoration(labelText: 'Guardian Email')),
+            TextField(
+              controller: widget.guardianEmailController,
+              decoration: const InputDecoration(labelText: 'Guardian Email'),
+            ),
             const SizedBox(height: 12),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -201,7 +251,12 @@ class _AddStudentDialogState extends State<AddStudentDialog> {
                   selectedDob == null
                       ? 'Select Date of Birth *'
                       : "DOB: ${selectedDob!.year}-${selectedDob!.month.toString().padLeft(2, '0')}-${selectedDob!.day.toString().padLeft(2, '0')}",
-                  style: TextStyle(fontWeight: FontWeight.bold, color: selectedDob == null ? Colors.redAccent : Colors.black87),
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: selectedDob == null
+                        ? Colors.redAccent
+                        : Colors.black87,
+                  ),
                 ),
                 TextButton.icon(
                   onPressed: () async {
@@ -219,7 +274,7 @@ class _AddStudentDialogState extends State<AddStudentDialog> {
                   },
                   icon: const Icon(Icons.calendar_month),
                   label: const Text('Pick'),
-                )
+                ),
               ],
             ),
             const SizedBox(height: 10),
@@ -275,7 +330,11 @@ class _AddStudentDialogState extends State<AddStudentDialog> {
               items: uniqueSemesters.map((sem) {
                 return DropdownMenuItem<int>(
                   value: sem['id'],
-                  child: Text(sem['semesterNo'] != null ? "Semester ${sem['semesterNo']}" : ''),
+                  child: Text(
+                    sem['semesterNo'] != null
+                        ? "Semester ${sem['semesterNo']}"
+                        : '',
+                  ),
                 );
               }).toList(),
               onChanged: (value) {
@@ -299,23 +358,26 @@ class _AddStudentDialogState extends State<AddStudentDialog> {
                 });
               },
             ),
-            isFetchingSections 
-              ? const Padding(padding: EdgeInsets.all(8.0), child: CircularProgressIndicator())
-              : DropdownButtonFormField<int>(
-                  value: selectedSectionId,
-                  decoration: const InputDecoration(labelText: 'Section'),
-                  items: uniqueSections.map((sec) {
-                    return DropdownMenuItem<int>(
-                      value: sec['id'],
-                      child: Text(sec['sectionName'] ?? ''),
-                    );
-                  }).toList(),
-                  onChanged: (value) {
-                    setState(() {
-                      selectedSectionId = value;
-                    });
-                  },
-                ),
+            isFetchingSections
+                ? const Padding(
+                    padding: EdgeInsets.all(8.0),
+                    child: CircularProgressIndicator(),
+                  )
+                : DropdownButtonFormField<int>(
+                    value: selectedSectionId,
+                    decoration: const InputDecoration(labelText: 'Section'),
+                    items: uniqueSections.map((sec) {
+                      return DropdownMenuItem<int>(
+                        value: sec['id'],
+                        child: Text(sec['sectionName'] ?? ''),
+                      );
+                    }).toList(),
+                    onChanged: (value) {
+                      setState(() {
+                        selectedSectionId = value;
+                      });
+                    },
+                  ),
             DropdownButtonFormField<int>(
               value: selectedGroupId,
               decoration: const InputDecoration(labelText: 'Group'),
@@ -335,7 +397,10 @@ class _AddStudentDialogState extends State<AddStudentDialog> {
         ),
       ),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancel'),
+        ),
         ElevatedButton(
           onPressed: () {
             widget.onAddStudent(

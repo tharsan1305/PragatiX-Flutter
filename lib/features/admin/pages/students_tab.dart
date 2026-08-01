@@ -1,41 +1,26 @@
-
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
-import 'package:spdms_app/core/utils/error_handler.dart';
+import 'package:pragatix/core/utils/error_handler.dart';
 
-import 'package:spdms_app/features/admin/repository/admin_repository.dart';
-import 'package:spdms_app/core/di/service_locator.dart';
+import 'package:pragatix/features/admin/repository/admin_repository.dart';
+import 'package:pragatix/core/di/service_locator.dart';
 
 import '../dialogs/add_student_dialog.dart';
 import '../dialogs/edit_student_dialog.dart';
 import '../widgets/student_filter_panel.dart';
 import '../widgets/student_list.dart';
 import '../widgets/student_fab.dart';
-import 'package:spdms_app/features/badge/pages/admin_badge_requests_page.dart';
-
-
-
-
+import 'package:pragatix/features/badge/pages/admin_badge_requests_page.dart';
 
 class StudentsTab extends StatefulWidget {
-
-  
-
   const StudentsTab({super.key});
 
-
-
   @override
-
   State<StudentsTab> createState() => _StudentsTabState();
-
 }
 
-
-
 class _StudentsTabState extends State<StudentsTab> {
-
   List<dynamic> studentsList = [];
 
   List<dynamic> departments = [];
@@ -52,15 +37,11 @@ class _StudentsTabState extends State<StudentsTab> {
 
   List<dynamic> groups = [];
 
-
-
   List<dynamic> dialogSections = [];
 
   bool isLoadingSections = false;
 
   int? lastFetchedDeptId;
-
-
 
   Future<List<dynamic>> _fetchSectionsForDept(int? deptId) async {
     if (deptId == null) {
@@ -74,8 +55,6 @@ class _StudentsTabState extends State<StudentsTab> {
     }
   }
 
-
-
   bool isLoading = true;
 
   bool isLoadingLookups = true;
@@ -83,8 +62,6 @@ class _StudentsTabState extends State<StudentsTab> {
   String searchQuery = '';
 
   final TextEditingController _searchController = TextEditingController();
-
-
 
   // Controllers
 
@@ -109,19 +86,14 @@ class _StudentsTabState extends State<StudentsTab> {
   DateTime? selectedDob;
   int? selectedDeptId;
 
-
-
   @override
-
   void initState() {
-
     super.initState();
 
     _fetchStudents();
     _fetchPendingBadges();
 
     _loadAllLookups();
-
   }
 
   Future<void> _fetchPendingBadges() async {
@@ -137,12 +109,8 @@ class _StudentsTabState extends State<StudentsTab> {
     }
   }
 
-
-
   @override
-
   void dispose() {
-
     _searchController.dispose();
 
     nameController.dispose();
@@ -159,8 +127,6 @@ class _StudentsTabState extends State<StudentsTab> {
     guardianEmailController.dispose();
     super.dispose();
   }
-
-
 
   Future<void> _loadAllLookups() async {
     try {
@@ -194,8 +160,6 @@ class _StudentsTabState extends State<StudentsTab> {
     }
   }
 
-
-
   Future<void> _fetchStudents() async {
     try {
       final fetchedStudents = await getIt<AdminRepository>().getStudents();
@@ -214,26 +178,17 @@ class _StudentsTabState extends State<StudentsTab> {
     }
   }
 
-
-
   String _normalizeSectionName(String name) {
-
     String cleaned = name.trim().toLowerCase();
 
     if (cleaned.startsWith('section ')) {
-
       cleaned = cleaned.substring(8).trim();
-
     }
 
     return cleaned;
-
   }
 
-
-
   Future<void> _addStudent({
-
     required int? departmentId,
 
     required int? academicYearId,
@@ -249,34 +204,23 @@ class _StudentsTabState extends State<StudentsTab> {
     required int? groupId,
 
     required String address,
-
   }) async {
-
     if (regNoController.text.trim().isEmpty ||
-
         nameController.text.trim().isEmpty ||
-
         emailController.text.trim().isEmpty ||
-
         selectedDob == null) {
-
       ScaffoldMessenger.of(context).showSnackBar(
-
         const SnackBar(content: Text('Required fields cannot be empty.')),
-
       );
 
       return;
-
     }
 
+    final formattedDob =
+        "${selectedDob!.year}-${selectedDob!.month.toString().padLeft(2, '0')}-${selectedDob!.day.toString().padLeft(2, '0')}";
 
-
-    final formattedDob = "${selectedDob!.year}-${selectedDob!.month.toString().padLeft(2, '0')}-${selectedDob!.day.toString().padLeft(2, '0')}";
-
-    final passwordDob = "${selectedDob!.day.toString().padLeft(2, '0')}${selectedDob!.month.toString().padLeft(2, '0')}${selectedDob!.year}";
-
-
+    final passwordDob =
+        "${selectedDob!.day.toString().padLeft(2, '0')}${selectedDob!.month.toString().padLeft(2, '0')}${selectedDob!.year}";
 
     try {
       await getIt<AdminRepository>().addStudent({
@@ -299,35 +243,34 @@ class _StudentsTabState extends State<StudentsTab> {
         if (guardianNameController.text.trim().isNotEmpty)
           'guardian': {
             'guardianName': guardianNameController.text.trim(),
-            'relationship': guardianRelController.text.trim().isEmpty ? 'Guardian' : guardianRelController.text.trim(),
+            'relationship': guardianRelController.text.trim().isEmpty
+                ? 'Guardian'
+                : guardianRelController.text.trim(),
             'phoneNo': guardianPhoneController.text.trim(),
             'email': guardianEmailController.text.trim(),
-          }
+          },
       });
 
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Student created successfully!'), backgroundColor: Colors.green),
+        const SnackBar(
+          content: Text('Student created successfully!'),
+          backgroundColor: Colors.green,
+        ),
       );
       _clearControllers();
       Navigator.pop(context);
       setState(() => isLoading = true);
       _fetchStudents();
     } catch (e) {
-
       if (!mounted) return;
 
       ErrorHandler.showSnackBar(context, e);
-
     }
-
   }
 
-
-
   Future<void> _editStudent({
-
     required int id,
 
     required String fullName,
@@ -359,25 +302,19 @@ class _StudentsTabState extends State<StudentsTab> {
     required bool active,
 
     required String password,
-
   }) async {
-
     if (fullName.isEmpty || email.isEmpty) {
-
       ScaffoldMessenger.of(context).showSnackBar(
-
         const SnackBar(content: Text('Required fields cannot be empty.')),
-
       );
 
       return;
-
     }
 
-
-
     try {
-      final formattedDob = dob != null ? "${dob.year}-${dob.month.toString().padLeft(2, '0')}-${dob.day.toString().padLeft(2, '0')}" : null;
+      final formattedDob = dob != null
+          ? "${dob.year}-${dob.month.toString().padLeft(2, '0')}-${dob.day.toString().padLeft(2, '0')}"
+          : null;
       await getIt<AdminRepository>().updateStudent(id, {
         'fullName': fullName,
         'email': email,
@@ -397,59 +334,55 @@ class _StudentsTabState extends State<StudentsTab> {
         if (guardianNameController.text.trim().isNotEmpty)
           'guardian': {
             'guardianName': guardianNameController.text.trim(),
-            'relationship': guardianRelController.text.trim().isEmpty ? 'Guardian' : guardianRelController.text.trim(),
+            'relationship': guardianRelController.text.trim().isEmpty
+                ? 'Guardian'
+                : guardianRelController.text.trim(),
             'phoneNo': guardianPhoneController.text.trim(),
             'email': guardianEmailController.text.trim(),
-          }
+          },
       });
 
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Student details updated successfully!'), backgroundColor: Colors.green),
+        const SnackBar(
+          content: Text('Student details updated successfully!'),
+          backgroundColor: Colors.green,
+        ),
       );
       _clearControllers();
       Navigator.pop(context);
       setState(() => isLoading = true);
       _fetchStudents();
     } catch (e) {
-
       if (!mounted) return;
 
       ErrorHandler.showSnackBar(context, e);
-
     }
-
   }
 
-
-
   Future<void> _deleteStudent(int id) async {
-
     try {
       await getIt<AdminRepository>().deleteStudent(id);
 
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Student deleted successfully'), backgroundColor: Colors.green),
+        const SnackBar(
+          content: Text('Student deleted successfully'),
+          backgroundColor: Colors.green,
+        ),
       );
       setState(() => isLoading = true);
       _fetchStudents();
     } catch (e) {
-
       if (!mounted) return;
 
       ErrorHandler.showSnackBar(context, e);
-
     }
-
   }
 
-
-
   void _clearControllers() {
-
     regNoController.clear();
 
     nameController.clear();
@@ -464,9 +397,6 @@ class _StudentsTabState extends State<StudentsTab> {
     guardianEmailController.clear();
     selectedDob = null;
   }
-
-
-
 
   void _showAddStudentDialog() {
     showDialog(
@@ -489,29 +419,30 @@ class _StudentsTabState extends State<StudentsTab> {
         groups: groups,
         fetchSectionsForDept: (deptId) => _fetchSectionsForDept(deptId),
         clearControllers: _clearControllers,
-        onAddStudent: ({
-          required departmentId,
-          required academicYearId,
-          required yearId,
-          required semesterId,
-          required genderId,
-          required sectionId,
-          required groupId,
-          required address,
-          required dob,
-        }) async {
-          selectedDob = dob;
-          await _addStudent(
-            departmentId: departmentId,
-            academicYearId: academicYearId,
-            yearId: yearId,
-            semesterId: semesterId,
-            genderId: genderId,
-            sectionId: sectionId,
-            groupId: groupId,
-            address: address,
-          );
-        },
+        onAddStudent:
+            ({
+              required departmentId,
+              required academicYearId,
+              required yearId,
+              required semesterId,
+              required genderId,
+              required sectionId,
+              required groupId,
+              required address,
+              required dob,
+            }) async {
+              selectedDob = dob;
+              await _addStudent(
+                departmentId: departmentId,
+                academicYearId: academicYearId,
+                yearId: yearId,
+                semesterId: semesterId,
+                genderId: genderId,
+                sectionId: sectionId,
+                groupId: groupId,
+                address: address,
+              );
+            },
       ),
     );
   }
@@ -538,43 +469,44 @@ class _StudentsTabState extends State<StudentsTab> {
         groups: groups,
         fetchSectionsForDept: (deptId) => _fetchSectionsForDept(deptId),
         clearControllers: _clearControllers,
-        onEditStudent: ({
-          required id,
-          required fullName,
-          required email,
-          required phone,
-          required genderId,
-          required departmentId,
-          required academicYearId,
-          required yearId,
-          required semesterId,
-          required sectionId,
-          required groupId,
-          required sprNo,
-          required dob,
-          required address,
-          required active,
-          required password,
-        }) async {
-          await _editStudent(
-            id: id,
-            fullName: fullName,
-            email: email,
-            phone: phone,
-            genderId: genderId,
-            departmentId: departmentId,
-            academicYearId: academicYearId,
-            yearId: yearId,
-            semesterId: semesterId,
-            sectionId: sectionId,
-            groupId: groupId,
-            sprNo: sprNo,
-            dob: dob,
-            address: address,
-            active: active,
-            password: password,
-          );
-        },
+        onEditStudent:
+            ({
+              required id,
+              required fullName,
+              required email,
+              required phone,
+              required genderId,
+              required departmentId,
+              required academicYearId,
+              required yearId,
+              required semesterId,
+              required sectionId,
+              required groupId,
+              required sprNo,
+              required dob,
+              required address,
+              required active,
+              required password,
+            }) async {
+              await _editStudent(
+                id: id,
+                fullName: fullName,
+                email: email,
+                phone: phone,
+                genderId: genderId,
+                departmentId: departmentId,
+                academicYearId: academicYearId,
+                yearId: yearId,
+                semesterId: semesterId,
+                sectionId: sectionId,
+                groupId: groupId,
+                sprNo: sprNo,
+                dob: dob,
+                address: address,
+                active: active,
+                password: password,
+              );
+            },
       ),
     );
   }
@@ -583,14 +515,20 @@ class _StudentsTabState extends State<StudentsTab> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Students Directory', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+        title: const Text(
+          'Students Directory',
+          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+        ),
         backgroundColor: const Color(0xFF1E293B),
         elevation: 0,
         actions: [
           IconButton(
             icon: Badge(
               isLabelVisible: _pendingBadgeRequests > 0,
-              label: Text(_pendingBadgeRequests.toString(), style: const TextStyle(color: Colors.white)),
+              label: Text(
+                _pendingBadgeRequests.toString(),
+                style: const TextStyle(color: Colors.white),
+              ),
               backgroundColor: Colors.red,
               child: const Icon(Icons.notifications, color: Colors.white),
             ),
@@ -598,7 +536,9 @@ class _StudentsTabState extends State<StudentsTab> {
             onPressed: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => const AdminBadgeRequestsPage()),
+                MaterialPageRoute(
+                  builder: (context) => const AdminBadgeRequestsPage(),
+                ),
               ).then((_) => _fetchPendingBadges());
             },
           ),
@@ -609,7 +549,7 @@ class _StudentsTabState extends State<StudentsTab> {
               _fetchStudents();
               _fetchPendingBadges();
             },
-          )
+          ),
         ],
       ),
       body: isLoading
@@ -638,9 +578,7 @@ class _StudentsTabState extends State<StudentsTab> {
                 ],
               ),
             ),
-      floatingActionButton: StudentFab(
-        onPressed: _showAddStudentDialog,
-      ),
+      floatingActionButton: StudentFab(onPressed: _showAddStudentDialog),
     );
   }
 }

@@ -16,7 +16,8 @@ class StudentAttendanceSummary {
   factory StudentAttendanceSummary.fromJson(Map<String, dynamic> json) {
     return StudentAttendanceSummary(
       attendancePercentage: (json['attendancePercentage'] as num).toDouble(),
-      monthlyAttendancePercentage: (json['monthlyAttendancePercentage'] as num).toDouble(),
+      monthlyAttendancePercentage: (json['monthlyAttendancePercentage'] as num)
+          .toDouble(),
       currentStreak: json['currentStreak'] as int,
       totalPresentDays: json['totalPresentDays'] as int,
       totalAbsentDays: json['totalAbsentDays'] as int,

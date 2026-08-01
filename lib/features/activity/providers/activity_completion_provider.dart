@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:spdms_app/features/activity/models/activity_completion_request.dart';
-import 'package:spdms_app/features/activity/services/activity_completion_service.dart';
+import 'package:pragatix/features/activity/models/activity_completion_request.dart';
+import 'package:pragatix/features/activity/services/activity_completion_service.dart';
 
 class ActivityCompletionProvider with ChangeNotifier {
   final ActivityCompletionService _service;
@@ -22,7 +22,9 @@ class ActivityCompletionProvider with ChangeNotifier {
     try {
       final response = await _service.getMyRequests();
       final List<dynamic> data = response['data'] ?? [];
-      _myRequests = data.map((json) => ActivityCompletionRequest.fromJson(json)).toList();
+      _myRequests = data
+          .map((json) => ActivityCompletionRequest.fromJson(json))
+          .toList();
       _error = null;
     } catch (e) {
       _error = e.toString();
@@ -36,7 +38,9 @@ class ActivityCompletionProvider with ChangeNotifier {
     try {
       final response = await _service.getInbox();
       final List<dynamic> data = response['data'] ?? [];
-      _inbox = data.map((json) => ActivityCompletionRequest.fromJson(json)).toList();
+      _inbox = data
+          .map((json) => ActivityCompletionRequest.fromJson(json))
+          .toList();
       _error = null;
     } catch (e) {
       _error = e.toString();
@@ -45,10 +49,20 @@ class ActivityCompletionProvider with ChangeNotifier {
     }
   }
 
-  Future<bool> submitRequest(int activityId, {int? teamId, String? proofUrl, String? reason}) async {
+  Future<bool> submitRequest(
+    int activityId, {
+    int? teamId,
+    String? proofUrl,
+    String? reason,
+  }) async {
     _setLoading(true);
     try {
-      await _service.submitRequest(activityId, teamId: teamId, proofUrl: proofUrl, reason: reason);
+      await _service.submitRequest(
+        activityId,
+        teamId: teamId,
+        proofUrl: proofUrl,
+        reason: reason,
+      );
       await loadMyRequests();
       return true;
     } catch (e) {
@@ -89,12 +103,19 @@ class ActivityCompletionProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  ActivityCompletionRequest? getMyRequestForActivity(int activityId, {int? teamId}) {
+  ActivityCompletionRequest? getMyRequestForActivity(
+    int activityId, {
+    int? teamId,
+  }) {
     try {
       if (teamId != null) {
-        return _myRequests.firstWhere((r) => r.activityId == activityId && r.teamId == teamId);
+        return _myRequests.firstWhere(
+          (r) => r.activityId == activityId && r.teamId == teamId,
+        );
       } else {
-        return _myRequests.firstWhere((r) => r.activityId == activityId && r.teamId == null);
+        return _myRequests.firstWhere(
+          (r) => r.activityId == activityId && r.teamId == null,
+        );
       }
     } catch (e) {
       return null;

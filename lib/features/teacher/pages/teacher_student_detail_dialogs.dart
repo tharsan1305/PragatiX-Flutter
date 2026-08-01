@@ -17,7 +17,7 @@ extension TeacherStudentDetailDialogs on _TeacherStudentDetailState {
             'Internship Completion (+20)',
             'Hackathon Winner (+25)',
             'Academic Topper (+30)',
-            'Faculty Appreciation (+10)'
+            'Faculty Appreciation (+10)',
           ]
         : [
             'Late Arrival (-3)',
@@ -26,12 +26,13 @@ extension TeacherStudentDetailDialogs on _TeacherStudentDetailState {
             'Misbehavior (-10)',
             'Proxy Attendance (-15)',
             'Ragging (-50)',
-            'Severe Misconduct (-100)'
+            'Severe Misconduct (-100)',
           ];
 
     int? selectedSubgroupId;
     String? selectedReason = reasons.first;
-    final TextEditingController customReasonController = TextEditingController();
+    final TextEditingController customReasonController =
+        TextEditingController();
 
     // Flatten all subgroups across stages for the dropdown
     final List<Map<String, dynamic>> allSubgroups = [];
@@ -65,10 +66,13 @@ extension TeacherStudentDetailDialogs on _TeacherStudentDetailState {
             children: [
               Text(
                 isAdding ? 'Add Points' : 'Deduct Points',
-                style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                style: const TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               const SizedBox(height: 16),
-              
+
               // Activity Assignment Dropdown
               DropdownButtonFormField<int?>(
                 initialValue: selectedSubgroupId,
@@ -86,17 +90,20 @@ extension TeacherStudentDetailDialogs on _TeacherStudentDetailState {
                       value: sub['id'],
                       child: Text(sub['name']),
                     );
-                  })
+                  }),
                 ],
                 onChanged: (val) {
                   selectedSubgroupId = val;
                 },
               ),
               const SizedBox(height: 16),
-              
-              const Text('Select Reason & Value:', style: TextStyle(fontWeight: FontWeight.bold)),
+
+              const Text(
+                'Select Reason & Value:',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
               const SizedBox(height: 8),
-              
+
               // Reasons List
               SizedBox(
                 height: 150,
@@ -122,28 +129,34 @@ extension TeacherStudentDetailDialogs on _TeacherStudentDetailState {
                   ),
                 ),
               ),
-              
+
               const SizedBox(height: 12),
               TextField(
                 controller: customReasonController,
                 decoration: const InputDecoration(
-                  labelText: 'Custom Reason (Overrides selected reason description)',
+                  labelText:
+                      'Custom Reason (Overrides selected reason description)',
                   border: OutlineInputBorder(),
                 ),
               ),
               const SizedBox(height: 20),
-              
+
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: () {
-                    final finalReason = customReasonController.text.trim().isNotEmpty
+                    final finalReason =
+                        customReasonController.text.trim().isNotEmpty
                         ? customReasonController.text.trim()
                         : selectedReason!;
-                    
+
                     // Parse points value from selectedReason
                     final int val = int.parse(
-                      selectedReason!.split(RegExp(r'[()]'))[1].replaceAll('+', '').replaceAll('-', '').trim(),
+                      selectedReason!
+                          .split(RegExp(r'[()]'))[1]
+                          .replaceAll('+', '')
+                          .replaceAll('-', '')
+                          .trim(),
                     );
                     final points = val * (isAdding ? 1 : -1);
 
@@ -156,7 +169,10 @@ extension TeacherStudentDetailDialogs on _TeacherStudentDetailState {
                   ),
                   child: Text(
                     isAdding ? 'Add Points' : 'Deduct Points',
-                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ),
@@ -167,4 +183,3 @@ extension TeacherStudentDetailDialogs on _TeacherStudentDetailState {
     );
   }
 }
-

@@ -1,13 +1,13 @@
-import 'package:spdms_app/features/auth/providers/auth_provider.dart';
+import 'package:pragatix/features/auth/providers/auth_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter/material.dart';
-import 'package:spdms_app/features/activity/services/activity_proxy_service.dart';
+import 'package:pragatix/features/activity/services/activity_proxy_service.dart';
 import 'dart:convert';
-import 'package:spdms_app/core/config/api_config.dart';
+import 'package:pragatix/core/config/api_config.dart';
 
-import 'package:spdms_app/features/activity/pages/group_activity_sec_page.dart';
-import 'package:spdms_app/features/activity/pages/group_activity_execution_page.dart';
-import 'package:spdms_app/core/di/service_locator.dart';
+import 'package:pragatix/features/activity/pages/group_activity_sec_page.dart';
+import 'package:pragatix/features/activity/pages/group_activity_execution_page.dart';
+import 'package:pragatix/core/di/service_locator.dart';
 
 class GroupActivityDeptPage extends StatefulWidget {
   final int activityId;
@@ -15,7 +15,7 @@ class GroupActivityDeptPage extends StatefulWidget {
 
   const GroupActivityDeptPage({
     super.key,
-    
+
     required this.activityId,
     required this.selectedYear,
   });
@@ -53,8 +53,12 @@ class _GroupActivityDeptPageState extends State<GroupActivityDeptPage> {
       if (yearNo == 4) yearParam = 'IV';
 
       final response = await getIt<ActivityProxyService>().get(
-        Uri.parse('${ApiConfig.baseUrl}/api/v1/my-activities/${widget.activityId}/departments?year=$yearParam'),
-        headers: {'Authorization': 'Bearer ${context.read<AuthProvider>().token!}'},
+        Uri.parse(
+          '${ApiConfig.baseUrl}/api/v1/my-activities/${widget.activityId}/departments?year=$yearParam',
+        ),
+        headers: {
+          'Authorization': 'Bearer ${context.read<AuthProvider>().token!}',
+        },
       );
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -94,10 +98,14 @@ class _GroupActivityDeptPageState extends State<GroupActivityDeptPage> {
       final deptId = dept['id'];
 
       final response = await getIt<ActivityProxyService>().get(
-        Uri.parse('${ApiConfig.baseUrl}/api/v1/my-activities/${widget.activityId}/sections?year=$yearParam&departmentId=$deptId'),
-        headers: {'Authorization': 'Bearer ${context.read<AuthProvider>().token!}'},
+        Uri.parse(
+          '${ApiConfig.baseUrl}/api/v1/my-activities/${widget.activityId}/sections?year=$yearParam&departmentId=$deptId',
+        ),
+        headers: {
+          'Authorization': 'Bearer ${context.read<AuthProvider>().token!}',
+        },
       );
-      
+
       // Close the loading dialog
       if (mounted) Navigator.pop(context);
 
@@ -112,7 +120,6 @@ class _GroupActivityDeptPageState extends State<GroupActivityDeptPage> {
                 context,
                 MaterialPageRoute(
                   builder: (_) => GroupActivitySecPage(
-                    
                     activityId: widget.activityId,
                     selectedYear: widget.selectedYear,
                     selectedDept: dept,
@@ -128,7 +135,6 @@ class _GroupActivityDeptPageState extends State<GroupActivityDeptPage> {
                 context,
                 MaterialPageRoute(
                   builder: (_) => GroupActivityExecutionPage(
-                    
                     activityId: widget.activityId,
                     selectedYear: widget.selectedYear,
                     selectedDept: dept,
@@ -143,7 +149,9 @@ class _GroupActivityDeptPageState extends State<GroupActivityDeptPage> {
     } catch (e) {
       if (mounted) Navigator.pop(context); // Close dialog on error
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error checking sections: $e')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error checking sections: $e')));
     }
   }
 
@@ -160,42 +168,57 @@ class _GroupActivityDeptPageState extends State<GroupActivityDeptPage> {
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _errorMessage != null
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(Icons.error_outline, size: 48, color: Colors.red),
-                      const SizedBox(height: 16),
-                      Text(_errorMessage!, style: const TextStyle(color: Colors.red)),
-                      const SizedBox(height: 16),
-                      ElevatedButton(
-                        onPressed: _fetchDeptsForYear,
-                        child: const Text('Retry'),
-                      )
-                    ],
+          ? Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.error_outline, size: 48, color: Colors.red),
+                  const SizedBox(height: 16),
+                  Text(
+                    _errorMessage!,
+                    style: const TextStyle(color: Colors.red),
                   ),
-                )
-              : ListView.builder(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: _availableDeptsList.length,
-                  itemBuilder: (context, index) {
-                    final dept = _availableDeptsList[index];
-                    return Card(
-                      margin: const EdgeInsets.only(bottom: 12),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      elevation: 1,
-                      child: ListTile(
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                        title: Text(
-                          dept['name'] ?? dept['departmentName'],
-                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: _dark),
-                        ),
-                        trailing: const Icon(Icons.chevron_right, color: Colors.grey),
-                        onTap: () => _checkSectionsAndNavigate(dept),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: _fetchDeptsForYear,
+                    child: const Text('Retry'),
+                  ),
+                ],
+              ),
+            )
+          : ListView.builder(
+              padding: const EdgeInsets.all(16),
+              itemCount: _availableDeptsList.length,
+              itemBuilder: (context, index) {
+                final dept = _availableDeptsList[index];
+                return Card(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  elevation: 1,
+                  child: ListTile(
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 12,
+                    ),
+                    title: Text(
+                      dept['name'] ?? dept['departmentName'],
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: _dark,
                       ),
-                    );
-                  },
-                ),
+                    ),
+                    trailing: const Icon(
+                      Icons.chevron_right,
+                      color: Colors.grey,
+                    ),
+                    onTap: () => _checkSectionsAndNavigate(dept),
+                  ),
+                );
+              },
+            ),
     );
   }
 }

@@ -22,11 +22,8 @@ class StudentAttendanceListItem {
       remarks: json['remarks'] as String?,
     );
   }
-  
-  StudentAttendanceListItem copyWith({
-    String? status,
-    String? remarks,
-  }) {
+
+  StudentAttendanceListItem copyWith({String? status, String? remarks}) {
     return StudentAttendanceListItem(
       studentId: this.studentId,
       studentName: this.studentName,
@@ -35,12 +32,8 @@ class StudentAttendanceListItem {
       remarks: remarks ?? this.remarks,
     );
   }
-  
+
   Map<String, dynamic> toJson() {
-    return {
-      'studentId': studentId,
-      'status': status,
-      'remarks': remarks,
-    };
+    return {'studentId': studentId, 'status': status, 'remarks': remarks};
   }
 }

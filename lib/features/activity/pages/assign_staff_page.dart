@@ -1,17 +1,19 @@
 import 'package:flutter/material.dart';
-import 'package:spdms_app/features/activity/models/activity_model.dart';
-import 'package:spdms_app/features/activity/providers/activity_provider.dart';
-import 'package:spdms_app/core/theme/app_colors.dart';
-import 'package:spdms_app/core/utils/error_handler.dart';
+import 'package:pragatix/features/activity/models/activity_model.dart';
+import 'package:pragatix/features/activity/providers/activity_provider.dart';
+import 'package:pragatix/core/theme/app_colors.dart';
+import 'package:pragatix/core/utils/error_handler.dart';
 
 class AssignStaffPage extends StatefulWidget {
   final ActivityProvider provider;
   final ActivityModel activity;
+  final int? stageId;
 
   const AssignStaffPage({
     super.key,
     required this.provider,
     required this.activity,
+    this.stageId,
   });
 
   @override
@@ -30,10 +32,20 @@ class _AssignStaffPageState extends State<AssignStaffPage> {
   @override
   void initState() {
     super.initState();
+    print('========================');
+    print('FRONTEND LOG: initState()');
+    print('Activity ID: ${widget.activity.id}');
+    print('Stage ID: ${widget.stageId}');
+    print('========================');
+
     _globalAssignment = widget.activity.assignmentMode == 'GLOBAL';
     _ccAssignment = widget.activity.assignmentMode == 'CLASS_COORDINATOR';
+    
+    print('FRONTEND LOG: Before API call');
     _loadAssignments();
-    if (widget.provider.departments.isEmpty || widget.provider.allTeachers.isEmpty) {
+    
+    if (widget.provider.departments.isEmpty ||
+        widget.provider.allTeachers.isEmpty) {
       widget.provider.loadDependencies();
     }
   }
@@ -41,8 +53,22 @@ class _AssignStaffPageState extends State<AssignStaffPage> {
   Future<void> _loadAssignments() async {
     setState(() => _isLoading = true);
     try {
-      final list = await widget.provider.getAssignments(widget.activity.id);
-      if (mounted) setState(() => _assignments = list);
+      print('FRONTEND LOG: After API call (Starting await)');
+      final list = await widget.provider.getAssignments(widget.activity.id, stageId: widget.stageId);
+      print('FRONTEND LOG: After await');
+      
+      if (mounted) {
+        setState(() {
+          _assignments = list;
+        });
+        print('========================');
+        print('FRONTEND LOG: API RESPONSE ARRIVED');
+        print('Total assignments received: ${list.length}');
+        for (var a in list) {
+          print('Assignment -> teacher=${a['teacherName']}, section=${a['sectionName']}, department=${a['departmentName']}, stage=${a['stageId']}');
+        }
+        print('========================');
+      }
     } catch (e) {
       if (mounted) ErrorHandler.showSnackBar(context, e);
     } finally {
@@ -53,19 +79,24 @@ class _AssignStaffPageState extends State<AssignStaffPage> {
   Future<void> _saveConfiguration() async {
     setState(() => _isLoading = true);
     try {
-      final currentAssignments = _assignments.map((a) => {
-        'scope': a['assignmentScope'],
-        'departmentId': a['departmentId'],
-        'sectionId': a['sectionId'],
-        'teacherId': a['teacherId'],
-        'year': a['year'] ?? '1'
-      }).toList();
+      final currentAssignments = _assignments
+          .map(
+            (a) => {
+              'scope': a['assignmentScope'],
+              'departmentId': a['departmentId'],
+              'sectionId': a['sectionId'],
+              'teacherId': a['teacherId'],
+              'year': a['year'] ?? '1',
+            },
+          )
+          .toList();
 
       await widget.provider.assignActivity(
         widget.activity.id,
         _ccAssignment,
         _globalAssignment,
-        currentAssignments
+        currentAssignments,
+        widget.stageId,
       );
       ErrorHandler.showSnackBar(context, 'Assignments saved successfully!');
       if (mounted) {
@@ -78,9 +109,22 @@ class _AssignStaffPageState extends State<AssignStaffPage> {
     }
   }
 
-  Future<void> _addAssignment(int teacherId, int? departmentId, String? year, int? sectionId) async {
+  Future<void> _addAssignment(
+    int teacherId,
+    int? departmentId,
+    String? year,
+    int? sectionId,
+  ) async {
     setState(() => _isLoading = true);
     try {
+      print('========================');
+      print('FRONTEND LOG: TAPPED FACULTY (SAVE TRIGGERED)');
+      print('Selected Faculty ID: $teacherId');
+      print('Department ID: $departmentId');
+      print('Section ID: $sectionId');
+      print('Year: $year');
+      print('========================');
+
       await widget.provider.addAssignment(
         widget.activity.id,
         departmentId ?? 1,
@@ -88,6 +132,7 @@ class _AssignStaffPageState extends State<AssignStaffPage> {
         sectionId,
         teacherId,
         sectionId == null ? 'DEPARTMENT' : 'SECTION',
+        stageId: widget.stageId,
       );
       ErrorHandler.showSnackBar(context, 'Faculty assigned successfully!');
       await _loadAssignments();
@@ -139,7 +184,7 @@ class _AssignStaffPageState extends State<AssignStaffPage> {
   Future<void> _unassignAll() async {
     setState(() => _isLoading = true);
     try {
-      await widget.provider.clearAllAssignments(widget.activity.id);
+      await widget.provider.clearAllAssignments(widget.activity.id, stageId: widget.stageId);
       ErrorHandler.showSnackBar(context, 'All faculty assignments removed.');
       await _loadAssignments();
     } catch (e) {
@@ -154,7 +199,9 @@ class _AssignStaffPageState extends State<AssignStaffPage> {
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Remove All Faculty Assignments?'),
-        content: const Text('This will remove every faculty assignment from every department and section for this activity.'),
+        content: const Text(
+          'This will remove every faculty assignment from every department and section for this activity.',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
@@ -163,7 +210,10 @@ class _AssignStaffPageState extends State<AssignStaffPage> {
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Remove All', style: TextStyle(color: Colors.white)),
+            child: const Text(
+              'Remove All',
+              style: TextStyle(color: Colors.white),
+            ),
           ),
         ],
       ),
@@ -174,12 +224,17 @@ class _AssignStaffPageState extends State<AssignStaffPage> {
     }
   }
 
-  void _showAssignBottomSheet(int deptId, int? secId, String deptName, String? secName) {
+  void _showAssignBottomSheet(
+    int deptId,
+    int? secId,
+    String deptName,
+    String? secName,
+  ) {
     // Show ALL active teachers across the entire system. Do not filter by department.
     final availableTeachers = widget.provider.allTeachers;
 
     String searchQuery = '';
-    
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -191,9 +246,13 @@ class _AssignStaffPageState extends State<AssignStaffPage> {
               final name = (t['fullName'] ?? '').toString().toLowerCase();
               final empId = (t['username'] ?? '').toString().toLowerCase();
               final dept = (t['departmentName'] ?? '').toString().toLowerCase();
-              final roles = (t['roles'] as List<dynamic>?)?.join(',').toLowerCase() ?? '';
+              final roles =
+                  (t['roles'] as List<dynamic>?)?.join(',').toLowerCase() ?? '';
               final search = searchQuery.toLowerCase();
-              return name.contains(search) || empId.contains(search) || dept.contains(search) || roles.contains(search);
+              return name.contains(search) ||
+                  empId.contains(search) ||
+                  dept.contains(search) ||
+                  roles.contains(search);
             }).toList();
 
             return Container(
@@ -209,8 +268,12 @@ class _AssignStaffPageState extends State<AssignStaffPage> {
                     padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
                       color: Colors.grey.shade50,
-                      borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-                      border: Border(bottom: BorderSide(color: Colors.grey.shade200)),
+                      borderRadius: const BorderRadius.vertical(
+                        top: Radius.circular(20),
+                      ),
+                      border: Border(
+                        bottom: BorderSide(color: Colors.grey.shade200),
+                      ),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -218,7 +281,13 @@ class _AssignStaffPageState extends State<AssignStaffPage> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            const Text('Assign Faculty', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                            const Text(
+                              'Assign Faculty',
+                              style: TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                             IconButton(
                               icon: const Icon(Icons.close),
                               onPressed: () => Navigator.pop(ctx),
@@ -228,24 +297,46 @@ class _AssignStaffPageState extends State<AssignStaffPage> {
                           ],
                         ),
                         const SizedBox(height: 4),
-                        Text('Department: $deptName', style: const TextStyle(color: Colors.grey, fontSize: 14)),
+                        Text(
+                          'Department: $deptName',
+                          style: const TextStyle(
+                            color: Colors.grey,
+                            fontSize: 14,
+                          ),
+                        ),
                         if (secName != null)
-                          Text('Section: $secName', style: const TextStyle(color: Colors.grey, fontSize: 14)),
+                          Text(
+                            'Section: $secName',
+                            style: const TextStyle(
+                              color: Colors.grey,
+                              fontSize: 14,
+                            ),
+                          ),
                         const SizedBox(height: 16),
                         TextField(
                           decoration: InputDecoration(
                             hintText: 'Search faculty...',
-                            prefixIcon: const Icon(Icons.search, color: Colors.grey),
+                            prefixIcon: const Icon(
+                              Icons.search,
+                              color: Colors.grey,
+                            ),
                             filled: true,
                             fillColor: Colors.white,
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 12,
+                            ),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(color: Colors.grey.shade300),
+                              borderSide: BorderSide(
+                                color: Colors.grey.shade300,
+                              ),
                             ),
                             enabledBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(color: Colors.grey.shade300),
+                              borderSide: BorderSide(
+                                color: Colors.grey.shade300,
+                              ),
                             ),
                           ),
                           onChanged: (val) {
@@ -259,7 +350,12 @@ class _AssignStaffPageState extends State<AssignStaffPage> {
                   ),
                   Expanded(
                     child: filteredTeachers.isEmpty
-                        ? const Center(child: Text('No faculty found.', style: TextStyle(color: Colors.grey)))
+                        ? const Center(
+                            child: Text(
+                              'No faculty found.',
+                              style: TextStyle(color: Colors.grey),
+                            ),
+                          )
                         : ListView.builder(
                             padding: const EdgeInsets.all(16),
                             itemCount: filteredTeachers.length,
@@ -267,48 +363,97 @@ class _AssignStaffPageState extends State<AssignStaffPage> {
                               final teacher = filteredTeachers[index];
                               final name = teacher['fullName'] ?? 'Unknown';
                               final empId = teacher['username'] ?? 'N/A';
-                              final roles = (teacher['roles'] as List<dynamic>?) ?? [];
-                              final isCC = roles.contains('ROLE_CC') || teacher['sectionId'] != null;
-                              
-                              final isAssignedHere = _assignments.any((a) => a['teacherId']?.toString() == teacher['id']?.toString() && a['sectionId']?.toString() == secId?.toString() && a['departmentId']?.toString() == deptId.toString());
+                              final roles =
+                                  (teacher['roles'] as List<dynamic>?) ?? [];
+                              final isCC =
+                                  roles.contains('ROLE_CC') ||
+                                  teacher['sectionId'] != null;
+
+                              final isAssignedHere = _assignments.any(
+                                (a) =>
+                                    a['teacherId']?.toString() ==
+                                        teacher['id']?.toString() &&
+                                    a['sectionId']?.toString() ==
+                                        secId?.toString() &&
+                                    a['departmentId']?.toString() ==
+                                        deptId.toString(),
+                              );
 
                               return Card(
                                 elevation: 0,
                                 margin: const EdgeInsets.only(bottom: 12),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: BorderSide(color: Colors.grey.shade200)),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  side: BorderSide(color: Colors.grey.shade200),
+                                ),
                                 child: Padding(
                                   padding: const EdgeInsets.all(12),
                                   child: Row(
                                     children: [
                                       CircleAvatar(
-                                        backgroundColor: AppColors.adminPrimary.withValues(alpha: 0.1),
-                                        child: const Icon(Icons.person, color: AppColors.adminPrimary),
+                                        backgroundColor: AppColors.adminPrimary
+                                            .withValues(alpha: 0.1),
+                                        child: const Icon(
+                                          Icons.person,
+                                          color: AppColors.adminPrimary,
+                                        ),
                                       ),
                                       const SizedBox(width: 12),
                                       Expanded(
                                         child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
                                           children: [
-                                            Text(name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-                                            Text('$empId • ${isCC ? 'CC' : 'Teacher'} • ${teacher['departmentName'] ?? 'Unknown Dept'}', style: const TextStyle(color: Colors.grey, fontSize: 13)),
+                                            Text(
+                                              name,
+                                              style: const TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 15,
+                                              ),
+                                            ),
+                                            Text(
+                                              '$empId • ${isCC ? 'CC' : 'Teacher'} • ${teacher['departmentName'] ?? 'Unknown Dept'}',
+                                              style: const TextStyle(
+                                                color: Colors.grey,
+                                                fontSize: 13,
+                                              ),
+                                            ),
                                           ],
                                         ),
                                       ),
                                       if (isAssignedHere)
                                         const Padding(
-                                          padding: EdgeInsets.symmetric(horizontal: 12),
-                                          child: Text('Assigned', style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold, fontSize: 13)),
+                                          padding: EdgeInsets.symmetric(
+                                            horizontal: 12,
+                                          ),
+                                          child: Text(
+                                            'Assigned',
+                                            style: TextStyle(
+                                              color: Colors.green,
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 13,
+                                            ),
+                                          ),
                                         )
                                       else
                                         ElevatedButton(
                                           onPressed: () {
                                             Navigator.pop(ctx);
-                                            _addAssignment(teacher['id'], deptId, '1', secId);
+                                            _addAssignment(
+                                              teacher['id'],
+                                              deptId,
+                                              '1',
+                                              secId,
+                                            );
                                           },
                                           style: ElevatedButton.styleFrom(
-                                            backgroundColor: AppColors.adminPrimary,
+                                            backgroundColor:
+                                                AppColors.adminPrimary,
                                             foregroundColor: Colors.white,
-                                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(8),
+                                            ),
                                           ),
                                           child: const Text('Assign'),
                                         ),
@@ -322,7 +467,7 @@ class _AssignStaffPageState extends State<AssignStaffPage> {
                 ],
               ),
             );
-          }
+          },
         );
       },
     );
@@ -331,22 +476,38 @@ class _AssignStaffPageState extends State<AssignStaffPage> {
   Widget _buildActivitySummary() {
     return Card(
       elevation: 0,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: BorderSide(color: Colors.grey.shade200)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(color: Colors.grey.shade200),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(widget.activity.name, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: _dark)),
+            Text(
+              widget.activity.name,
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: _dark,
+              ),
+            ),
             const SizedBox(height: 12),
             Wrap(
-              spacing: 8, runSpacing: 8,
+              spacing: 8,
+              runSpacing: 8,
               children: [
                 _Tag('Type: ${widget.activity.type}', Colors.purple),
                 _Tag('Category: ${widget.activity.xpCategory}', Colors.blue),
-                if (widget.activity.awardEnabled) _Tag('Award XP: ${widget.activity.awardXp}', Colors.green),
-                if (widget.activity.penaltyEnabled) _Tag('Penalty XP: ${widget.activity.penaltyXp}', Colors.red),
-                _Tag('${_assignments.length} Total Assignments', AppColors.adminPrimary),
+                if (widget.activity.awardEnabled)
+                  _Tag('Award XP: ${widget.activity.awardXp}', Colors.green),
+                if (widget.activity.penaltyEnabled)
+                  _Tag('Penalty XP: ${widget.activity.penaltyXp}', Colors.red),
+                _Tag(
+                  '${_assignments.length} Total Assignments',
+                  AppColors.adminPrimary,
+                ),
               ],
             ),
           ],
@@ -360,7 +521,10 @@ class _AssignStaffPageState extends State<AssignStaffPage> {
       children: [
         Card(
           elevation: 0,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: BorderSide(color: Colors.grey.shade200)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: BorderSide(color: Colors.grey.shade200),
+          ),
           child: Padding(
             padding: const EdgeInsets.all(16.0),
             child: Row(
@@ -369,9 +533,18 @@ class _AssignStaffPageState extends State<AssignStaffPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('GLOBAL ASSIGNMENT', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                      Text(
+                        'GLOBAL ASSIGNMENT',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
+                      ),
                       SizedBox(height: 4),
-                      Text('Enable to assign this activity to ALL departments, ALL sections and ALL faculty members.', style: TextStyle(fontSize: 13, color: Colors.grey)),
+                      Text(
+                        'Enable to assign this activity to ALL departments, ALL sections and ALL faculty members.',
+                        style: TextStyle(fontSize: 13, color: Colors.grey),
+                      ),
                     ],
                   ),
                 ),
@@ -392,7 +565,10 @@ class _AssignStaffPageState extends State<AssignStaffPage> {
         const SizedBox(height: 16),
         Card(
           elevation: 0,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: BorderSide(color: Colors.grey.shade200)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: BorderSide(color: Colors.grey.shade200),
+          ),
           child: Padding(
             padding: const EdgeInsets.all(16.0),
             child: Row(
@@ -401,9 +577,18 @@ class _AssignStaffPageState extends State<AssignStaffPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('CLASS COORDINATOR ASSIGNMENT', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                      Text(
+                        'CLASS COORDINATOR ASSIGNMENT',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
+                      ),
                       SizedBox(height: 4),
-                      Text('Automatically assign this activity to the Class Coordinator of every section.', style: TextStyle(fontSize: 13, color: Colors.grey)),
+                      Text(
+                        'Automatically assign this activity to the Class Coordinator of every section.',
+                        style: TextStyle(fontSize: 13, color: Colors.grey),
+                      ),
                     ],
                   ),
                 ),
@@ -425,9 +610,45 @@ class _AssignStaffPageState extends State<AssignStaffPage> {
     );
   }
 
-  Widget _buildAssignmentWidget(bool isAssigned, List<dynamic> allAssignments, int deptId, int? secId, String deptName, String? secName) {
-    final validAssignments = allAssignments.where((a) => a['teacherId'] != null).toList();
-    
+  Widget _buildAssignmentWidget(
+    bool isAssigned,
+    List<dynamic> allAssignments,
+    int deptId,
+    int? secId,
+    String deptName,
+    String? secName,
+  ) {
+    final validAssignments = allAssignments
+        .where((a) => a['teacherId'] != null)
+        .toList();
+
+    if (validAssignments.isEmpty) {
+      print('========================');
+      print('FRONTEND LOG: Rendering No Faculty Assigned');
+      print('because matchedAssignment == null (or teacherId is null)');
+      print('Current Card -> department=$deptId, section=$secId, stage=${widget.stageId}, mappingId=N/A');
+      print('Assignments Received=${_assignments.length}');
+      if (_assignments.isEmpty) {
+        print('Rejected because list is empty');
+      } else {
+        for (var a in _assignments) {
+          if (a['departmentId']?.toString() != deptId.toString()) {
+            print('Rejected because assignment.departmentId != card.departmentId (${a['departmentId']} != $deptId)');
+          } else if (secId != null && a['sectionId']?.toString() != secId.toString()) {
+            print('Rejected because assignment.sectionId != card.sectionId (${a['sectionId']} != $secId)');
+          } else if (secId == null && a['sectionId'] != null) {
+            print('Rejected because assignment.sectionId is not null for department card');
+          } else if (a['teacherId'] == null) {
+            print('Rejected because assignment.teacherId is null');
+          } else {
+             // Shouldn't reach here if it's truly empty, but just in case
+             print('Rejected because UNKNOWN REASON');
+          }
+        }
+      }
+      print('========================');
+    }
+
     return InkWell(
       onTap: () => _showAssignBottomSheet(deptId, secId, deptName, secName),
       borderRadius: BorderRadius.circular(12),
@@ -435,10 +656,14 @@ class _AssignStaffPageState extends State<AssignStaffPage> {
         width: double.infinity,
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: validAssignments.isEmpty ? Colors.red.shade50 : Colors.green.shade50,
+          color: validAssignments.isEmpty
+              ? Colors.red.shade50
+              : Colors.green.shade50,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: validAssignments.isEmpty ? Colors.red.shade300 : Colors.green.shade300,
+            color: validAssignments.isEmpty
+                ? Colors.red.shade300
+                : Colors.green.shade300,
             width: 1,
           ),
         ),
@@ -448,7 +673,14 @@ class _AssignStaffPageState extends State<AssignStaffPage> {
                   Icon(Icons.close, color: Colors.red, size: 18),
                   SizedBox(width: 8),
                   Expanded(
-                    child: Text('❌ No Faculty Assigned\nTap to Assign', style: TextStyle(color: Colors.red, fontWeight: FontWeight.w600, fontSize: 14)),
+                    child: Text(
+                      '❌ No Faculty Assigned\nTap to Assign',
+                      style: TextStyle(
+                        color: Colors.red,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                      ),
+                    ),
                   ),
                 ],
               )
@@ -460,20 +692,48 @@ class _AssignStaffPageState extends State<AssignStaffPage> {
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Icon(Icons.check_circle, color: Colors.green, size: 18),
+                        const Icon(
+                          Icons.check_circle,
+                          color: Colors.green,
+                          size: 18,
+                        ),
                         const SizedBox(width: 8),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text('${a['teacherName'] ?? 'Unknown'}', style: const TextStyle(color: Colors.green, fontWeight: FontWeight.w600, fontSize: 14)),
-                              Text('Role • ${a['teacherUsername'] ?? 'N/A'} • $deptName', style: const TextStyle(color: Colors.green, fontSize: 12)),
-                              const Text('Tap to Change', style: TextStyle(color: Colors.green, fontSize: 12, fontStyle: FontStyle.italic)),
+                              Text(
+                                '${a['teacherName'] ?? 'Unknown'}',
+                                style: const TextStyle(
+                                  color: Colors.green,
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 14,
+                                ),
+                              ),
+                              Text(
+                                'Role • ${a['teacherUsername'] ?? 'N/A'} • $deptName',
+                                style: const TextStyle(
+                                  color: Colors.green,
+                                  fontSize: 12,
+                                ),
+                              ),
+                              const Text(
+                                'Tap to Change',
+                                style: TextStyle(
+                                  color: Colors.green,
+                                  fontSize: 12,
+                                  fontStyle: FontStyle.italic,
+                                ),
+                              ),
                             ],
                           ),
                         ),
                         IconButton(
-                          icon: const Icon(Icons.remove_circle_outline, color: Colors.red, size: 20),
+                          icon: const Icon(
+                            Icons.remove_circle_outline,
+                            color: Colors.red,
+                            size: 20,
+                          ),
                           onPressed: () => _confirmRemoveAssignment(a['id']),
                           padding: EdgeInsets.zero,
                           constraints: const BoxConstraints(),
@@ -492,7 +752,12 @@ class _AssignStaffPageState extends State<AssignStaffPage> {
     if (depts.isEmpty) {
       return const Padding(
         padding: EdgeInsets.all(32.0),
-        child: Center(child: Text('No departments available.', style: TextStyle(color: Colors.grey))),
+        child: Center(
+          child: Text(
+            'No departments available.',
+            style: TextStyle(color: Colors.grey),
+          ),
+        ),
       );
     }
 
@@ -510,29 +775,104 @@ class _AssignStaffPageState extends State<AssignStaffPage> {
         return Card(
           elevation: 0,
           margin: const EdgeInsets.only(bottom: 16),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: BorderSide(color: Colors.blueGrey.shade100)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: BorderSide(color: Colors.blueGrey.shade100),
+          ),
           child: Padding(
             padding: const EdgeInsets.all(16.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('🏢 $deptName', style: const TextStyle(fontWeight: FontWeight.bold, color: _dark, fontSize: 16)),
+                Text(
+                  '🏢 $deptName',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: _dark,
+                    fontSize: 16,
+                  ),
+                ),
                 const SizedBox(height: 8),
-                const Text('Configure Assignments', style: TextStyle(color: Colors.grey, fontSize: 13)),
+                const Text(
+                  'Configure Assignments',
+                  style: TextStyle(color: Colors.grey, fontSize: 13),
+                ),
                 const SizedBox(height: 16),
                 if (hasSections)
                   ...sections.map((sec) {
                     final secId = sec['id'] as int;
                     final secName = sec['sectionName'] ?? 'Section';
-                    final secAssignments = _assignments.where((a) => a['sectionId']?.toString() == secId.toString() && a['departmentId']?.toString() == deptId.toString()).toList();
+                    
+                    print('========================');
+                    print('FRONTEND LOG: MATCHING LOGIC (SECTION)');
+                    print('Current Card -> departmentId: $deptId, departmentName: $deptName, sectionId: $secId, sectionName: $secName, stageId: ${widget.stageId}');
+                    
+                    final secAssignments = _assignments.where((a) {
+                      print('--- Comparing Assignment ID: ${a['id']} ---');
+                      print('Assignment.departmentId: ${a['departmentId']}');
+                      print('Assignment.sectionId: ${a['sectionId']}');
+                      print('Assignment.stageId: ${a['stageId']}');
+                      print('Assignment.teacherId: ${a['teacherId']}');
+                      print('Assignment.teacherName: ${a['teacherName']}');
+                      print('Assignment.assignmentMode: ${a['assignmentMode']}');
+                      
+                      bool deptMatch = a['departmentId']?.toString() == deptId.toString();
+                      bool secMatch = a['sectionId']?.toString() == secId.toString();
+                      
+                      // Also check stageId if it exists in the API response
+                      bool stageMatch = true;
+                      if (a['stageId'] != null && widget.stageId != null) {
+                        stageMatch = a['stageId'].toString() == widget.stageId.toString();
+                      }
+                      
+                      print('Assignment.departmentId == Card.departmentId -> $deptMatch');
+                      print('Assignment.sectionId == Card.sectionId -> $secMatch');
+                      if (a['stageId'] != null && widget.stageId != null) {
+                        print('Assignment.stageId == Card.stageId -> $stageMatch');
+                      }
+                      
+                      if (!deptMatch) {
+                        print('Rejected Reason: Department mismatch');
+                        return false;
+                      }
+                      if (!secMatch) {
+                        print('Rejected Reason: Section mismatch');
+                        return false;
+                      }
+                      if (!stageMatch) {
+                        print('Rejected Reason: Stage mismatch');
+                        return false;
+                      }
+                      
+                      print('MATCH FOUND!');
+                      return true;
+                    }).toList();
+                    
+                    print('Total Matches for Section $secName: ${secAssignments.length}');
+                    print('========================');
+                    
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 16),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(secName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Colors.black87)),
+                          Text(
+                            secName,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 15,
+                              color: Colors.black87,
+                            ),
+                          ),
                           const SizedBox(height: 8),
-                          _buildAssignmentWidget(secAssignments.isNotEmpty, secAssignments, deptId, secId, deptName, secName),
+                          _buildAssignmentWidget(
+                            secAssignments.isNotEmpty,
+                            secAssignments,
+                            deptId,
+                            secId,
+                            deptName,
+                            secName,
+                          ),
                         ],
                       ),
                     );
@@ -540,13 +880,34 @@ class _AssignStaffPageState extends State<AssignStaffPage> {
                 else
                   Builder(
                     builder: (context) {
-                      final deptAssignments = _assignments.where((a) => a['sectionId'] == null && a['departmentId']?.toString() == deptId.toString()).toList();
+                      final deptAssignments = _assignments
+                          .where(
+                            (a) =>
+                                a['sectionId'] == null &&
+                                a['departmentId']?.toString() ==
+                                    deptId.toString(),
+                          )
+                          .toList();
                       return Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text('Department Faculty', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Colors.black87)),
+                          const Text(
+                            'Department Faculty',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 15,
+                              color: Colors.black87,
+                            ),
+                          ),
                           const SizedBox(height: 8),
-                          _buildAssignmentWidget(deptAssignments.isNotEmpty, deptAssignments, deptId, null, deptName, null),
+                          _buildAssignmentWidget(
+                            deptAssignments.isNotEmpty,
+                            deptAssignments,
+                            deptId,
+                            null,
+                            deptName,
+                            null,
+                          ),
                         ],
                       );
                     },
@@ -561,16 +922,35 @@ class _AssignStaffPageState extends State<AssignStaffPage> {
 
   @override
   Widget build(BuildContext context) {
+    print('========================');
+    print('FRONTEND LOG: build() executed');
+    print('Current assignment list size: ${_assignments.length}');
+    print('Provider assignment list size: ${widget.provider.currentAssignments.length}');
+    print('========================');
+
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
-        title: const Text('Assign Faculty', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18)),
+        title: const Text(
+          'Assign Faculty',
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+            fontSize: 18,
+          ),
+        ),
         backgroundColor: _dark,
         iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: AnimatedBuilder(
         animation: widget.provider,
         builder: (context, child) {
+          // Sync local assignments with provider if it updated
+          if (widget.provider.currentAssignments != _assignments) {
+             _assignments = widget.provider.currentAssignments;
+             print('FRONTEND LOG: Synced _assignments with Provider inside build() -> size: ${_assignments.length}');
+          }
+
           return Stack(
             children: [
               Column(
@@ -585,7 +965,15 @@ class _AssignStaffPageState extends State<AssignStaffPage> {
                           const SizedBox(height: 24),
                           _buildConfigurationToggles(),
                           const SizedBox(height: 32),
-                          const Text('CLASS COORDINATOR ASSIGNMENTS (Auto-Resolved)', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: Colors.blue, letterSpacing: 0.5)),
+                          const Text(
+                            'CLASS COORDINATOR ASSIGNMENTS (Auto-Resolved)',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w800,
+                              color: Colors.blue,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
                           const SizedBox(height: 16),
                           _buildDepartmentList(),
                         ],
@@ -611,22 +999,46 @@ class _AssignStaffPageState extends State<AssignStaffPage> {
                             onPressed: () => Navigator.pop(context),
                             style: OutlinedButton.styleFrom(
                               padding: const EdgeInsets.symmetric(vertical: 16),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
                               side: const BorderSide(color: Colors.grey),
                             ),
-                            child: const Text('Cancel', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
+                            child: const Text(
+                              'Cancel',
+                              style: TextStyle(
+                                color: Colors.grey,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                           ),
                         ),
                         const SizedBox(width: 8),
                         Expanded(
                           child: OutlinedButton(
-                            onPressed: _isLoading || _assignments.isEmpty ? null : _confirmUnassignAll,
+                            onPressed: _isLoading || _assignments.isEmpty
+                                ? null
+                                : _confirmUnassignAll,
                             style: OutlinedButton.styleFrom(
                               padding: const EdgeInsets.symmetric(vertical: 16),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                              side: BorderSide(color: _assignments.isEmpty ? Colors.grey.shade300 : Colors.red),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              side: BorderSide(
+                                color: _assignments.isEmpty
+                                    ? Colors.grey.shade300
+                                    : Colors.red,
+                              ),
                             ),
-                            child: Text('Unassign All', style: TextStyle(color: _assignments.isEmpty ? Colors.grey : Colors.red, fontWeight: FontWeight.bold)),
+                            child: Text(
+                              'Unassign All',
+                              style: TextStyle(
+                                color: _assignments.isEmpty
+                                    ? Colors.grey
+                                    : Colors.red,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                           ),
                         ),
                         const SizedBox(width: 8),
@@ -638,9 +1050,14 @@ class _AssignStaffPageState extends State<AssignStaffPage> {
                               backgroundColor: AppColors.adminPrimary,
                               foregroundColor: Colors.white,
                               padding: const EdgeInsets.symmetric(vertical: 16),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
                             ),
-                            child: const Text('Save Assignments', style: TextStyle(fontWeight: FontWeight.bold)),
+                            child: const Text(
+                              'Save Assignments',
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
                           ),
                         ),
                       ],
@@ -648,7 +1065,9 @@ class _AssignStaffPageState extends State<AssignStaffPage> {
                   ),
                 ],
               ),
-              if (_isLoading || widget.provider.isLoadingDependencies || widget.provider.isSaving)
+              if (_isLoading ||
+                  widget.provider.isLoadingDependencies ||
+                  widget.provider.isSaving)
                 Container(
                   color: Colors.black.withValues(alpha: 0.1),
                   child: const Center(child: CircularProgressIndicator()),
@@ -676,7 +1095,14 @@ class _Tag extends StatelessWidget {
         borderRadius: BorderRadius.circular(6),
         border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
-      child: Text(text, style: TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.bold)),
+      child: Text(
+        text,
+        style: TextStyle(
+          color: color,
+          fontSize: 12,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
     );
   }
 }

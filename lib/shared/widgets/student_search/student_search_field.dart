@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:spdms_app/shared/widgets/student_search/student_search_dialog.dart';
+import 'package:pragatix/shared/widgets/student_search/student_search_dialog.dart';
 
 class StudentSearchField extends StatelessWidget {
   final Map<String, dynamic>? selectedStudent;

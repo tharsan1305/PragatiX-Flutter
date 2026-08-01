@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:spdms_app/features/auth/providers/auth_provider.dart';
-import 'package:spdms_app/features/auth/repository/auth_repository.dart';
-import 'package:spdms_app/features/admin/repository/admin_repository.dart';
-import 'package:spdms_app/features/activity/repository/activity_repository.dart';
-import 'package:spdms_app/core/di/service_locator.dart';
+import 'package:pragatix/features/auth/providers/auth_provider.dart';
+import 'package:pragatix/features/auth/repository/auth_repository.dart';
+import 'package:pragatix/features/admin/repository/admin_repository.dart';
+import 'package:pragatix/features/activity/repository/activity_repository.dart';
+import 'package:pragatix/core/di/service_locator.dart';
 import 'mocks.dart';
 
 /// A wrapper to provide necessary context and providers for widget tests.

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:spdms_app/core/theme/app_colors.dart';
-import 'package:spdms_app/features/admin/pages/activity_tab.dart'; // We will use this or the global_activity_page
+import 'package:pragatix/core/theme/app_colors.dart';
+import 'package:pragatix/features/admin/pages/activity_tab.dart'; // We will use this or the global_activity_page
+import 'package:provider/provider.dart';
+import 'package:pragatix/features/auth/providers/auth_provider.dart';
 
 class YearSelectionPage extends StatelessWidget {
   const YearSelectionPage({Key? key}) : super(key: key);
@@ -8,6 +10,7 @@ class YearSelectionPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
         title: const Text('Activity & Thresholds'),
         backgroundColor: AppColors.adminPrimary,
@@ -30,23 +33,40 @@ class YearSelectionPage extends StatelessWidget {
             const SizedBox(height: 8),
             const Text(
               'Please select an academic year to manage its stages and activities.',
-              style: TextStyle(
-                fontSize: 16,
-                color: AppColors.textSecondary,
-              ),
+              style: TextStyle(fontSize: 16, color: AppColors.textSecondary),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 32),
             Expanded(
               child: ListView(
                 children: [
-                  _buildYearCard(context, '🎓 First Year', 'FIRST_YEAR', Icons.looks_one),
+                  _buildYearCard(
+                    context,
+                    '🎓 First Year',
+                    'FIRST_YEAR',
+                    Icons.looks_one,
+                  ),
                   const SizedBox(height: 16),
-                  _buildYearCard(context, '🎓 Second Year', 'SECOND_YEAR', Icons.looks_two),
+                  _buildYearCard(
+                    context,
+                    '🎓 Second Year',
+                    'SECOND_YEAR',
+                    Icons.looks_two,
+                  ),
                   const SizedBox(height: 16),
-                  _buildYearCard(context, '🎓 Third Year', 'THIRD_YEAR', Icons.looks_3),
+                  _buildYearCard(
+                    context,
+                    '🎓 Third Year',
+                    'THIRD_YEAR',
+                    Icons.looks_3,
+                  ),
                   const SizedBox(height: 16),
-                  _buildYearCard(context, '🎓 Fourth Year', 'FOURTH_YEAR', Icons.looks_4),
+                  _buildYearCard(
+                    context,
+                    '🎓 Fourth Year',
+                    'FOURTH_YEAR',
+                    Icons.looks_4,
+                  ),
                 ],
               ),
             ),
@@ -56,18 +76,28 @@ class YearSelectionPage extends StatelessWidget {
     );
   }
 
-  Widget _buildYearCard(BuildContext context, String title, String yearValue, IconData icon) {
+  Widget _buildYearCard(
+    BuildContext context,
+    String title,
+    String yearValue,
+    IconData icon,
+  ) {
     return Card(
       elevation: 4,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
-        onTap: () {
+        onTap: () async {
+          final authProvider = context.read<AuthProvider>();
+          await authProvider.setSelectedAcademicYear(yearValue);
+
+          if (!context.mounted) return;
           // Push to Activity Management with the selected year
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => AdminActivityManagementPage(selectedYear: yearValue),
+              builder: (context) =>
+                  AdminActivityManagementPage(selectedYear: yearValue),
             ),
           );
         },
@@ -94,7 +124,10 @@ class YearSelectionPage extends StatelessWidget {
                   ),
                 ),
               ),
-              const Icon(Icons.arrow_forward_ios, color: AppColors.textSecondary),
+              const Icon(
+                Icons.arrow_forward_ios,
+                color: AppColors.textSecondary,
+              ),
             ],
           ),
         ),

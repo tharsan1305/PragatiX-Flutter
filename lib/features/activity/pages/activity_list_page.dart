@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
-import 'package:spdms_app/features/activity/models/activity_model.dart';
-import 'package:spdms_app/features/activity/models/grouped_activity_model.dart';
-import 'package:spdms_app/features/activity/providers/activity_provider.dart';
-import 'package:spdms_app/shared/widgets/activity_card.dart';
-import 'package:spdms_app/features/activity/pages/create_activity_page.dart';
-import 'package:spdms_app/features/activity/pages/edit_activity_page.dart';
-import 'package:spdms_app/features/activity/pages/activity_execution_page.dart';
-import 'package:spdms_app/features/activity/pages/group_activity_year_page.dart';
-import 'package:spdms_app/features/activity/pages/assign_staff_page.dart';
-import 'package:spdms_app/features/activity/repository/activity_repository.dart';
-import 'package:spdms_app/core/di/service_locator.dart';
-import 'package:spdms_app/core/utils/string_utils.dart';
+import 'package:pragatix/features/activity/models/activity_model.dart';
+import 'package:pragatix/features/activity/models/grouped_activity_model.dart';
+import 'package:pragatix/features/activity/providers/activity_provider.dart';
+import 'package:pragatix/shared/widgets/activity_card.dart';
+import 'package:pragatix/features/activity/pages/create_activity_page.dart';
+import 'package:pragatix/features/activity/pages/edit_activity_page.dart';
+import 'package:pragatix/features/activity/pages/activity_execution_page.dart';
+import 'package:pragatix/features/activity/pages/group_activity_year_page.dart';
+import 'package:pragatix/features/activity/pages/assign_staff_page.dart';
+import 'package:pragatix/features/activity/repository/activity_repository.dart';
+import 'package:pragatix/core/di/service_locator.dart';
+import 'package:pragatix/core/utils/string_utils.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Activity List Page – entry point from SubgroupDetailsPage.
@@ -27,6 +27,7 @@ class ActivityListPage extends StatefulWidget {
   final bool isMyActivitiesOnly;
   final bool showAppBar;
   final bool isAdmin;
+  final String? academicYear;
 
   const ActivityListPage({
     super.key,
@@ -39,6 +40,7 @@ class ActivityListPage extends StatefulWidget {
     this.isMyActivitiesOnly = false,
     this.showAppBar = true,
     this.isAdmin = false,
+    this.academicYear,
   });
 
   @override
@@ -47,7 +49,7 @@ class ActivityListPage extends StatefulWidget {
 
 class _ActivityListPageState extends State<ActivityListPage> {
   static const Color _primary = Color(0xFFEA4335);
-  static const Color _dark = Color(0xFF1E293B);
+  static const Color _dark = Color(0xFF2B4598);
 
   late final ActivityProvider _provider;
 
@@ -105,6 +107,7 @@ class _ActivityListPageState extends State<ActivityListPage> {
         builder: (_) => AssignStaffPage(
           provider: _provider,
           activity: activity,
+          stageId: widget.stageId,
         ),
       ),
     );
@@ -185,7 +188,11 @@ class _ActivityListPageState extends State<ActivityListPage> {
     );
 
     try {
-      final groupedRaw = await getIt<ActivityRepository>().getGroupedActivities(subgroupName: widget.subgroupName);
+      final groupedRaw = await getIt<ActivityRepository>().getGroupedActivities(
+        stageId: widget.stageId,
+        subgroupName: widget.subgroupName,
+        academicYear: widget.academicYear,
+      );
       if (!mounted) return;
       Navigator.pop(context); // close loading
 
@@ -586,13 +593,8 @@ class GroupedActivitySelectionDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Filter out already mapped activities by checking names (case-insensitive)
-    final filteredGroups = groupedActivities.map((g) {
-      return GroupedActivityModel(
-        subgroup: g.subgroup,
-        activities: g.activities.where((a) => !existingNames.contains(a.name.toLowerCase())).toList(),
-      );
-    }).where((g) => g.activities.isNotEmpty).toList();
+    // Render everything the backend returns. The backend marks alreadyMapped properly.
+    final filteredGroups = groupedActivities.where((g) => g.activities.isNotEmpty).toList();
 
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -683,11 +685,12 @@ class GroupedActivitySelectionDialog extends StatelessWidget {
                                   Material(
                                     color: Colors.transparent,
                                     child: InkWell(
-                                      onTap: () {
+                                      onTap: act.alreadyMapped ? null : () {
                                         Navigator.pop(context);
                                         onSelect(act);
                                       },
-                                      child: Padding(
+                                      child: Container(
+                                        color: act.alreadyMapped ? Colors.grey.shade100 : Colors.transparent,
                                         padding: const EdgeInsets.all(16),
                                         child: Column(
                                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -698,22 +701,43 @@ class GroupedActivitySelectionDialog extends StatelessWidget {
                                                 Expanded(
                                                   child: Text(
                                                     act.name,
-                                                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                                                    style: TextStyle(
+                                                      fontWeight: FontWeight.bold, 
+                                                      fontSize: 16,
+                                                      color: act.alreadyMapped ? Colors.grey : const Color(0xFF1E293B)
+                                                    ),
                                                     maxLines: 2,
                                                     overflow: TextOverflow.ellipsis,
                                                   ),
                                                 ),
+                                                if (act.alreadyMapped)
+                                                  Container(
+                                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                                    margin: const EdgeInsets.only(right: 8),
+                                                    decoration: BoxDecoration(
+                                                      color: Colors.grey.shade300,
+                                                      borderRadius: BorderRadius.circular(12),
+                                                    ),
+                                                    child: const Text(
+                                                      'Already Added',
+                                                      style: TextStyle(
+                                                        color: Colors.black54,
+                                                        fontWeight: FontWeight.bold,
+                                                        fontSize: 12,
+                                                      ),
+                                                    ),
+                                                  ),
                                                 Container(
                                                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                                   decoration: BoxDecoration(
-                                                    color: Colors.green.shade50,
+                                                    color: act.alreadyMapped ? Colors.grey.shade200 : Colors.green.shade50,
                                                     borderRadius: BorderRadius.circular(12),
-                                                    border: Border.all(color: Colors.green.shade200),
+                                                    border: Border.all(color: act.alreadyMapped ? Colors.grey.shade300 : Colors.green.shade200),
                                                   ),
                                                   child: Text(
                                                     '+\${act.awardXp} XP',
                                                     style: TextStyle(
-                                                      color: Colors.green.shade700,
+                                                      color: act.alreadyMapped ? Colors.grey.shade600 : Colors.green.shade700,
                                                       fontWeight: FontWeight.bold,
                                                       fontSize: 12,
                                                     ),

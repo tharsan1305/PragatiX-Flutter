@@ -109,17 +109,41 @@ class _StudentAttendanceTabState extends State<StudentAttendanceTab> {
       children: [
         Row(
           children: [
-            Expanded(child: _buildMetricCard('Overall', '${summary.attendancePercentage}%', Colors.blue)),
+            Expanded(
+              child: _buildMetricCard(
+                'Overall',
+                '${summary.attendancePercentage}%',
+                Colors.blue,
+              ),
+            ),
             const SizedBox(width: 16),
-            Expanded(child: _buildMetricCard('Monthly', '${summary.monthlyAttendancePercentage}%', Colors.teal)),
+            Expanded(
+              child: _buildMetricCard(
+                'Monthly',
+                '${summary.monthlyAttendancePercentage}%',
+                Colors.teal,
+              ),
+            ),
           ],
         ),
         const SizedBox(height: 16),
         Row(
           children: [
-            Expanded(child: _buildMetricCard('Present Days', '${summary.totalPresentDays}', Colors.green)),
+            Expanded(
+              child: _buildMetricCard(
+                'Present Days',
+                '${summary.totalPresentDays}',
+                Colors.green,
+              ),
+            ),
             const SizedBox(width: 16),
-            Expanded(child: _buildMetricCard('Absent Days', '${summary.totalAbsentDays}', Colors.red)),
+            Expanded(
+              child: _buildMetricCard(
+                'Absent Days',
+                '${summary.totalAbsentDays}',
+                Colors.red,
+              ),
+            ),
           ],
         ),
       ],
@@ -137,15 +161,28 @@ class _StudentAttendanceTabState extends State<StudentAttendanceTab> {
             color: Colors.black.withOpacity(0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
-          )
+          ),
         ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: TextStyle(color: Colors.grey.shade600, fontWeight: FontWeight.w600)),
+          Text(
+            title,
+            style: TextStyle(
+              color: Colors.grey.shade600,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
           const SizedBox(height: 8),
-          Text(value, style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: color.shade700)),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              color: color.shade700,
+            ),
+          ),
         ],
       ),
     );
@@ -153,10 +190,20 @@ class _StudentAttendanceTabState extends State<StudentAttendanceTab> {
 
   Widget _buildHistoryList() {
     if (_isLoadingHistory) {
-      return const Center(child: Padding(padding: EdgeInsets.all(16.0), child: CircularProgressIndicator()));
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(16.0),
+          child: CircularProgressIndicator(),
+        ),
+      );
     }
     if (_history == null || _history!.isEmpty) {
-      return const Center(child: Padding(padding: EdgeInsets.all(16.0), child: Text('No history available.')));
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(16.0),
+          child: Text('No history available.'),
+        ),
+      );
     }
 
     return ListView.builder(
@@ -175,7 +222,9 @@ class _StudentAttendanceTabState extends State<StudentAttendanceTab> {
               color: isPresent ? Colors.green : Colors.red,
             ),
             title: Text('Date: ${item.date} | Period: ${item.period}'),
-            subtitle: item.remarks != null && item.remarks!.isNotEmpty ? Text('Remarks: ${item.remarks}') : null,
+            subtitle: item.remarks != null && item.remarks!.isNotEmpty
+                ? Text('Remarks: ${item.remarks}')
+                : null,
             trailing: Text(
               item.status,
               style: TextStyle(

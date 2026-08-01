@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:spdms_app/features/student/pages/dashboard_tab.dart';
-import 'package:spdms_app/features/student/pages/point_review_tab.dart';
-import 'package:spdms_app/features/student/pages/leaderboard_tab.dart';
-import 'package:spdms_app/features/student/pages/profile_tab.dart';
-import 'package:spdms_app/features/captain/pages/student_group_tab.dart';
-import 'package:spdms_app/features/student/pages/levels_badges_tab.dart';
+import 'package:pragatix/features/student/pages/dashboard_tab.dart';
+import 'package:pragatix/features/student/pages/point_review_tab.dart';
+import 'package:pragatix/features/student/pages/leaderboard_tab.dart';
+import 'package:pragatix/features/profile/pages/profile_page.dart';
+import 'package:pragatix/features/captain/pages/student_group_tab.dart';
+import 'package:pragatix/features/student/pages/levels_badges_tab.dart';
+import 'package:pragatix/features/student/pages/activities_tab.dart';
+
 
 class CaptainDashboardPage extends StatefulWidget {
-  const CaptainDashboardPage({super.key, });
+  const CaptainDashboardPage({super.key});
 
   @override
   State<CaptainDashboardPage> createState() => _CaptainDashboardPageState();
@@ -24,9 +26,10 @@ class _CaptainDashboardPageState extends State<CaptainDashboardPage> {
       const DashboardTab(),
       const PointReviewTab(),
       const LeaderboardTab(),
+      const ActivitiesTab(),
       const StudentGroupTab(),
       const LevelsBadgesTab(),
-      const ProfileTab(),
+      const ProfilePage(),
     ];
   }
 
@@ -48,6 +51,10 @@ class _CaptainDashboardPageState extends State<CaptainDashboardPage> {
         label: 'Leaderboard',
       ),
       const BottomNavigationBarItem(
+        icon: Icon(Icons.local_activity_rounded),
+        label: 'Activities',
+      ),
+      const BottomNavigationBarItem(
         icon: Icon(Icons.groups_rounded),
         label: 'My Group',
       ),
@@ -62,10 +69,7 @@ class _CaptainDashboardPageState extends State<CaptainDashboardPage> {
     ];
 
     return Scaffold(
-      body: IndexedStack(
-        index: _currentIndex,
-        children: _screens,
-      ),
+      body: IndexedStack(index: _currentIndex, children: _screens),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
         onTap: (index) => setState(() => _currentIndex = index),

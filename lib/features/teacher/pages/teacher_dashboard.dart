@@ -1,21 +1,22 @@
-import 'package:spdms_app/features/auth/providers/auth_provider.dart';
+import 'package:pragatix/features/auth/providers/auth_provider.dart';
 import 'package:provider/provider.dart';
-import 'package:spdms_app/core/config/api_config.dart';
+import 'package:pragatix/core/config/api_config.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:spdms_app/features/teacher/services/teacher_proxy_service.dart';
-import 'package:spdms_app/features/teacher/pages/performance_activities_tab.dart';
-import 'package:spdms_app/features/teacher/pages/leaderboard_tab.dart';
-import 'package:spdms_app/features/teacher/pages/profile_tab.dart';
-import 'package:spdms_app/features/teacher/pages/hod_performance_tab.dart';
-import 'package:spdms_app/features/attendance/pages/teacher_attendance_tab.dart';
-import 'package:spdms_app/features/teacher/pages/teacher_activity_requests_tab.dart';
+import 'package:pragatix/features/teacher/services/teacher_proxy_service.dart';
+import 'package:pragatix/features/teacher/pages/performance_activities_tab.dart';
+import 'package:pragatix/features/teacher/pages/leaderboard_tab.dart';
+import 'package:pragatix/features/profile/pages/profile_page.dart';
+import 'package:pragatix/features/teacher/pages/hod_performance_tab.dart';
+import 'package:pragatix/features/attendance/pages/teacher_attendance_tab.dart';
+import 'package:pragatix/features/teacher/pages/teacher_activity_requests_tab.dart';
 
-import 'package:spdms_app/features/team/pages/team_group_management_tab.dart';
-import 'package:spdms_app/core/di/service_locator.dart';
+import 'package:pragatix/features/team/pages/team_group_management_tab.dart';
+import 'package:pragatix/core/di/service_locator.dart';
+
 
 class TeacherDashboard extends StatefulWidget {
-  const TeacherDashboard({super.key, });
+  const TeacherDashboard({super.key});
 
   @override
   State<TeacherDashboard> createState() => _TeacherDashboardState();
@@ -45,7 +46,9 @@ class _TeacherDashboardState extends State<TeacherDashboard> {
     try {
       final response = await getIt<TeacherProxyService>().get(
         Uri.parse('${ApiConfig.baseUrl}/api/v1/auth/me'),
-        headers: {'Authorization': 'Bearer ${context.read<AuthProvider>().token!}'},
+        headers: {
+          'Authorization': 'Bearer ${context.read<AuthProvider>().token!}',
+        },
       );
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -56,7 +59,7 @@ class _TeacherDashboardState extends State<TeacherDashboard> {
           setState(() {
             subRoles = [
               ...subs.map((e) => e.toString()),
-              ...mainRoles.map((e) => e.toString())
+              ...mainRoles.map((e) => e.toString()),
             ].toList();
             isProfileLoading = false;
             _initializeScreens();
@@ -74,19 +77,16 @@ class _TeacherDashboardState extends State<TeacherDashboard> {
     });
   }
 
-
-
   void _initializeScreens() {
     setState(() {
       _screens = [
-        PerformanceActivitiesTab( subRoles: subRoles),
+        PerformanceActivitiesTab(subRoles: subRoles),
         const TeacherAttendanceTab(),
         const LeaderboardTab(),
         const TeacherActivityRequestsTab(),
         const TeamGroupManagementTab(),
-        if (subRoles.contains('HOD'))
-          const HodPerformanceTab(),
-        const ProfileTab(),
+        if (subRoles.contains('HOD')) const HodPerformanceTab(),
+        const ProfilePage(),
       ];
     });
   }
@@ -94,9 +94,7 @@ class _TeacherDashboardState extends State<TeacherDashboard> {
   @override
   Widget build(BuildContext context) {
     if (isProfileLoading) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     final List<BottomNavigationBarItem> barItems = [
@@ -132,8 +130,8 @@ class _TeacherDashboardState extends State<TeacherDashboard> {
     ];
 
     return Scaffold(
-      body: _screens.isEmpty 
-          ? const Center(child: CircularProgressIndicator()) 
+      body: _screens.isEmpty
+          ? const Center(child: CircularProgressIndicator())
           : _screens[_currentIndex],
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,

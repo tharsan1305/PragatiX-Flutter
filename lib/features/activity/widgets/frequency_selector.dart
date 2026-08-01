@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:spdms_app/features/activity/utils/constants.dart';
+import 'package:pragatix/features/activity/utils/constants.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Animated frequency selector tiles.
@@ -50,7 +50,9 @@ class FrequencySelector extends StatelessWidget {
             child: Text(
               'Please select a frequency.',
               style: TextStyle(
-                  color: Theme.of(context).colorScheme.error, fontSize: 12),
+                color: Theme.of(context).colorScheme.error,
+                fontSize: 12,
+              ),
             ),
           ),
       ],
@@ -92,7 +94,7 @@ class _FrequencyTile extends StatelessWidget {
                   color: _primary.withValues(alpha: 0.18),
                   blurRadius: 8,
                   offset: const Offset(0, 3),
-                )
+                ),
               ]
             : [],
       ),
@@ -102,8 +104,7 @@ class _FrequencyTile extends StatelessWidget {
           borderRadius: BorderRadius.circular(14),
           onTap: onTap,
           child: Padding(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             child: Row(
               children: [
                 AnimatedContainer(
@@ -136,8 +137,11 @@ class _FrequencyTile extends StatelessWidget {
                 AnimatedOpacity(
                   duration: const Duration(milliseconds: 200),
                   opacity: isSelected ? 1 : 0,
-                  child: const Icon(Icons.check_circle_rounded,
-                      color: _primary, size: 22),
+                  child: const Icon(
+                    Icons.check_circle_rounded,
+                    color: _primary,
+                    size: 22,
+                  ),
                 ),
               ],
             ),

@@ -34,12 +34,10 @@ class OwnerSelector extends StatelessWidget {
   List<dynamic> get _filteredTeachers {
     if (!showTeacher || selectedDept == null) return [];
     final deptId = selectedDept['id'];
-    final deptName =
-        (selectedDept['name'] as String).toLowerCase();
+    final deptName = (selectedDept['name'] as String).toLowerCase();
     return allTeachers.where((t) {
       final tid = t['departmentId'];
-      final tname =
-          (t['departmentName'] as String? ?? '').toLowerCase();
+      final tname = (t['departmentName'] as String? ?? '').toLowerCase();
       return tid == deptId || tname == deptName;
     }).toList();
   }
@@ -50,8 +48,7 @@ class OwnerSelector extends StatelessWidget {
       prefixIcon: Icon(icon, color: _primary, size: 20),
       filled: true,
       fillColor: Colors.grey.shade50,
-      contentPadding:
-          const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
         borderSide: BorderSide(color: Colors.grey.shade300),
@@ -97,8 +94,10 @@ class OwnerSelector extends StatelessWidget {
             items: departments.map((d) {
               return DropdownMenuItem<dynamic>(
                 value: d,
-                child: Text(d['name'].toString(),
-                    style: const TextStyle(fontSize: 14, color: _dark)),
+                child: Text(
+                  d['name'].toString(),
+                  style: const TextStyle(fontSize: 14, color: _dark),
+                ),
               );
             }).toList(),
             onChanged: (val) {
@@ -113,8 +112,10 @@ class OwnerSelector extends StatelessWidget {
 
           // ── Teacher dropdown ─────────────────────────────────────────────────
           InputDecorator(
-            decoration:
-                _deco('Faculty / Teacher (Optional)', Icons.person_outline_rounded),
+            decoration: _deco(
+              'Faculty / Teacher (Optional)',
+              Icons.person_outline_rounded,
+            ),
             child: DropdownButton<dynamic>(
               value: selectedTeacher,
               isExpanded: true,
@@ -124,8 +125,8 @@ class OwnerSelector extends StatelessWidget {
                 selectedDept == null
                     ? 'Select department first'
                     : filtered.isEmpty
-                        ? 'No teachers in this department'
-                        : 'Select teacher',
+                    ? 'No teachers in this department'
+                    : 'Select teacher',
                 style: TextStyle(fontSize: 13, color: Colors.grey.shade500),
               ),
               items: filtered.map((t) {

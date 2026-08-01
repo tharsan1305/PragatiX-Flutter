@@ -1,16 +1,16 @@
-import 'package:spdms_app/features/auth/providers/auth_provider.dart';
+import 'package:pragatix/features/auth/providers/auth_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter/material.dart';
 import 'dart:convert';
-import 'package:spdms_app/features/activity/services/activity_proxy_service.dart';
-import 'package:spdms_app/core/config/api_config.dart';
-import 'package:spdms_app/features/activity/models/activity_model.dart';
-import 'package:spdms_app/features/activity/providers/activity_provider.dart';
-import 'package:spdms_app/features/activity/utils/validators.dart';
-import 'package:spdms_app/features/activity/widgets/activity_section.dart';
-import 'package:spdms_app/features/activity/widgets/evidence_selector.dart';
-import 'package:spdms_app/features/activity/widgets/type_selector.dart';
-import 'package:spdms_app/core/di/service_locator.dart';
+import 'package:pragatix/features/activity/services/activity_proxy_service.dart';
+import 'package:pragatix/core/config/api_config.dart';
+import 'package:pragatix/features/activity/models/activity_model.dart';
+import 'package:pragatix/features/activity/providers/activity_provider.dart';
+import 'package:pragatix/features/activity/utils/validators.dart';
+import 'package:pragatix/features/activity/widgets/activity_section.dart';
+import 'package:pragatix/features/activity/widgets/evidence_selector.dart';
+import 'package:pragatix/features/activity/widgets/type_selector.dart';
+import 'package:pragatix/core/di/service_locator.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Shared activity form used by both CreateActivityPage and EditActivityPage.

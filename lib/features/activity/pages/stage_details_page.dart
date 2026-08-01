@@ -1,12 +1,12 @@
-import 'package:spdms_app/features/auth/providers/auth_provider.dart';
+import 'package:pragatix/features/auth/providers/auth_provider.dart';
 import 'package:provider/provider.dart';
-import 'package:spdms_app/core/config/api_config.dart';
+import 'package:pragatix/core/config/api_config.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:spdms_app/features/activity/services/activity_proxy_service.dart';
-import 'package:spdms_app/features/activity/pages/activity_list_page.dart';
-import 'package:spdms_app/core/di/service_locator.dart';
-import 'package:spdms_app/core/utils/string_utils.dart';
+import 'package:pragatix/features/activity/services/activity_proxy_service.dart';
+import 'package:pragatix/features/activity/pages/activity_list_page.dart';
+import 'package:pragatix/core/di/service_locator.dart';
+import 'package:pragatix/core/utils/string_utils.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Stage Details Page – shows subgroup list for a given stage.
@@ -54,7 +54,9 @@ class _StageDetailsPageState extends State<StageDetailsPage> {
     try {
       final response = await getIt<ActivityProxyService>().get(
         Uri.parse('${ApiConfig.baseUrl}/api/v1/admin/stages'),
-        headers: {'Authorization': 'Bearer ${context.read<AuthProvider>().token!}'},
+        headers: {
+          'Authorization': 'Bearer ${context.read<AuthProvider>().token!}',
+        },
       );
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body) as Map<String, dynamic>;
@@ -69,9 +71,10 @@ class _StageDetailsPageState extends State<StageDetailsPage> {
               _mustThreshold = stage['mustThreshold'] ?? 0;
               _individualThreshold = stage['individualThreshold'] ?? 0;
               _groupThreshold = stage['groupThreshold'] ?? 0;
-              
-              List<dynamic> existingSubs = stage['subgroups'] as List<dynamic>? ?? [];
-              
+
+              List<dynamic> existingSubs =
+                  stage['subgroups'] as List<dynamic>? ?? [];
+
               if (existingSubs.isNotEmpty) {
                 final seenNames = <String>{};
                 _subgroups = [];
@@ -90,9 +93,24 @@ class _StageDetailsPageState extends State<StageDetailsPage> {
               } else {
                 // Fallback if no subgroups are in the database yet
                 _subgroups = [
-                  {'id': 1, 'name': 'Must', 'threshold': _mustThreshold, 'category': 'must'},
-                  {'id': 2, 'name': 'Individual', 'threshold': _individualThreshold, 'category': 'individual'},
-                  {'id': 3, 'name': 'Group', 'threshold': _groupThreshold, 'category': 'group'},
+                  {
+                    'id': 1,
+                    'name': 'Must',
+                    'threshold': _mustThreshold,
+                    'category': 'must',
+                  },
+                  {
+                    'id': 2,
+                    'name': 'Individual',
+                    'threshold': _individualThreshold,
+                    'category': 'individual',
+                  },
+                  {
+                    'id': 3,
+                    'name': 'Group',
+                    'threshold': _groupThreshold,
+                    'category': 'group',
+                  },
                 ];
               }
               _isLoading = false;
@@ -106,7 +124,12 @@ class _StageDetailsPageState extends State<StageDetailsPage> {
       if (_subgroups.isEmpty) {
         _subgroups = [
           {'id': 1, 'name': 'Must', 'threshold': 0, 'category': 'must'},
-          {'id': 2, 'name': 'Individual', 'threshold': 0, 'category': 'individual'},
+          {
+            'id': 2,
+            'name': 'Individual',
+            'threshold': 0,
+            'category': 'individual',
+          },
           {'id': 3, 'name': 'Group', 'threshold': 0, 'category': 'group'},
         ];
       }
@@ -121,9 +144,15 @@ class _StageDetailsPageState extends State<StageDetailsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
-        title: Text(widget.stageName,
-            style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+        title: Text(
+          widget.stageName,
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+        ),
         backgroundColor: _dark,
         elevation: 0,
         leading: IconButton(
@@ -141,21 +170,40 @@ class _StageDetailsPageState extends State<StageDetailsPage> {
                   // ── Stage header card ────────────────────────────────────
                   Card(
                     elevation: 1.5,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
                     color: Colors.white,
                     child: Padding(
                       padding: const EdgeInsets.all(16),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(widget.stageName,
-                              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: _dark)),
+                          Text(
+                            widget.stageName,
+                            style: const TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              color: _dark,
+                            ),
+                          ),
                           const SizedBox(height: 6),
-                          Text(widget.stageDescription,
-                              style: TextStyle(fontSize: 14, color: Colors.grey.shade600)),
+                          Text(
+                            widget.stageDescription,
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey.shade600,
+                            ),
+                          ),
                           const Divider(height: 30),
-                          const Text("Stage Progression Thresholds",
-                              style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: _dark)),
+                          const Text(
+                            "Stage Progression Thresholds",
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                              color: _dark,
+                            ),
+                          ),
                           const SizedBox(height: 12),
                           Row(
                             children: [
@@ -192,7 +240,11 @@ class _StageDetailsPageState extends State<StageDetailsPage> {
                   const SizedBox(height: 20),
                   const Text(
                     'Activity Categories',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: _dark),
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: _dark,
+                    ),
                   ),
                   const SizedBox(height: 10),
                   // ── Subgroup list ─────────────────────────────────────────
@@ -201,19 +253,26 @@ class _StageDetailsPageState extends State<StageDetailsPage> {
                         ? Center(
                             child: Text(
                               'No activity categories available.',
-                              style: TextStyle(fontSize: 14, fontStyle: FontStyle.italic, color: Colors.grey.shade500),
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontStyle: FontStyle.italic,
+                                color: Colors.grey.shade500,
+                              ),
                             ),
                           )
                         : ListView.builder(
                             itemCount: _subgroups.length,
                             itemBuilder: (context, index) {
-                              final sub = _subgroups[index] as Map<String, dynamic>;
+                              final sub =
+                                  _subgroups[index] as Map<String, dynamic>;
                               final subName = sub['name'] as String? ?? '';
                               final catVal = sub['category'] as String? ?? '';
 
                               return Card(
                                 elevation: 2,
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
                                 margin: const EdgeInsets.only(bottom: 12),
                                 child: InkWell(
                                   onTap: () {
@@ -227,27 +286,41 @@ class _StageDetailsPageState extends State<StageDetailsPage> {
                                           subgroupCategory: catVal,
                                           teachersList: widget.teachersList,
                                           isAdmin: true,
+                                          academicYear: widget.selectedYear,
                                         ),
                                       ),
                                     );
                                   },
                                   borderRadius: BorderRadius.circular(16),
                                   child: Padding(
-                                    padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 16,
+                                      horizontal: 16,
+                                    ),
                                     child: Row(
                                       children: [
                                         Icon(
-                                          catVal == 'must' ? Icons.star_border : (catVal == 'group' ? Icons.groups_outlined : Icons.person_outline),
+                                          catVal == 'must'
+                                              ? Icons.star_border
+                                              : (catVal == 'group'
+                                                    ? Icons.groups_outlined
+                                                    : Icons.person_outline),
                                           color: _dark,
                                         ),
                                         const SizedBox(width: 16),
                                         Expanded(
                                           child: Text(
                                             _getCleanName(subName),
-                                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                                            style: const TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 16,
+                                            ),
                                           ),
                                         ),
-                                        const Icon(Icons.chevron_right, color: Colors.grey),
+                                        const Icon(
+                                          Icons.chevron_right,
+                                          color: Colors.grey,
+                                        ),
                                       ],
                                     ),
                                   ),
@@ -292,8 +365,22 @@ class _ThresholdCard extends StatelessWidget {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(title, style: TextStyle(fontSize: 12, color: color, fontWeight: FontWeight.bold)),
-              Text('$value XP', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black87)),
+              Text(
+                title,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: color,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              Text(
+                '$value XP',
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
+                ),
+              ),
             ],
           ),
         ],

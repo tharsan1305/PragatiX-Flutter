@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:spdms_app/features/penalty/providers/penalty_provider.dart';
-import 'package:spdms_app/features/penalty/models/penalty_request.dart';
+import 'package:pragatix/features/penalty/providers/penalty_provider.dart';
+import 'package:pragatix/features/penalty/models/penalty_request.dart';
 import 'package:intl/intl.dart';
 
 class MyRequestsTab extends StatelessWidget {
@@ -16,11 +16,18 @@ class MyRequestsTab extends StatelessWidget {
         }
 
         if (provider.error != null) {
-          return Center(child: Text('Error: ${provider.error}', style: const TextStyle(color: Colors.red)));
+          return Center(
+            child: Text(
+              'Error: ${provider.error}',
+              style: const TextStyle(color: Colors.red),
+            ),
+          );
         }
 
         if (provider.myRequests.isEmpty) {
-          return const Center(child: Text('You have not submitted any penalty requests.'));
+          return const Center(
+            child: Text('You have not submitted any penalty requests.'),
+          );
         }
 
         return ListView.builder(
@@ -37,7 +44,7 @@ class MyRequestsTab extends StatelessWidget {
 
   Widget _buildPenaltyCard(BuildContext context, PenaltyRequest request) {
     final dateFormat = DateFormat('MMM dd, yyyy - hh:mm a');
-    
+
     Color statusColor;
     switch (request.status) {
       case 'APPROVED':
@@ -70,18 +77,28 @@ class MyRequestsTab extends StatelessWidget {
                 Expanded(
                   child: Text(
                     request.studentName ?? 'Unknown Student',
-                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: statusColor.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
                     request.status,
-                    style: TextStyle(color: statusColor, fontWeight: FontWeight.bold, fontSize: 12),
+                    style: TextStyle(
+                      color: statusColor,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
+                    ),
                   ),
                 ),
               ],
@@ -89,8 +106,17 @@ class MyRequestsTab extends StatelessWidget {
             const SizedBox(height: 8),
             Text('Register No: ${request.regNo ?? 'N/A'}'),
             const Divider(height: 24),
-            Text('Activity: ${request.penaltyActivity ?? 'Custom Penalty'}', style: const TextStyle(fontWeight: FontWeight.w600)),
-            Text('Penalty XP: -${request.penaltyXP}', style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+            Text(
+              'Activity: ${request.penaltyActivity ?? 'Custom Penalty'}',
+              style: const TextStyle(fontWeight: FontWeight.w600),
+            ),
+            Text(
+              'Penalty XP: -${request.penaltyXP}',
+              style: const TextStyle(
+                color: Colors.red,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
             const SizedBox(height: 8),
             Row(
               children: [
@@ -106,7 +132,13 @@ class MyRequestsTab extends StatelessWidget {
               const SizedBox(height: 8),
               Row(
                 children: [
-                  Icon(request.status == 'REJECTED' ? Icons.cancel : Icons.check_circle, size: 14, color: statusColor),
+                  Icon(
+                    request.status == 'REJECTED'
+                        ? Icons.cancel
+                        : Icons.check_circle,
+                    size: 14,
+                    color: statusColor,
+                  ),
                   const SizedBox(width: 4),
                   Text(
                     'Reviewed By: ${request.approvedBy ?? 'System'}',
@@ -124,12 +156,16 @@ class MyRequestsTab extends StatelessWidget {
                   ),
                 ],
               ),
-              if (request.status == 'REJECTED' && request.rejectedReason != null)
+              if (request.status == 'REJECTED' &&
+                  request.rejectedReason != null)
                 Padding(
                   padding: const EdgeInsets.only(top: 8.0),
-                  child: Text('Reason: ${request.rejectedReason}', style: const TextStyle(color: Colors.red)),
-                )
-            ]
+                  child: Text(
+                    'Reason: ${request.rejectedReason}',
+                    style: const TextStyle(color: Colors.red),
+                  ),
+                ),
+            ],
           ],
         ),
       ),

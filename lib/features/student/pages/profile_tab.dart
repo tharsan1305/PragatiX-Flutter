@@ -1,19 +1,19 @@
-import 'package:spdms_app/features/auth/providers/auth_provider.dart';
+import 'package:pragatix/features/auth/providers/auth_provider.dart';
 import 'package:provider/provider.dart';
-import 'package:spdms_app/core/config/api_config.dart';
+import 'package:pragatix/core/config/api_config.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:spdms_app/features/student/services/student_proxy_service.dart';
-import 'package:spdms_app/shared/widgets/profile_header.dart';
-import 'package:spdms_app/shared/widgets/shared_profile_card.dart';
-import 'package:spdms_app/shared/widgets/shared_logout_button.dart';
-import 'package:spdms_app/core/di/service_locator.dart';
+import 'package:pragatix/features/student/services/student_proxy_service.dart';
+import 'package:pragatix/shared/widgets/profile_header.dart';
+import 'package:pragatix/shared/widgets/shared_profile_card.dart';
+import 'package:pragatix/shared/widgets/shared_logout_button.dart';
+import 'package:pragatix/core/di/service_locator.dart';
 import 'package:provider/provider.dart';
-import 'package:spdms_app/features/attendance/providers/attendance_provider.dart';
-import 'package:spdms_app/features/attendance/widgets/fire_streak_icon.dart';
+import 'package:pragatix/features/attendance/providers/attendance_provider.dart';
+import 'package:pragatix/features/attendance/widgets/fire_streak_icon.dart';
 
 class ProfileTab extends StatefulWidget {
-  const ProfileTab({super.key, });
+  const ProfileTab({super.key});
 
   @override
   State<ProfileTab> createState() => _ProfileTabState();
@@ -72,7 +72,9 @@ class _ProfileTabState extends State<ProfileTab> {
             semester = resData['semester'] ?? 'VI Semester';
             phone = resData['phone'] ?? '+91 98765 43210';
             department = resData['department'] ?? 'Computer Science';
-            teamRole = resData['userType']?.toString().replaceAll('_', ' ') ?? 'STUDENT';
+            teamRole =
+                resData['userType']?.toString().replaceAll('_', ' ') ??
+                'STUDENT';
             teamName = resData['teamName'] ?? 'No Team';
             if (teamName.isEmpty) teamName = 'No Team';
             rank = resData['rank'] ?? 0;
@@ -95,7 +97,7 @@ class _ProfileTabState extends State<ProfileTab> {
   Widget build(BuildContext context) {
     if (isLoading) {
       return const Scaffold(
-        backgroundColor: Color(0xFFF8FAFC),
+        backgroundColor: Colors.transparent,
         body: Center(
           child: CircularProgressIndicator(
             valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF4F46E5)),
@@ -105,7 +107,7 @@ class _ProfileTabState extends State<ProfileTab> {
     }
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
         title: const Text(
           'My Profile',
@@ -139,6 +141,8 @@ class _ProfileTabState extends State<ProfileTab> {
                 subtitle: 'Register ID: $regNo',
                 icon: Icons.person_outline_rounded,
                 radius: 54,
+                isCaptain: teamRole == 'CAPTAIN',
+                isViceCaptain: teamRole == 'VICE CAPTAIN',
               ),
               const SizedBox(height: 24),
 
@@ -159,7 +163,10 @@ class _ProfileTabState extends State<ProfileTab> {
                   const Divider(height: 20, thickness: 0.8),
                   SharedProfileRow(label: 'SPR No.', value: sprNo),
                   const Divider(height: 20, thickness: 0.8),
-                  SharedProfileRow(label: 'Academic Year', value: '$year Year - Sec $section'),
+                  SharedProfileRow(
+                    label: 'Academic Year',
+                    value: '$year Year - Sec $section',
+                  ),
                   const Divider(height: 20, thickness: 0.8),
                   SharedProfileRow(label: 'Semester', value: semester),
                   const Divider(height: 20, thickness: 0.8),
@@ -172,7 +179,7 @@ class _ProfileTabState extends State<ProfileTab> {
               ),
 
               const SizedBox(height: 40),
-              
+
               const SharedLogoutButton(backgroundColor: Color(0xFF4F46E5)),
               const SizedBox(height: 40),
             ],

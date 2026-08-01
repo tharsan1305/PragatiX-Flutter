@@ -1,11 +1,11 @@
 import 'dart:convert';
-import 'package:spdms_app/core/utils/api_client.dart' as http;
-import 'package:spdms_app/core/config/api_config.dart';
-import 'package:spdms_app/features/auth/providers/auth_provider.dart';
+import 'package:pragatix/core/utils/api_client.dart' as http;
+import 'package:pragatix/core/config/api_config.dart';
+import 'package:pragatix/features/auth/providers/auth_provider.dart';
 
 class LeaderboardService {
   final AuthProvider authProvider;
-  
+
   LeaderboardService(this.authProvider);
 
   String get token => authProvider.token ?? '';
@@ -16,14 +16,24 @@ class LeaderboardService {
     String? sectionId,
   }) async {
     final Map<String, String> queryParams = {};
-    if (yearId != null && yearId.isNotEmpty && yearId != 'All') queryParams['yearId'] = yearId;
-    if (departmentId != null && departmentId.isNotEmpty && departmentId != 'All') queryParams['departmentId'] = departmentId;
-    if (sectionId != null && sectionId.isNotEmpty && sectionId != 'All') queryParams['sectionId'] = sectionId;
+    if (yearId != null && yearId.isNotEmpty && yearId != 'All')
+      queryParams['yearId'] = yearId;
+    if (departmentId != null &&
+        departmentId.isNotEmpty &&
+        departmentId != 'All')
+      queryParams['departmentId'] = departmentId;
+    if (sectionId != null && sectionId.isNotEmpty && sectionId != 'All')
+      queryParams['sectionId'] = sectionId;
 
-    final uri = Uri.parse('${ApiConfig.baseUrl}/api/v1/leaderboard').replace(queryParameters: queryParams);
-    
-    final response = await http.get(uri, headers: {'Authorization': 'Bearer $token'});
-    
+    final uri = Uri.parse(
+      '${ApiConfig.baseUrl}/api/v1/leaderboard',
+    ).replace(queryParameters: queryParams);
+
+    final response = await http.get(
+      uri,
+      headers: {'Authorization': 'Bearer $token'},
+    );
+
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
       if (data != null && data['success'] == true) {
@@ -38,13 +48,22 @@ class LeaderboardService {
     String? departmentId,
   }) async {
     final Map<String, String> queryParams = {};
-    if (yearId != null && yearId.isNotEmpty && yearId != 'All') queryParams['yearId'] = yearId;
-    if (departmentId != null && departmentId.isNotEmpty && departmentId != 'All') queryParams['departmentId'] = departmentId;
+    if (yearId != null && yearId.isNotEmpty && yearId != 'All')
+      queryParams['yearId'] = yearId;
+    if (departmentId != null &&
+        departmentId.isNotEmpty &&
+        departmentId != 'All')
+      queryParams['departmentId'] = departmentId;
 
-    final uri = Uri.parse('${ApiConfig.baseUrl}/api/v1/leaderboard/filters').replace(queryParameters: queryParams);
-    
-    final response = await http.get(uri, headers: {'Authorization': 'Bearer $token'});
-    
+    final uri = Uri.parse(
+      '${ApiConfig.baseUrl}/api/v1/leaderboard/filters',
+    ).replace(queryParameters: queryParams);
+
+    final response = await http.get(
+      uri,
+      headers: {'Authorization': 'Bearer $token'},
+    );
+
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
       if (data != null && data['success'] == true) {

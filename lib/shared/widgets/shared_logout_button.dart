@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:spdms_app/core/theme/app_colors.dart';
-import 'package:spdms_app/features/auth/pages/login_page.dart';
-import 'package:spdms_app/features/auth/providers/auth_provider.dart';
+import 'package:pragatix/core/theme/app_colors.dart';
+import 'package:pragatix/features/auth/pages/login_page.dart';
+import 'package:pragatix/features/auth/providers/auth_provider.dart';
 
 class SharedLogoutButton extends StatelessWidget {
   final Color backgroundColor;
@@ -32,12 +32,16 @@ class SharedLogoutButton extends StatelessWidget {
                 TextButton(
                   onPressed: () async {
                     Navigator.pop(context);
-                    await Provider.of<AuthProvider>(context, listen: false).logout();
+                    await Provider.of<AuthProvider>(
+                      context,
+                      listen: false,
+                    ).logout();
                     if (!context.mounted) return;
                     Navigator.pushAndRemoveUntil(
                       context,
                       MaterialPageRoute(
-                          builder: (context) => const LoginPage()),
+                        builder: (context) => const LoginPage(),
+                      ),
                       (route) => false,
                     );
                   },
@@ -61,8 +65,9 @@ class SharedLogoutButton extends StatelessWidget {
         ),
         style: ElevatedButton.styleFrom(
           backgroundColor: backgroundColor,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
         ),
       ),
     );

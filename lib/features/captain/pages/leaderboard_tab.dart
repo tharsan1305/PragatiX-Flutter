@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:spdms_app/features/leaderboard/pages/shared_leaderboard_page.dart';
-import 'package:spdms_app/core/di/service_locator.dart';
-import 'package:spdms_app/features/captain/repository/captain_repository.dart';
+import 'package:pragatix/features/leaderboard/pages/shared_leaderboard_page.dart';
+import 'package:pragatix/core/di/service_locator.dart';
+import 'package:pragatix/features/captain/repository/captain_repository.dart';
 
 class LeaderboardTab extends StatelessWidget {
   const LeaderboardTab({super.key});

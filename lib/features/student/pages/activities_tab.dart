@@ -1,14 +1,14 @@
-import 'package:spdms_app/features/auth/providers/auth_provider.dart';
-import 'package:spdms_app/core/config/api_config.dart';
+import 'package:pragatix/features/auth/providers/auth_provider.dart';
+import 'package:pragatix/core/config/api_config.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:spdms_app/features/student/services/student_proxy_service.dart';
+import 'package:pragatix/features/student/services/student_proxy_service.dart';
 import 'package:provider/provider.dart';
-import 'package:spdms_app/core/di/service_locator.dart';
-import 'package:spdms_app/features/attendance/providers/attendance_provider.dart';
-import 'package:spdms_app/features/attendance/widgets/fire_streak_icon.dart';
-import 'package:spdms_app/features/student/widgets/stage_card.dart';
-import 'package:spdms_app/features/student/screens/stage_details_screen.dart';
+import 'package:pragatix/core/di/service_locator.dart';
+import 'package:pragatix/features/attendance/providers/attendance_provider.dart';
+import 'package:pragatix/features/attendance/widgets/fire_streak_icon.dart';
+import 'package:pragatix/features/student/widgets/stage_card.dart';
+import 'package:pragatix/features/student/screens/stage_details_screen.dart';
 
 class ActivitiesTab extends StatefulWidget {
   const ActivitiesTab({super.key});
@@ -19,7 +19,7 @@ class ActivitiesTab extends StatefulWidget {
 
 class _ActivitiesTabState extends State<ActivitiesTab> {
   final darkColor = const Color(0xFF1E293B);
-  
+
   List<Map<String, dynamic>> stages = [];
   bool isLoading = true;
 
@@ -36,23 +36,32 @@ class _ActivitiesTabState extends State<ActivitiesTab> {
     try {
       final response = await getIt<StudentProxyService>().get(
         Uri.parse('${ApiConfig.baseUrl}/api/v1/students/stages'),
-        headers: {'Authorization': 'Bearer ${context.read<AuthProvider>().token!}'},
+        headers: {
+          'Authorization': 'Bearer ${context.read<AuthProvider>().token!}',
+        },
       );
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data['success'] == true) {
           final List<dynamic> fetchedStages = data['data'] ?? [];
-          
-          final List<Map<String, dynamic>> mapped = fetchedStages.map((st) {
-             return st as Map<String, dynamic>;
-          }).where((st) {
-             final bool isLocked = st['isLocked'] == true;
-             final bool isCompleted = st['isCompleted'] == true;
-             // Hide future stages entirely, show only past (completed) and current stages
-             return !(isLocked && !isCompleted);
-          }).toList();
 
-          mapped.sort((a, b) => ((a['displayOrder'] ?? a['id']) as num).compareTo((b['displayOrder'] ?? b['id']) as num));
+          final List<Map<String, dynamic>> mapped = fetchedStages
+              .map((st) {
+                return st as Map<String, dynamic>;
+              })
+              .where((st) {
+                final bool isLocked = st['isLocked'] == true;
+                final bool isCompleted = st['isCompleted'] == true;
+                // Hide future stages entirely, show only past (completed) and current stages
+                return !(isLocked && !isCompleted);
+              })
+              .toList();
+
+          mapped.sort(
+            (a, b) => ((a['displayOrder'] ?? a['id']) as num).compareTo(
+              (b['displayOrder'] ?? b['id']) as num,
+            ),
+          );
 
           setState(() {
             stages = mapped;
@@ -78,7 +87,7 @@ class _ActivitiesTabState extends State<ActivitiesTab> {
     }
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
         title: const Text(
           'Activities & Stages',
@@ -121,7 +130,7 @@ class _ActivitiesTabState extends State<ActivitiesTab> {
               ),
               const SizedBox(height: 24),
               Expanded(
-                child: stages.isEmpty 
+                child: stages.isEmpty
                     ? const Center(child: Text('No stages found.'))
                     : ListView.builder(
                         physics: const AlwaysScrollableScrollPhysics(),
@@ -134,7 +143,8 @@ class _ActivitiesTabState extends State<ActivitiesTab> {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (context) => StageDetailsScreen(stage: stage),
+                                  builder: (context) =>
+                                      StageDetailsScreen(stage: stage),
                                 ),
                               ).then((_) {
                                 // Refresh when coming back just in case

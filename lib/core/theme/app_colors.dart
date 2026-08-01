@@ -38,11 +38,11 @@ abstract final class AppColors {
 
   // ── Semantic ───────────────────────────────────────────────────────────────
   static const Color success = Color(0xFF22C55E);
-  static const Color danger  = Color(0xFFEF4444);
+  static const Color danger = Color(0xFFEF4444);
   static const Color warning = Color(0xFFF59E0B);
 
   // ── Leaderboard podium ────────────────────────────────────────────────────
-  static const Color rankGold   = Color(0xFFFBBF24); // #1
+  static const Color rankGold = Color(0xFFFBBF24); // #1
   static const Color rankSilver = Color(0xFF94A3B8); // #2
   static const Color rankBronze = Color(0xFFF97316); // #3
 }

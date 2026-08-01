@@ -1,17 +1,18 @@
 import 'package:flutter/material.dart';
-import 'package:spdms_app/features/admin/pages/overview_tab.dart';
-import 'package:spdms_app/features/admin/pages/activity_tab.dart';
-import 'package:spdms_app/features/activity/pages/year_selection_page.dart';
-import 'package:spdms_app/features/admin/pages/profile_tab.dart';
-import 'package:spdms_app/features/team/pages/team_group_management_tab.dart';
-import 'package:spdms_app/features/attendance/pages/admin_attendance_tab.dart';
-import 'package:spdms_app/features/badge/pages/admin_badge_requests_page.dart';
-import 'package:spdms_app/features/admin/pages/super_admin_management_tab.dart';
+import 'package:pragatix/features/admin/pages/overview_tab.dart';
+import 'package:pragatix/features/admin/pages/activity_tab.dart';
+import 'package:pragatix/features/activity/pages/year_selection_page.dart';
+import 'package:pragatix/features/profile/pages/profile_page.dart';
+import 'package:pragatix/features/team/pages/team_group_management_tab.dart';
+import 'package:pragatix/features/attendance/pages/admin_attendance_tab.dart';
+import 'package:pragatix/features/badge/pages/admin_badge_requests_page.dart';
+import 'package:pragatix/features/admin/pages/super_admin_management_tab.dart';
 import 'package:provider/provider.dart';
-import 'package:spdms_app/features/auth/providers/auth_provider.dart';
+import 'package:pragatix/features/auth/providers/auth_provider.dart';
+
 
 class SuperAdminDashboard extends StatefulWidget {
-  const SuperAdminDashboard({super.key, });
+  const SuperAdminDashboard({super.key});
 
   @override
   State<SuperAdminDashboard> createState() => _SuperAdminDashboardState();
@@ -31,7 +32,7 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
       const TeamGroupManagementTab(),
       const AdminBadgeRequestsPage(),
       const SuperAdminManagementTab(),
-      const ProfileTab(),
+      const ProfilePage(),
     ];
   }
 

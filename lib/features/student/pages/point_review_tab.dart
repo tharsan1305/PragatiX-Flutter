@@ -1,18 +1,18 @@
-import 'package:spdms_app/features/auth/providers/auth_provider.dart';
-import 'package:spdms_app/core/config/api_config.dart';
+import 'package:pragatix/features/auth/providers/auth_provider.dart';
+import 'package:pragatix/core/config/api_config.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:spdms_app/features/student/services/student_proxy_service.dart';
+import 'package:pragatix/features/student/services/student_proxy_service.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-import 'package:spdms_app/features/xp/providers/xp_provider.dart';
-import 'package:spdms_app/core/di/service_locator.dart';
+import 'package:pragatix/features/xp/providers/xp_provider.dart';
+import 'package:pragatix/core/di/service_locator.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:spdms_app/features/attendance/providers/attendance_provider.dart';
-import 'package:spdms_app/features/attendance/widgets/fire_streak_icon.dart';
+import 'package:pragatix/features/attendance/providers/attendance_provider.dart';
+import 'package:pragatix/features/attendance/widgets/fire_streak_icon.dart';
 
 class PointReviewTab extends StatefulWidget {
-  const PointReviewTab({super.key, });
+  const PointReviewTab({super.key});
 
   @override
   State<PointReviewTab> createState() => _PointReviewTabState();
@@ -25,19 +25,57 @@ class _PointReviewTabState extends State<PointReviewTab> {
 
   // Category Configuration
   final Map<String, Map<String, dynamic>> categoryConfig = {
-    'ACADEMIC': {'color': Colors.blue, 'priority': 'HIGH', 'decay': 'Streak decays if broken ↺'},
-    'SKILL': {'color': Colors.purple, 'priority': 'HIGH', 'decay': 'Permanent ✓'},
-    'COMMUNICATION': {'color': Colors.indigo, 'priority': 'HIGH', 'decay': 'Permanent ✓'},
-    'LEADERSHIP': {'color': Colors.amber, 'priority': 'MEDIUM-HIGH', 'decay': 'Permanent ✓'},
-    'INNOVATION': {'color': Colors.orange, 'priority': 'HIGH', 'decay': 'Permanent ✓'},
-    'PLACEMENT': {'color': Colors.green, 'priority': 'HIGH', 'decay': 'Permanent ✓'},
-    'DISCIPLINE': {'color': Colors.red, 'priority': 'MEDIUM', 'decay': 'Resets if streak broken ↺'},
-    'COMMUNITY': {'color': Colors.teal, 'priority': 'MEDIUM', 'decay': 'Resets per semester ↺'},
-    'SPORTS': {'color': Colors.pink, 'priority': 'MEDIUM', 'decay': 'Permanent ✓'},
-    'CULTURAL': {'color': Colors.cyan, 'priority': 'MEDIUM', 'decay': 'Permanent ✓'},
+    'ACADEMIC': {
+      'color': Colors.blue,
+      'priority': 'HIGH',
+      'decay': 'Streak decays if broken ↺',
+    },
+    'SKILL': {
+      'color': Colors.purple,
+      'priority': 'HIGH',
+      'decay': 'Permanent ✓',
+    },
+    'COMMUNICATION': {
+      'color': Colors.indigo,
+      'priority': 'HIGH',
+      'decay': 'Permanent ✓',
+    },
+    'LEADERSHIP': {
+      'color': Colors.amber,
+      'priority': 'MEDIUM-HIGH',
+      'decay': 'Permanent ✓',
+    },
+    'INNOVATION': {
+      'color': Colors.orange,
+      'priority': 'HIGH',
+      'decay': 'Permanent ✓',
+    },
+    'PLACEMENT': {
+      'color': Colors.green,
+      'priority': 'HIGH',
+      'decay': 'Permanent ✓',
+    },
+    'DISCIPLINE': {
+      'color': Colors.red,
+      'priority': 'MEDIUM',
+      'decay': 'Resets if streak broken ↺',
+    },
+    'COMMUNITY': {
+      'color': Colors.teal,
+      'priority': 'MEDIUM',
+      'decay': 'Resets per semester ↺',
+    },
+    'SPORTS': {
+      'color': Colors.pink,
+      'priority': 'MEDIUM',
+      'decay': 'Permanent ✓',
+    },
+    'CULTURAL': {
+      'color': Colors.cyan,
+      'priority': 'MEDIUM',
+      'decay': 'Permanent ✓',
+    },
   };
-
-
 
   @override
   void initState() {
@@ -50,7 +88,9 @@ class _PointReviewTabState extends State<PointReviewTab> {
     try {
       final response = await getIt<StudentProxyService>().get(
         Uri.parse('${ApiConfig.baseUrl}/api/v1/auth/me'),
-        headers: {'Authorization': 'Bearer ${context.read<AuthProvider>().token!}'},
+        headers: {
+          'Authorization': 'Bearer ${context.read<AuthProvider>().token!}',
+        },
       );
 
       if (response.statusCode == 200) {
@@ -100,10 +140,13 @@ class _PointReviewTabState extends State<PointReviewTab> {
       (s) => s['streakType'] == 'C_CODING',
       orElse: () => null,
     );
-    final hasCodingBonus = codingStreak != null && (codingStreak['currentStreak'] ?? 0) >= 7 && !(codingStreak['isBroken'] ?? false);
+    final hasCodingBonus =
+        codingStreak != null &&
+        (codingStreak['currentStreak'] ?? 0) >= 7 &&
+        !(codingStreak['isBroken'] ?? false);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
         title: const Text(
           'XP Tracker',
@@ -139,7 +182,11 @@ class _PointReviewTabState extends State<PointReviewTab> {
                   Expanded(
                     child: Text(
                       '7-Day Coding Streak Active — 2x XP all coding this week!',
-                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 13,
+                      ),
                     ),
                   ),
                 ],
@@ -152,7 +199,11 @@ class _PointReviewTabState extends State<PointReviewTab> {
             padding: EdgeInsets.symmetric(horizontal: 16.0),
             child: Text(
               'XP Category Summary',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF1E293B),
+              ),
             ),
           ),
           const SizedBox(height: 10),
@@ -163,15 +214,17 @@ class _PointReviewTabState extends State<PointReviewTab> {
             padding: EdgeInsets.symmetric(horizontal: 16.0),
             child: Text(
               'XP Submission History',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF1E293B),
+              ),
             ),
           ),
           const SizedBox(height: 8),
 
           // Section D: XP History List
-          Expanded(
-            child: _buildHistoryList(xpProvider.history),
-          ),
+          Expanded(child: _buildHistoryList(xpProvider.history)),
         ],
       ),
       floatingActionButton: FloatingActionButton(
@@ -193,7 +246,13 @@ class _PointReviewTabState extends State<PointReviewTab> {
         children: categories.entries.map((entry) {
           final String cat = entry.key;
           final int val = entry.value;
-          final config = categoryConfig[cat] ?? {'color': Colors.grey, 'priority': 'MEDIUM', 'decay': 'Permanent'};
+          final config =
+              categoryConfig[cat] ??
+              {
+                'color': Colors.grey,
+                'priority': 'MEDIUM',
+                'decay': 'Permanent',
+              };
           final Color color = config['color'];
           final String priority = config['priority'];
           final String decay = config['decay'];
@@ -207,7 +266,11 @@ class _PointReviewTabState extends State<PointReviewTab> {
               borderRadius: BorderRadius.circular(16),
               border: Border.all(color: Colors.grey.shade100),
               boxShadow: [
-                BoxShadow(color: Colors.black.withValues(alpha: 0.01), blurRadius: 4, offset: const Offset(0, 2)),
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.01),
+                  blurRadius: 4,
+                  offset: const Offset(0, 2),
+                ),
               ],
             ),
             child: Column(
@@ -220,31 +283,50 @@ class _PointReviewTabState extends State<PointReviewTab> {
                     Expanded(
                       child: Text(
                         cat,
-                        style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 11),
+                        style: TextStyle(
+                          color: color,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 11,
+                        ),
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
                     const SizedBox(width: 4),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 2,
+                      ),
                       decoration: BoxDecoration(
                         color: color.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: Text(
                         priority,
-                        style: TextStyle(color: color, fontSize: 8, fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                          color: color,
+                          fontSize: 8,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                   ],
                 ),
                 Text(
                   '$val XP',
-                  style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+                  style: const TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF1E293B),
+                  ),
                 ),
                 Text(
                   decay,
-                  style: TextStyle(color: Colors.grey.shade500, fontSize: 8, fontStyle: FontStyle.italic),
+                  style: TextStyle(
+                    color: Colors.grey.shade500,
+                    fontSize: 8,
+                    fontStyle: FontStyle.italic,
+                  ),
                   overflow: TextOverflow.ellipsis,
                 ),
               ],
@@ -272,7 +354,8 @@ class _PointReviewTabState extends State<PointReviewTab> {
         final String cat = log['category'] ?? 'SKILL';
         final int points = log['xpPoints'] ?? 0;
         final bool isPositive = points > 0;
-        final config = categoryConfig[cat.toUpperCase()] ?? {'color': Colors.grey};
+        final config =
+            categoryConfig[cat.toUpperCase()] ?? {'color': Colors.grey};
         final Color catColor = config['color'];
         final String status = log['status'] ?? 'APPROVED';
 
@@ -303,24 +386,36 @@ class _PointReviewTabState extends State<PointReviewTab> {
                     children: [
                       Text(
                         log['activityName'] ?? '',
-                        style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1E293B), fontSize: 13),
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF1E293B),
+                          fontSize: 13,
+                        ),
                       ),
                       const SizedBox(height: 6),
                       Row(
                         children: [
                           Text(
-                            log['submittedAt'] != null ? log['submittedAt'].toString().split('T')[0] : '',
-                            style: TextStyle(color: Colors.grey.shade500, fontSize: 11),
+                            log['submittedAt'] != null
+                                ? log['submittedAt'].toString().split('T')[0]
+                                : '',
+                            style: TextStyle(
+                              color: Colors.grey.shade500,
+                              fontSize: 11,
+                            ),
                           ),
                           const SizedBox(width: 8),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
                             decoration: BoxDecoration(
                               color: 'APPROVED'.equalsIgnoreCase(status)
                                   ? Colors.green.withValues(alpha: 0.12)
                                   : 'REJECTED'.equalsIgnoreCase(status)
-                                      ? Colors.red.withValues(alpha: 0.12)
-                                      : Colors.orange.withValues(alpha: 0.12),
+                                  ? Colors.red.withValues(alpha: 0.12)
+                                  : Colors.orange.withValues(alpha: 0.12),
                               borderRadius: BorderRadius.circular(6),
                             ),
                             child: Text(
@@ -331,8 +426,8 @@ class _PointReviewTabState extends State<PointReviewTab> {
                                 color: 'APPROVED'.equalsIgnoreCase(status)
                                     ? Colors.green
                                     : 'REJECTED'.equalsIgnoreCase(status)
-                                        ? Colors.red
-                                        : Colors.orange,
+                                    ? Colors.red
+                                    : Colors.orange,
                               ),
                             ),
                           ),
@@ -348,7 +443,9 @@ class _PointReviewTabState extends State<PointReviewTab> {
                     color: isPositive ? Colors.green : Colors.red,
                     fontWeight: FontWeight.bold,
                     fontSize: 15,
-                    decoration: 'REJECTED'.equalsIgnoreCase(status) ? TextDecoration.lineThrough : null,
+                    decoration: 'REJECTED'.equalsIgnoreCase(status)
+                        ? TextDecoration.lineThrough
+                        : null,
                   ),
                 ),
               ],
@@ -389,7 +486,7 @@ class _PointReviewTabState extends State<PointReviewTab> {
                         'xp': act['rewardXp'],
                         'category': act['category'] ?? 'OTHER',
                         'stage': stage['displayOrder'] ?? 1,
-                        'cap': act['frequency'] ?? 'Once'
+                        'cap': act['frequency'] ?? 'Once',
                       });
                     }
                   }
@@ -398,7 +495,9 @@ class _PointReviewTabState extends State<PointReviewTab> {
             }
 
             final filteredActivities = allActs.where((act) {
-              final catMatch = selectedCategory == null || act['category'] == selectedCategory;
+              final catMatch =
+                  selectedCategory == null ||
+                  act['category'] == selectedCategory;
               final stageMatch = act['stage'] <= currentStage;
               return catMatch && stageMatch;
             }).toList();
@@ -421,11 +520,19 @@ class _PointReviewTabState extends State<PointReviewTab> {
                       children: [
                         const Text(
                           'Submit Activity Evidence',
-                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF1E293B),
+                          ),
                         ),
                         Text(
                           'Step $currentStep of 4',
-                          style: TextStyle(color: Colors.grey.shade500, fontSize: 12, fontWeight: FontWeight.bold),
+                          style: TextStyle(
+                            color: Colors.grey.shade500,
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ],
                     ),
@@ -433,18 +540,32 @@ class _PointReviewTabState extends State<PointReviewTab> {
 
                     // STEP 1: Select Category
                     if (currentStep == 1) ...[
-                      const Text('Select Category', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                      const Text(
+                        'Select Category',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
+                      ),
                       const SizedBox(height: 8),
                       DropdownButtonFormField<String>(
                         dropdownColor: Colors.white,
                         initialValue: selectedCategory,
                         hint: const Text('Choose a category'),
-                        style: const TextStyle(color: Color(0xFF1E293B), fontSize: 14),
+                        style: const TextStyle(
+                          color: Color(0xFF1E293B),
+                          fontSize: 14,
+                        ),
                         decoration: InputDecoration(
                           filled: true,
                           fillColor: Colors.grey.shade50,
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 4,
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                         ),
                         items: categoryConfig.keys.map((cat) {
                           return DropdownMenuItem<String>(
@@ -463,24 +584,42 @@ class _PointReviewTabState extends State<PointReviewTab> {
 
                     // STEP 2: Select Activity
                     if (currentStep == 2) ...[
-                      const Text('Select Activity', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                      const Text(
+                        'Select Activity',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
+                      ),
                       const SizedBox(height: 8),
                       DropdownButtonFormField<Map<String, dynamic>>(
                         dropdownColor: Colors.white,
                         initialValue: selectedActivity,
                         hint: const Text('Choose an activity'),
-                        style: const TextStyle(color: Color(0xFF1E293B), fontSize: 14),
+                        style: const TextStyle(
+                          color: Color(0xFF1E293B),
+                          fontSize: 14,
+                        ),
                         decoration: InputDecoration(
                           filled: true,
                           fillColor: Colors.grey.shade50,
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 4,
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                         ),
                         items: filteredActivities.map((act) {
-                          final String details = "${act['name']} (+${act['xp']} XP | ${act['cap']})";
+                          final String details =
+                              "${act['name']} (+${act['xp']} XP | ${act['cap']})";
                           return DropdownMenuItem<Map<String, dynamic>>(
                             value: act,
-                            child: Text(details, overflow: TextOverflow.ellipsis),
+                            child: Text(
+                              details,
+                              overflow: TextOverflow.ellipsis,
+                            ),
                           );
                         }).toList(),
                         onChanged: (val) {
@@ -493,20 +632,38 @@ class _PointReviewTabState extends State<PointReviewTab> {
 
                     // STEP 3: Submit Evidence Description & File
                     if (currentStep == 3) ...[
-                      const Text('Evidence Description', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                      const Text(
+                        'Evidence Description',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
+                      ),
                       const SizedBox(height: 8),
                       TextField(
                         controller: evidenceDescController,
-                        style: const TextStyle(color: Color(0xFF1E293B), fontSize: 14),
+                        style: const TextStyle(
+                          color: Color(0xFF1E293B),
+                          fontSize: 14,
+                        ),
                         decoration: InputDecoration(
-                          hintText: 'Enter evidence links or verification notes...',
+                          hintText:
+                              'Enter evidence links or verification notes...',
                           filled: true,
                           fillColor: Colors.grey.shade50,
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                         ),
                       ),
                       const SizedBox(height: 16),
-                      const Text('Upload File Document', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                      const Text(
+                        'Upload File Document',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
+                      ),
                       const SizedBox(height: 8),
                       ElevatedButton.icon(
                         onPressed: () async {
@@ -514,7 +671,8 @@ class _PointReviewTabState extends State<PointReviewTab> {
                             type: FileType.custom,
                             allowedExtensions: ['pdf', 'jpg', 'png', 'doc'],
                           );
-                          if (result != null && result.files.single.name.isNotEmpty) {
+                          if (result != null &&
+                              result.files.single.name.isNotEmpty) {
                             setModalState(() {
                               selectedFileName = result.files.single.name;
                             });
@@ -523,16 +681,26 @@ class _PointReviewTabState extends State<PointReviewTab> {
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.grey.shade200,
                           foregroundColor: Colors.grey.shade800,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                         ),
                         icon: const Icon(Icons.upload_file_rounded),
-                        label: Text(selectedFileName ?? 'Select PDF/Photo Document'),
+                        label: Text(
+                          selectedFileName ?? 'Select PDF/Photo Document',
+                        ),
                       ),
                     ],
 
                     // STEP 4: Review and Submit
                     if (currentStep == 4) ...[
-                      const Text('Claim Preview', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                      const Text(
+                        'Claim Preview',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
+                      ),
                       const SizedBox(height: 12),
                       Container(
                         width: double.infinity,
@@ -545,17 +713,31 @@ class _PointReviewTabState extends State<PointReviewTab> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text("Activity: ${selectedActivity?['name']}", style: const TextStyle(fontWeight: FontWeight.bold)),
+                            Text(
+                              "Activity: ${selectedActivity?['name']}",
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                             const SizedBox(height: 4),
                             Text('Category: $selectedCategory'),
                             const SizedBox(height: 4),
-                            Text("Points to Earn: +${selectedActivity?['xp']} XP", style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
+                            Text(
+                              "Points to Earn: +${selectedActivity?['xp']} XP",
+                              style: const TextStyle(
+                                color: Colors.green,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                             const SizedBox(height: 4),
                             Text('Evidence: ${evidenceDescController.text}'),
                             if (selectedFileName != null) ...[
                               const SizedBox(height: 4),
-                              Text('Attachment: $selectedFileName', style: const TextStyle(color: Colors.indigo)),
-                            ]
+                              Text(
+                                'Attachment: $selectedFileName',
+                                style: const TextStyle(color: Colors.indigo),
+                              ),
+                            ],
                           ],
                         ),
                       ),
@@ -569,22 +751,40 @@ class _PointReviewTabState extends State<PointReviewTab> {
                         if (currentStep > 1)
                           TextButton(
                             onPressed: () => setModalState(() => currentStep--),
-                            child: const Text('Back', style: TextStyle(fontWeight: FontWeight.bold)),
+                            child: const Text(
+                              'Back',
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
                           )
                         else
                           const SizedBox(),
                         ElevatedButton(
                           onPressed: () async {
                             if (currentStep == 1 && selectedCategory == null) {
-                              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please select a category.')));
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Please select a category.'),
+                                ),
+                              );
                               return;
                             }
                             if (currentStep == 2 && selectedActivity == null) {
-                              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please select an activity.')));
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Please select an activity.'),
+                                ),
+                              );
                               return;
                             }
-                            if (currentStep == 3 && evidenceDescController.text.trim().isEmpty) {
-                              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please describe your evidence.')));
+                            if (currentStep == 3 &&
+                                evidenceDescController.text.trim().isEmpty) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text(
+                                    'Please describe your evidence.',
+                                  ),
+                                ),
+                              );
                               return;
                             }
 
@@ -606,17 +806,33 @@ class _PointReviewTabState extends State<PointReviewTab> {
                               if (success) {
                                 if (!mounted) return;
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('XP claim submitted for approval!'), backgroundColor: Colors.green),
+                                  const SnackBar(
+                                    content: Text(
+                                      'XP claim submitted for approval!',
+                                    ),
+                                    backgroundColor: Colors.green,
+                                  ),
                                 );
                                 // Reload data
                                 if (!mounted) return;
-                                await xpProvider.fetchSummary(regNo, context.read<AuthProvider>().token!);
+                                await xpProvider.fetchSummary(
+                                  regNo,
+                                  context.read<AuthProvider>().token!,
+                                );
                                 if (!mounted) return;
-                                await xpProvider.fetchHistory(regNo, context.read<AuthProvider>().token!);
+                                await xpProvider.fetchHistory(
+                                  regNo,
+                                  context.read<AuthProvider>().token!,
+                                );
                               } else {
                                 if (!mounted) return;
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('Failed to submit claim. try again.'), backgroundColor: Colors.redAccent),
+                                  const SnackBar(
+                                    content: Text(
+                                      'Failed to submit claim. try again.',
+                                    ),
+                                    backgroundColor: Colors.redAccent,
+                                  ),
                                 );
                               }
                             }
@@ -624,9 +840,13 @@ class _PointReviewTabState extends State<PointReviewTab> {
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFF4F46E5),
                             foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
                           ),
-                          child: Text(currentStep == 4 ? 'Submit for Approval' : 'Next'),
+                          child: Text(
+                            currentStep == 4 ? 'Submit for Approval' : 'Next',
+                          ),
                         ),
                       ],
                     ),

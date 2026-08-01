@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:network_image_mock/network_image_mock.dart';
-import 'package:spdms_app/features/auth/pages/login_page.dart';
+import 'package:pragatix/features/auth/pages/login_page.dart';
 import '../../../helpers/mocks.dart';
 import '../../../helpers/test_wrapper.dart';
 

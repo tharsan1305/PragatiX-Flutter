@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'dart:convert';
-import 'package:spdms_app/core/config/api_config.dart';
-import 'package:spdms_app/core/di/service_locator.dart';
-import 'package:spdms_app/features/auth/providers/auth_provider.dart';
-import 'package:spdms_app/features/team/services/team_proxy_service.dart';
+import 'package:pragatix/core/config/api_config.dart';
+import 'package:pragatix/core/di/service_locator.dart';
+import 'package:pragatix/features/auth/providers/auth_provider.dart';
+import 'package:pragatix/features/team/services/team_proxy_service.dart';
 
 class StudentTeamDetailsPage extends StatefulWidget {
   const StudentTeamDetailsPage({super.key});
@@ -32,7 +32,9 @@ class _StudentTeamDetailsPageState extends State<StudentTeamDetailsPage> {
     try {
       final response = await getIt<TeamProxyService>().get(
         Uri.parse('${ApiConfig.baseUrl}/api/v1/teams/my-team/details'),
-        headers: {'Authorization': 'Bearer ${context.read<AuthProvider>().token!}'},
+        headers: {
+          'Authorization': 'Bearer ${context.read<AuthProvider>().token!}',
+        },
       );
 
       if (response.statusCode == 200) {
@@ -50,7 +52,8 @@ class _StudentTeamDetailsPageState extends State<StudentTeamDetailsPage> {
         }
       } else {
         setState(() {
-          _errorMessage = 'Failed to load team details. Status: ${response.statusCode}';
+          _errorMessage =
+              'Failed to load team details. Status: ${response.statusCode}';
           _isLoading = false;
         });
       }
@@ -63,9 +66,12 @@ class _StudentTeamDetailsPageState extends State<StudentTeamDetailsPage> {
   }
 
   Widget _buildHeaderCard() {
-    final currentMembers = _teamData!['currentMemberCount'] ?? (_teamData!['members'] as List?)?.length ?? 0;
+    final currentMembers =
+        _teamData!['currentMemberCount'] ??
+        (_teamData!['members'] as List?)?.length ??
+        0;
     final maxMembers = _teamData!['maxTeamSize'] ?? 10;
-    
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
@@ -101,14 +107,20 @@ class _StudentTeamDetailsPageState extends State<StudentTeamDetailsPage> {
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.white24,
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
                   '${_teamData!['stage'] ?? 'Stage 1'}',
-                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
             ],
@@ -119,8 +131,14 @@ class _StudentTeamDetailsPageState extends State<StudentTeamDetailsPage> {
             runSpacing: 8,
             children: [
               _buildChip(Icons.domain, _teamData!['department'] ?? 'N/A'),
-              _buildChip(Icons.class_, 'Sec: ${_teamData!['section'] ?? 'N/A'}'),
-              _buildChip(Icons.calendar_today, _teamData!['academicYear'] ?? 'N/A'),
+              _buildChip(
+                Icons.class_,
+                'Sec: ${_teamData!['section'] ?? 'N/A'}',
+              ),
+              _buildChip(
+                Icons.calendar_today,
+                _teamData!['academicYear'] ?? 'N/A',
+              ),
               _buildChip(Icons.book, _teamData!['semester'] ?? 'N/A'),
             ],
           ),
@@ -128,8 +146,16 @@ class _StudentTeamDetailsPageState extends State<StudentTeamDetailsPage> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _buildHeaderInfoItem(Icons.star, '${_teamData!['totalTeamXp'] ?? 0} XP', 'Total Team XP'),
-              _buildHeaderInfoItem(Icons.group, '$currentMembers / $maxMembers', 'Members'),
+              _buildHeaderInfoItem(
+                Icons.star,
+                '${_teamData!['totalTeamXp'] ?? 0} XP',
+                'Total Team XP',
+              ),
+              _buildHeaderInfoItem(
+                Icons.group,
+                '$currentMembers / $maxMembers',
+                'Members',
+              ),
             ],
           ),
           const SizedBox(height: 16),
@@ -137,8 +163,18 @@ class _StudentTeamDetailsPageState extends State<StudentTeamDetailsPage> {
           const SizedBox(height: 12),
           Row(
             children: [
-              Expanded(child: _buildRoleInfo('Captain', _teamData!['captainName'] ?? 'N/A')),
-              Expanded(child: _buildRoleInfo('Vice Captain', _teamData!['viceCaptainName'] ?? 'N/A')),
+              Expanded(
+                child: _buildRoleInfo(
+                  'Captain',
+                  _teamData!['captainName'] ?? 'N/A',
+                ),
+              ),
+              Expanded(
+                child: _buildRoleInfo(
+                  'Vice Captain',
+                  _teamData!['viceCaptainName'] ?? 'N/A',
+                ),
+              ),
             ],
           ),
         ],
@@ -158,7 +194,10 @@ class _StudentTeamDetailsPageState extends State<StudentTeamDetailsPage> {
         children: [
           Icon(icon, color: Colors.white70, size: 14),
           const SizedBox(width: 4),
-          Text(label, style: const TextStyle(color: Colors.white, fontSize: 12)),
+          Text(
+            label,
+            style: const TextStyle(color: Colors.white, fontSize: 12),
+          ),
         ],
       ),
     );
@@ -169,8 +208,18 @@ class _StudentTeamDetailsPageState extends State<StudentTeamDetailsPage> {
       children: [
         Icon(icon, color: Colors.white70, size: 24),
         const SizedBox(height: 4),
-        Text(value, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
-        Text(label, style: const TextStyle(color: Colors.white70, fontSize: 12)),
+        Text(
+          value,
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+            fontSize: 16,
+          ),
+        ),
+        Text(
+          label,
+          style: const TextStyle(color: Colors.white70, fontSize: 12),
+        ),
       ],
     );
   }
@@ -181,14 +230,21 @@ class _StudentTeamDetailsPageState extends State<StudentTeamDetailsPage> {
       children: [
         Text(role, style: const TextStyle(color: Colors.white70, fontSize: 12)),
         const SizedBox(height: 2),
-        Text(name, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 14)),
+        Text(
+          name,
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.w600,
+            fontSize: 14,
+          ),
+        ),
       ],
     );
   }
 
   Widget _buildLeaderboardCard(Map<String, dynamic> member) {
     final rank = member['rankInsideTeam'] as int? ?? 0;
-    
+
     Color backgroundColor = Colors.white;
     Color rankColor = Colors.grey;
     IconData? rankIcon;
@@ -224,18 +280,28 @@ class _StudentTeamDetailsPageState extends State<StudentTeamDetailsPage> {
                 color: rankColor.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
-              child: rankIcon != null 
+              child: rankIcon != null
                   ? Icon(rankIcon, color: rankColor, size: 24)
-                  : Text('#$rank', style: TextStyle(color: rankColor, fontWeight: FontWeight.bold, fontSize: 16)),
+                  : Text(
+                      '#$rank',
+                      style: TextStyle(
+                        color: rankColor,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
             ),
             const SizedBox(width: 16),
             CircleAvatar(
               backgroundColor: Colors.blue.shade100,
               child: Text(
-                (member['studentName'] as String?)?.isNotEmpty == true 
-                    ? member['studentName'].toString()[0].toUpperCase() 
+                (member['studentName'] as String?)?.isNotEmpty == true
+                    ? member['studentName'].toString()[0].toUpperCase()
                     : '?',
-                style: TextStyle(color: Colors.blue.shade800, fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  color: Colors.blue.shade800,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
             const SizedBox(width: 16),
@@ -252,7 +318,10 @@ class _StudentTeamDetailsPageState extends State<StudentTeamDetailsPage> {
                       Expanded(
                         child: Text(
                           member['studentName'] ?? 'Unknown',
-                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -263,24 +332,39 @@ class _StudentTeamDetailsPageState extends State<StudentTeamDetailsPage> {
                   Row(
                     children: [
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 2,
+                        ),
                         decoration: BoxDecoration(
-                          color: member['teamRole'] == 'CAPTAIN' ? Colors.amber.withValues(alpha: 0.1) : (member['teamRole'] == 'VICE_CAPTAIN' ? Colors.grey.withValues(alpha: 0.2) : Colors.blue.withValues(alpha: 0.1)),
+                          color: member['teamRole'] == 'CAPTAIN'
+                              ? Colors.amber.withValues(alpha: 0.1)
+                              : (member['teamRole'] == 'VICE_CAPTAIN'
+                                    ? Colors.grey.withValues(alpha: 0.2)
+                                    : Colors.blue.withValues(alpha: 0.1)),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Text(
-                          member['teamRole']?.toString().replaceAll('_', ' ') ?? 'MEMBER',
+                          member['teamRole']?.toString().replaceAll('_', ' ') ??
+                              'MEMBER',
                           style: TextStyle(
-                            color: member['teamRole'] == 'CAPTAIN' ? Colors.amber.shade800 : (member['teamRole'] == 'VICE_CAPTAIN' ? Colors.grey.shade800 : Colors.blue.shade800), 
-                            fontSize: 12, 
-                            fontWeight: FontWeight.bold
+                            color: member['teamRole'] == 'CAPTAIN'
+                                ? Colors.amber.shade800
+                                : (member['teamRole'] == 'VICE_CAPTAIN'
+                                      ? Colors.grey.shade800
+                                      : Colors.blue.shade800),
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
                       ),
                       const SizedBox(width: 8),
                       Text(
                         '${member['currentStage'] ?? 'Stage 1'} - ${member['currentLevel'] ?? 'Explorer'}',
-                        style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+                        style: TextStyle(
+                          color: Colors.grey.shade600,
+                          fontSize: 12,
+                        ),
                       ),
                     ],
                   ),
@@ -296,7 +380,10 @@ class _StudentTeamDetailsPageState extends State<StudentTeamDetailsPage> {
                     const SizedBox(width: 4),
                     Text(
                       '${member['totalXp'] ?? 0}',
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
                     ),
                   ],
                 ),
@@ -318,29 +405,33 @@ class _StudentTeamDetailsPageState extends State<StudentTeamDetailsPage> {
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _errorMessage != null
-              ? Center(child: Text(_errorMessage!, style: const TextStyle(color: Colors.red)))
-              : _teamData == null
-                  ? const Center(child: Text('No team data found'))
-                  : RefreshIndicator(
-                      onRefresh: _fetchTeamDetails,
-                      child: ListView(
-                        padding: const EdgeInsets.all(16),
-                        children: [
-                          _buildHeaderCard(),
-                          const SizedBox(height: 24),
-                          const Text(
-                            'Team Leaderboard',
-                            style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          if (_teamData!['members'] != null)
-                            ...(_teamData!['members'] as List).map((m) => _buildLeaderboardCard(m as Map<String, dynamic>)),
-                        ],
-                      ),
+          ? Center(
+              child: Text(
+                _errorMessage!,
+                style: const TextStyle(color: Colors.red),
+              ),
+            )
+          : _teamData == null
+          ? const Center(child: Text('No team data found'))
+          : RefreshIndicator(
+              onRefresh: _fetchTeamDetails,
+              child: ListView(
+                padding: const EdgeInsets.all(16),
+                children: [
+                  _buildHeaderCard(),
+                  const SizedBox(height: 24),
+                  const Text(
+                    'Team Leaderboard',
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 12),
+                  if (_teamData!['members'] != null)
+                    ...(_teamData!['members'] as List).map(
+                      (m) => _buildLeaderboardCard(m as Map<String, dynamic>),
                     ),
+                ],
+              ),
+            ),
     );
   }
 }

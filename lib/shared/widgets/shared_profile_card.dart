@@ -1,15 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:spdms_app/core/theme/app_colors.dart';
+import 'package:pragatix/core/theme/app_colors.dart';
 
 class SharedProfileRow extends StatelessWidget {
   final String label;
   final String value;
 
-  const SharedProfileRow({
-    super.key,
-    required this.label,
-    required this.value,
-  });
+  const SharedProfileRow({super.key, required this.label, required this.value});
 
   @override
   Widget build(BuildContext context) {
@@ -45,10 +41,7 @@ class SharedProfileRow extends StatelessWidget {
 class SharedProfileCard extends StatelessWidget {
   final List<Widget> children;
 
-  const SharedProfileCard({
-    super.key,
-    required this.children,
-  });
+  const SharedProfileCard({super.key, required this.children});
 
   @override
   Widget build(BuildContext context) {
@@ -57,9 +50,7 @@ class SharedProfileCard extends StatelessWidget {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(
         padding: const EdgeInsets.all(20.0),
-        child: Column(
-          children: children,
-        ),
+        child: Column(children: children),
       ),
     );
   }
