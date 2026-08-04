@@ -364,7 +364,7 @@ class _GroupActivityExecutionPageState
                     _buildDetailItem(
                       'Evidence',
                       act.evidence.isNotEmpty
-                          ? act.evidence.join(', ')
+                          ? act.displayEvidence.join(', ')
                           : 'None',
                       itemWidth,
                     ),

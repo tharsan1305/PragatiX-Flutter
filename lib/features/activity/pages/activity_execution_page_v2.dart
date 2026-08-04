@@ -413,7 +413,7 @@ class _ActivityExecutionPageState extends State<ActivityExecutionPage> {
                 if (act.evidence.isNotEmpty)
                   _buildInfoBadge(
                     Icons.attach_file,
-                    'Evidence: ${act.evidence.join(", ")}',
+                    'Evidence: ${act.displayEvidence.join(", ")}',
                   ),
                 _buildInfoBadge(
                   Icons.person,

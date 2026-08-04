@@ -56,6 +56,16 @@ class ActivityExecutionDetailModel {
   final int penaltyXp;
   final String xpCategory;
   final int cap;
+  final String? manualEvidenceName;
+
+  List<String> get displayEvidence {
+    return evidence.map((e) {
+      if (e == 'Manual' && manualEvidenceName != null && manualEvidenceName!.isNotEmpty) {
+        return manualEvidenceName!;
+      }
+      return e;
+    }).toList();
+  }
 
   ActivityExecutionDetailModel({
     required this.id,
@@ -71,6 +81,7 @@ class ActivityExecutionDetailModel {
     required this.penaltyXp,
     required this.xpCategory,
     required this.cap,
+    this.manualEvidenceName,
   });
 
   factory ActivityExecutionDetailModel.fromJson(Map<String, dynamic> json) {
@@ -112,6 +123,7 @@ class ActivityExecutionDetailModel {
       penaltyXp: parsedPenaltyXp,
       xpCategory: json['xpCategory'] as String? ?? '',
       cap: (json['cap'] as num?)?.toInt() ?? 1,
+      manualEvidenceName: json['manualEvidenceName']?.toString(),
     );
   }
 }

@@ -26,6 +26,9 @@ class _AssignStaffPageState extends State<AssignStaffPage> {
 
   bool _globalAssignment = false;
   bool _ccAssignment = false;
+  
+  bool _attendanceEngineEnabled = false;
+  String _attendanceRule = 'DAILY';
 
   List<dynamic> _assignments = [];
 
@@ -40,6 +43,9 @@ class _AssignStaffPageState extends State<AssignStaffPage> {
 
     _globalAssignment = widget.activity.assignmentMode == 'GLOBAL';
     _ccAssignment = widget.activity.assignmentMode == 'CLASS_COORDINATOR';
+    
+    _attendanceEngineEnabled = widget.activity.attendanceEngineEnabled;
+    _attendanceRule = widget.activity.attendanceRule ?? 'DAILY';
     
     print('FRONTEND LOG: Before API call');
     _loadAssignments();
@@ -98,6 +104,19 @@ class _AssignStaffPageState extends State<AssignStaffPage> {
         currentAssignments,
         widget.stageId,
       );
+
+      final updateSuccess = await widget.provider.updateActivity(
+        widget.activity.id,
+        {
+          ...widget.activity.toJson(),
+          'attendanceEngineEnabled': _attendanceEngineEnabled,
+          'attendanceRule': _attendanceRule,
+        },
+      );
+
+      if (!updateSuccess) {
+        throw Exception(widget.provider.error ?? 'Failed to update attendance engine configuration');
+      }
       ErrorHandler.showSnackBar(context, 'Assignments saved successfully!');
       if (mounted) {
         Navigator.pop(context);
@@ -602,6 +621,108 @@ class _AssignStaffPageState extends State<AssignStaffPage> {
                     });
                   },
                 ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+        Card(
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: BorderSide(color: Colors.grey.shade200),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'ATTENDANCE ENGINE INTEGRATION',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                            ),
+                          ),
+                          SizedBox(height: 4),
+                          Text(
+                            'Automatically generate XP transactions based on student attendance.',
+                            style: TextStyle(fontSize: 13, color: Colors.grey),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Switch(
+                      value: _attendanceEngineEnabled,
+                      activeColor: Colors.blue,
+                      onChanged: (val) {
+                        setState(() {
+                          _attendanceEngineEnabled = val;
+                        });
+                      },
+                    ),
+                  ],
+                ),
+                if (_attendanceEngineEnabled) ...[
+                  const SizedBox(height: 16),
+                  const Divider(height: 1),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Integration Rule',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 13,
+                      color: Colors.grey,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  DropdownButtonFormField<String>(
+                    value: _attendanceRule,
+                    decoration: InputDecoration(
+                      filled: true,
+                      fillColor: Colors.white,
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: Colors.grey.shade300),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: Colors.grey.shade300),
+                      ),
+                    ),
+                    items: const [
+                      DropdownMenuItem(
+                        value: 'DAILY',
+                        child: Text('Daily Check (Apply partial/full day penalty)'),
+                      ),
+                      DropdownMenuItem(
+                        value: 'WEEKLY',
+                        child: Text('Weekly Check (Apply perfect week reward)'),
+                      ),
+                      DropdownMenuItem(
+                        value: 'BOTH',
+                        child: Text('Both (Daily penalty + Weekly reward)'),
+                      ),
+                    ],
+                    onChanged: (val) {
+                      if (val != null) {
+                        setState(() {
+                          _attendanceRule = val;
+                        });
+                      }
+                    },
+                  ),
+                ],
               ],
             ),
           ),

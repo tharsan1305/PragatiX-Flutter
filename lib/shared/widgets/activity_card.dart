@@ -249,7 +249,7 @@ class ActivityCard extends StatelessWidget {
                     const SizedBox(width: 6),
                     Expanded(
                       child: Text(
-                        'Evidence: ${activity.evidence.join(", ")}',
+                        'Evidence: ${activity.displayEvidence.join(", ")}',
                         style: TextStyle(
                           fontSize: 12,
                           color: Colors.grey.shade700,

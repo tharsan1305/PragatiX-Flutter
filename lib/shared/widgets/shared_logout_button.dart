@@ -37,11 +37,9 @@ class SharedLogoutButton extends StatelessWidget {
                       listen: false,
                     ).logout();
                     if (!context.mounted) return;
-                    Navigator.pushAndRemoveUntil(
+                    Navigator.pushNamedAndRemoveUntil(
                       context,
-                      MaterialPageRoute(
-                        builder: (context) => const LoginPage(),
-                      ),
+                      '/',
                       (route) => false,
                     );
                   },

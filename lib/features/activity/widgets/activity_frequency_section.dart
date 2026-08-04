@@ -119,21 +119,31 @@ class ActivityFrequencySection extends StatelessWidget {
           decoration: _deco('Award Frequency', Icons.repeat_rounded),
           child: DropdownButton<String>(
             dropdownColor: Colors.white,
-            value: selectedAwardFrequency,
+            value: {
+              'One Time',
+              'Daily',
+              'Weekly',
+              'Monthly',
+              'Per Assignment',
+              'Every Period',
+              ...customFrequencies.map((f) => f['name'] as String),
+              'Manual',
+            }.contains(selectedAwardFrequency)
+                ? selectedAwardFrequency
+                : 'One Time',
             isExpanded: true,
             underline: const SizedBox.shrink(),
             icon: const Icon(Icons.expand_more_rounded, color: _primary),
-            items:
-                {
-                  'One Time',
-                  'Daily',
-                  'Weekly',
-                  'Monthly',
-                  'Per Assignment',
-                  'Every Period',
-                  ...customFrequencies.map((f) => f['name'] as String),
-                  'Manual',
-                }.toList().map((f) {
+            items: {
+              'One Time',
+              'Daily',
+              'Weekly',
+              'Monthly',
+              'Per Assignment',
+              'Every Period',
+              ...customFrequencies.map((f) => f['name'] as String),
+              'Manual',
+            }.toList().map((f) {
                   return DropdownMenuItem<String>(
                     value: f,
                     child: Text(

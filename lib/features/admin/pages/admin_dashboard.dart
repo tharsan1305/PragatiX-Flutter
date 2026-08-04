@@ -5,6 +5,7 @@ import 'package:pragatix/features/profile/pages/profile_page.dart';
 import 'package:pragatix/features/team/pages/team_group_management_tab.dart';
 import 'package:pragatix/features/attendance/pages/admin_attendance_tab.dart';
 import 'package:pragatix/features/badge/pages/admin_badge_requests_page.dart';
+import 'package:pragatix/features/analytics/pages/analytics_tab.dart';
 import 'package:provider/provider.dart';
 import 'package:pragatix/features/auth/providers/auth_provider.dart';
 
@@ -28,6 +29,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
       const AdminAttendanceTab(),
       const TeamGroupManagementTab(),
       const AdminBadgeRequestsPage(),
+      const AnalyticsTab(),
       const ProfilePage(),
     ];
   }
@@ -62,6 +64,10 @@ class _AdminDashboardState extends State<AdminDashboard> {
           BottomNavigationBarItem(
             icon: Icon(Icons.workspace_premium),
             label: 'Requests',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.insights_rounded),
+            label: 'Analytics',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.admin_panel_settings_rounded),

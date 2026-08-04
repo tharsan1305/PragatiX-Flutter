@@ -186,26 +186,19 @@ class ActivityXpSection extends StatelessWidget {
           decoration: _deco('Award Type', Icons.stars_rounded),
           child: DropdownButton<String>(
             dropdownColor: Colors.white,
-            value: selectedAwardType,
+            value: ['Fixed XP', 'Variable XP (future use)'].contains(selectedAwardType) ? selectedAwardType : 'Fixed XP',
             isExpanded: true,
             underline: const SizedBox.shrink(),
             icon: const Icon(Icons.expand_more_rounded, color: _primary),
-            items: const [
-              DropdownMenuItem<String>(
-                value: 'Fixed XP',
+            items: ['Fixed XP', 'Variable XP (future use)'].toSet().map((s) {
+              return DropdownMenuItem<String>(
+                value: s,
                 child: Text(
-                  'Fixed XP',
-                  style: TextStyle(fontSize: 14, color: _dark),
+                  s,
+                  style: const TextStyle(fontSize: 14, color: _dark),
                 ),
-              ),
-              DropdownMenuItem<String>(
-                value: 'Variable XP (future use)',
-                child: Text(
-                  'Variable XP (future use)',
-                  style: TextStyle(fontSize: 14, color: _dark),
-                ),
-              ),
-            ],
+              );
+            }).toList(),
             onChanged: onAwardTypeChanged,
           ),
         ),

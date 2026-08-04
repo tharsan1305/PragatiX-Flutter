@@ -81,15 +81,21 @@ class AttendanceService {
   // Admin Endpoints
   Future<AdminAttendanceSummary> getAdminSummary(
     String date,
-    int period,
     int yearId,
-    int departmentId, {
+    int? departmentId, {
     int? sectionId,
+    int? period,
   }) async {
     String url =
-        '$_baseUrl/api/admin/attendance/summary?date=$date&period=$period&yearId=$yearId&departmentId=$departmentId';
+        '$_baseUrl/api/admin/attendance/summary?date=$date&yearId=$yearId';
+    if (departmentId != null) {
+      url += '&departmentId=$departmentId';
+    }
     if (sectionId != null) {
       url += '&sectionId=$sectionId';
+    }
+    if (period != null) {
+      url += '&period=$period';
     }
 
     final response = await http.get(

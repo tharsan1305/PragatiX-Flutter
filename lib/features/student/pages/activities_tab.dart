@@ -9,6 +9,7 @@ import 'package:pragatix/features/attendance/providers/attendance_provider.dart'
 import 'package:pragatix/features/attendance/widgets/fire_streak_icon.dart';
 import 'package:pragatix/features/student/widgets/stage_card.dart';
 import 'package:pragatix/features/student/screens/stage_details_screen.dart';
+import 'package:pragatix/core/widgets/pragatix_loader.dart';
 
 class ActivitiesTab extends StatefulWidget {
   const ActivitiesTab({super.key});
@@ -79,9 +80,7 @@ class _ActivitiesTabState extends State<ActivitiesTab> {
     if (isLoading) {
       return const Scaffold(
         body: Center(
-          child: CircularProgressIndicator(
-            valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF4F46E5)),
-          ),
+          child: PragatiXLoader(fullScreen: false, message: 'Loading Activities...'),
         ),
       );
     }

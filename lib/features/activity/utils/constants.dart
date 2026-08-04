@@ -27,6 +27,7 @@ class ActivityConstants {
     'Direct Observation',
     'Attendance Register',
     'ERP Attendance',
+    'Manual',
   ];
 
   static const List<String> xpOptions = [

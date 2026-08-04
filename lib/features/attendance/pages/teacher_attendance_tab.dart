@@ -33,6 +33,7 @@ class _TeacherAttendanceTabState extends State<TeacherAttendanceTab> {
   List<StudentAttendanceListItem>? _students;
   bool _isLoading = false;
   bool _isLoadingLookups = true;
+  bool _isHoliday = false;
 
   @override
   void initState() {
@@ -178,11 +179,19 @@ class _TeacherAttendanceTabState extends State<TeacherAttendanceTab> {
       );
       setState(() {
         _students = students;
+        _isHoliday = false;
       });
     } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Error loading students: $e')));
+      if (e.toString().contains('Holiday')) {
+        setState(() {
+          _students = [];
+          _isHoliday = true;
+        });
+      } else {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error loading students: $e')));
+      }
     } finally {
       setState(() => _isLoading = false);
     }
@@ -247,7 +256,7 @@ class _TeacherAttendanceTabState extends State<TeacherAttendanceTab> {
                 Expanded(child: _buildStudentList()),
               ],
             ),
-      floatingActionButton: _students != null && _students!.isNotEmpty
+      floatingActionButton: _students != null && _students!.isNotEmpty && !_isHoliday
           ? FloatingActionButton.extended(
               onPressed: _isLoading ? null : _saveAttendance,
               label: const Text('Save Attendance'),
@@ -434,6 +443,30 @@ class _TeacherAttendanceTabState extends State<TeacherAttendanceTab> {
   Widget _buildStudentList() {
     if (_isLoading) {
       return const Center(child: CircularProgressIndicator());
+    }
+
+    if (_isHoliday) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(32.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.event_busy, color: Colors.red, size: 64),
+              SizedBox(height: 16),
+              Text(
+                'Attendance cannot be marked.\nToday is configured as a Holiday.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: Colors.red,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
     }
 
     if (_students == null) {

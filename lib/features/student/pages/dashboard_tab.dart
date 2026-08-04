@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:pragatix/features/student/services/student_proxy_service.dart';
 import 'package:provider/provider.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:pragatix/core/widgets/pragatix_loader.dart';
 import 'package:pragatix/features/xp/providers/xp_provider.dart';
 import 'package:pragatix/features/badge/providers/badge_provider.dart';
 import 'package:pragatix/features/attendance/providers/attendance_provider.dart';
@@ -189,9 +190,7 @@ class _DashboardTabState extends State<DashboardTab> {
       return const Scaffold(
         backgroundColor: Color(0xFFF8FAFC),
         body: Center(
-          child: CircularProgressIndicator(
-            valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF4F46E5)),
-          ),
+          child: PragatiXLoader(fullScreen: false, message: 'Loading Dashboard...'),
         ),
       );
     }

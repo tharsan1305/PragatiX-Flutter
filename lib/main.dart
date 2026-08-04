@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:pragatix/core/theme/app_theme.dart';
+import 'package:pragatix/core/services/navigator_service.dart';
+import 'package:pragatix/core/services/loading_service.dart';
 import 'package:pragatix/features/xp/providers/xp_provider.dart';
 import 'package:pragatix/features/badge/providers/badge_provider.dart';
 import 'package:pragatix/features/activity/providers/activity_completion_provider.dart';
@@ -13,12 +15,17 @@ import 'package:pragatix/features/auth/providers/auth_provider.dart';
 import 'package:pragatix/core/di/service_locator.dart';
 import 'package:pragatix/shared/providers/student_search_provider.dart';
 import 'package:pragatix/features/attendance/providers/attendance_provider.dart';
+import 'package:pragatix/features/analytics/providers/xp_analytics_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   setupLocator();
 
   final authProvider = getIt<AuthProvider>();
+  
+  // Show loader during initial auth check if possible
+  // Since runApp hasn't been called yet, the overlay is not available.
+  // The login page itself can handle the loading state if needed.
   await authProvider.checkAuthStatus();
 
   runApp(
@@ -32,6 +39,7 @@ void main() async {
         ChangeNotifierProvider(
           create: (_) => getIt<ActivityCompletionProvider>(),
         ),
+        ChangeNotifierProvider(create: (_) => getIt<XpAnalyticsProvider>()),
       ],
       child: const MyApp(),
     ),
@@ -44,6 +52,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      navigatorKey: NavigatorService.navigatorKey,
       debugShowCheckedModeBanner: false,
       title: 'pragatiX – Track. Learn. Grow.',
       theme: AppTheme.light(),

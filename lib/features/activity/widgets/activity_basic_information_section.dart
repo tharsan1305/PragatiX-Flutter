@@ -97,7 +97,7 @@ class ActivityBasicInformationSection extends StatelessWidget {
           ),
           child: DropdownButton<String>(
             dropdownColor: Colors.white,
-            value: selectedXpCategory,
+            value: _xpCategories.contains(selectedXpCategory) ? selectedXpCategory : null,
             isExpanded: true,
             underline: const SizedBox.shrink(),
             icon: const Icon(Icons.expand_more_rounded, color: _primary),
@@ -105,7 +105,7 @@ class ActivityBasicInformationSection extends StatelessWidget {
               'Select XP Category',
               style: TextStyle(fontSize: 14),
             ),
-            items: _xpCategories.map((c) {
+            items: _xpCategories.toSet().map((c) {
               return DropdownMenuItem<String>(
                 value: c,
                 child: Text(
@@ -137,7 +137,7 @@ class ActivityBasicInformationSection extends StatelessWidget {
                 'Select Subgroup',
                 style: TextStyle(fontSize: 14),
               ),
-              items: ['Must', 'Individual', 'Group'].map((s) {
+              items: ['Must', 'Individual', 'Group'].toSet().map((s) {
                 return DropdownMenuItem<String>(
                   value: s,
                   child: Text(
@@ -180,26 +180,19 @@ class ActivityBasicInformationSection extends StatelessWidget {
           decoration: _deco('Status', Icons.check_circle_outline_rounded),
           child: DropdownButton<String>(
             dropdownColor: Colors.white,
-            value: selectedStatus,
+            value: ['ACTIVE', 'INACTIVE'].contains(selectedStatus) ? selectedStatus : 'ACTIVE',
             isExpanded: true,
             underline: const SizedBox.shrink(),
             icon: const Icon(Icons.expand_more_rounded, color: _primary),
-            items: const [
-              DropdownMenuItem<String>(
-                value: 'ACTIVE',
+            items: ['ACTIVE', 'INACTIVE'].toSet().map((s) {
+              return DropdownMenuItem<String>(
+                value: s,
                 child: Text(
-                  'Active',
-                  style: TextStyle(fontSize: 14, color: _dark),
+                  s == 'ACTIVE' ? 'Active' : 'Inactive',
+                  style: const TextStyle(fontSize: 14, color: _dark),
                 ),
-              ),
-              DropdownMenuItem<String>(
-                value: 'INACTIVE',
-                child: Text(
-                  'Inactive',
-                  style: TextStyle(fontSize: 14, color: _dark),
-                ),
-              ),
-            ],
+              );
+            }).toList(),
             onChanged: onStatusChanged,
           ),
         ),

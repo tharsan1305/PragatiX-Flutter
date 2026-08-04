@@ -56,6 +56,7 @@ class ActivityFormState extends State<ActivityForm> {
   final _teacherSearchCtrl = TextEditingController();
   final _capCtrl = TextEditingController(text: '1');
   final _displayOrderCtrl = TextEditingController(text: '0');
+  final _manualEvidenceNameCtrl = TextEditingController();
   bool _awardEnabled = true;
   bool _penaltyEnabled = false;
   final _awardXpCtrl = TextEditingController(text: '0');
@@ -278,6 +279,7 @@ class ActivityFormState extends State<ActivityForm> {
       _selectedAwardDays = Set<String>.from(d.awardDays);
       _selectedType = d.type.isNotEmpty ? d.type : 'Individual';
       _selectedEvidence = Set<String>.from(d.evidence);
+      _manualEvidenceNameCtrl.text = d.manualEvidenceName ?? '';
       _selectedXpCategory = _normalizeXpCategory(d.xpCategory);
       _selectedSubgroup = d.subgroup;
 
@@ -322,6 +324,7 @@ class ActivityFormState extends State<ActivityForm> {
     _teacherSearchCtrl.dispose();
     _awardXpCtrl.dispose();
     _penaltyXpCtrl.dispose();
+    _manualEvidenceNameCtrl.dispose();
     super.dispose();
   }
 
@@ -520,6 +523,10 @@ class ActivityFormState extends State<ActivityForm> {
       return null;
     }
 
+    if (_selectedEvidence.contains('Manual') && _manualEvidenceNameCtrl.text.trim().isEmpty) {
+      return null;
+    }
+
     final int cap = int.tryParse(_capCtrl.text.trim()) ?? 1;
     final bool capLocked =
         _selectedAwardFrequency == 'One Time' ||
@@ -564,6 +571,9 @@ class ActivityFormState extends State<ActivityForm> {
       'xpType': computedXpType,
       'allowStudentRequest': _allowStudentRequest,
       'subgroup': _selectedSubgroup,
+      'manualEvidenceName': _manualEvidenceNameCtrl.text.trim(),
+      'attendanceEngineEnabled': widget.initialData?.attendanceEngineEnabled ?? false,
+      'attendanceRule': widget.initialData?.attendanceRule,
     };
     debugPrint('Award Enabled : ${payload['awardEnabled']}');
     debugPrint('Award XP : ${payload['awardXp']}');
@@ -638,141 +648,241 @@ class ActivityFormState extends State<ActivityForm> {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  ActivitySection(
-                    number: (stepNum++).toString(),
-                    title: 'Award Rules',
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        ActivityXpSection(
-                          awardEnabled: _awardEnabled,
-                          penaltyEnabled: _penaltyEnabled,
-                          awardXpCtrl: _awardXpCtrl,
-                          penaltyXpCtrl: _penaltyXpCtrl,
-                          selectedAwardType: _selectedAwardType,
-                          onAwardEnabledChanged: (val) {
-                            setState(() => _awardEnabled = val);
-                          },
-                          onPenaltyEnabledChanged: (val) {
-                            setState(() => _penaltyEnabled = val);
-                          },
-                          onAwardTypeChanged: (val) {
-                            if (val != null)
-                              setState(() => _selectedAwardType = val);
-                          },
-                        ),
-                        const SizedBox(height: 16),
-                        ActivityFrequencySection(
-                          selectedAwardFrequency: _selectedAwardFrequency,
-                          selectedAwardDays: _selectedAwardDays,
-                          capCtrl: _capCtrl,
-                          submitted: _submitted,
-                          customFrequencies: widget.provider.customFrequencies,
-                          onFrequencyChanged: (val) {
-                            if (val != null) {
-                              setState(() {
-                                _selectedAwardFrequency = val;
-                                final customMatch = widget
-                                    .provider
-                                    .customFrequencies
-                                    .where((f) => f['name'] == val)
-                                    .toList();
-                                if (customMatch.isNotEmpty) {
-                                  final cf = customMatch.first;
-                                  if (cf['capType'] == 'UNLIMITED') {
+                  if (!(widget.initialData?.attendanceEngineEnabled == true)) ...[
+                    ActivitySection(
+                      number: (stepNum++).toString(),
+                      title: 'Award Rules',
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          ActivityXpSection(
+                            awardEnabled: _awardEnabled,
+                            penaltyEnabled: _penaltyEnabled,
+                            awardXpCtrl: _awardXpCtrl,
+                            penaltyXpCtrl: _penaltyXpCtrl,
+                            selectedAwardType: _selectedAwardType,
+                            onAwardEnabledChanged: (val) {
+                              setState(() => _awardEnabled = val);
+                            },
+                            onPenaltyEnabledChanged: (val) {
+                              setState(() => _penaltyEnabled = val);
+                            },
+                            onAwardTypeChanged: (val) {
+                              if (val != null)
+                                setState(() => _selectedAwardType = val);
+                            },
+                          ),
+                          const SizedBox(height: 16),
+                          ActivityFrequencySection(
+                            selectedAwardFrequency: _selectedAwardFrequency,
+                            selectedAwardDays: _selectedAwardDays,
+                            capCtrl: _capCtrl,
+                            submitted: _submitted,
+                            customFrequencies: widget.provider.customFrequencies,
+                            onFrequencyChanged: (val) {
+                              if (val != null) {
+                                setState(() {
+                                  _selectedAwardFrequency = val;
+                                  final customMatch = widget
+                                      .provider
+                                      .customFrequencies
+                                      .where((f) => f['name'] == val)
+                                      .toList();
+                                  if (customMatch.isNotEmpty) {
+                                    final cf = customMatch.first;
+                                    if (cf['capType'] == 'UNLIMITED') {
+                                      _capCtrl.text = '1';
+                                    } else {
+                                      _capCtrl.text = cf['defaultCap'].toString();
+                                    }
+                                  } else if (val == 'One Time') {
                                     _capCtrl.text = '1';
+                                    _selectedAwardDays = {};
+                                  } else if (val == 'Per Assignment') {
+                                    _capCtrl.text = 'Unlimited';
+                                    _selectedAwardDays = {};
+                                  } else if (val == 'Weekly' &&
+                                      _selectedAwardDays.isEmpty) {
+                                    _selectedAwardDays = {
+                                      'Monday',
+                                      'Tuesday',
+                                      'Wednesday',
+                                      'Thursday',
+                                      'Friday',
+                                    };
+                                    if (_capCtrl.text == '1') _capCtrl.text = '5';
+                                  } else if (val == 'Every Period') {
+                                    _capCtrl.text = '8';
+                                    _selectedAwardDays = {};
                                   } else {
-                                    _capCtrl.text = cf['defaultCap'].toString();
+                                    if (_capCtrl.text == '1') _capCtrl.text = '1';
                                   }
-                                } else if (val == 'One Time') {
-                                  _capCtrl.text = '1';
-                                  _selectedAwardDays = {};
-                                } else if (val == 'Per Assignment') {
-                                  _capCtrl.text = 'Unlimited';
-                                  _selectedAwardDays = {};
-                                } else if (val == 'Weekly' &&
-                                    _selectedAwardDays.isEmpty) {
-                                  _selectedAwardDays = {
-                                    'Monday',
-                                    'Tuesday',
-                                    'Wednesday',
-                                    'Thursday',
-                                    'Friday',
-                                  };
-                                  if (_capCtrl.text == '1') _capCtrl.text = '5';
-                                } else if (val == 'Every Period') {
-                                  _capCtrl.text = '8';
-                                  _selectedAwardDays = {};
-                                } else {
-                                  if (_capCtrl.text == '1') _capCtrl.text = '1';
+                                });
+                              }
+                            },
+                            onShowCustomFrequencyDialog:
+                                _showCustomFrequencyDialog,
+                            onDaysChanged: (val) {
+                              setState(() => _selectedAwardDays = val);
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    ActivitySection(
+                      number: (stepNum++).toString(),
+                      title: 'Evidence',
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          EvidenceSelector(
+                            selected: _selectedEvidence,
+                            onChanged: (next) =>
+                                setState(() => _selectedEvidence = next),
+                            showError: _submitted,
+                          ),
+                          if (_selectedEvidence.contains('Manual')) ...[
+                            const SizedBox(height: 12),
+                            TextFormField(
+                              controller: _manualEvidenceNameCtrl,
+                              decoration: const InputDecoration(
+                                labelText: 'Evidence Name',
+                                hintText: 'e.g. Attendance Register, Physical Verification',
+                                prefixIcon: Icon(Icons.edit_note, color: _primary, size: 20),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.all(Radius.circular(10)),
+                                ),
+                              ),
+                              validator: (val) {
+                                if (val == null || val.trim().isEmpty) {
+                                  return 'Please enter a custom evidence name.';
                                 }
-                              });
-                            }
-                          },
-                          onShowCustomFrequencyDialog:
-                              _showCustomFrequencyDialog,
-                          onDaysChanged: (val) {
-                            setState(() => _selectedAwardDays = val);
-                          },
+                                return null;
+                              },
+                            ),
+                          ]
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    ActivitySection(
+                      number: (stepNum++).toString(),
+                      title: 'Activity Type',
+                      child: TypeSelector(
+                        selected: _selectedType,
+                        onChanged: (v) => setState(() => _selectedType = v),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: Colors.grey.shade200),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.02),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: SwitchListTile(
+                        title: const Text(
+                          'Allow Student Request',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 16,
+                          ),
                         ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  ActivitySection(
-                    number: (stepNum++).toString(),
-                    title: 'Evidence',
-                    child: EvidenceSelector(
-                      selected: _selectedEvidence,
-                      onChanged: (next) =>
-                          setState(() => _selectedEvidence = next),
-                      showError: _submitted,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  ActivitySection(
-                    number: (stepNum++).toString(),
-                    title: 'Activity Type',
-                    child: TypeSelector(
-                      selected: _selectedType,
-                      onChanged: (v) => setState(() => _selectedType = v),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Container(
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: Colors.grey.shade200),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.02),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
+                        subtitle: const Text(
+                          'Students can submit a completion request for this activity.',
+                          style: TextStyle(color: Colors.grey),
                         ),
-                      ],
+                        value: _allowStudentRequest,
+                        activeColor: _primary,
+                        onChanged: (val) =>
+                            setState(() => _allowStudentRequest = val),
+                        contentPadding: EdgeInsets.zero,
+                      ),
                     ),
-                    child: SwitchListTile(
-                      title: const Text(
-                        'Allow Student Request',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w600,
-                          fontSize: 16,
+                    const SizedBox(height: 16),
+                  ] else ...[
+                    ActivitySection(
+                      number: (stepNum++).toString(),
+                      title: 'Award Rules',
+                      child: Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.blue.shade50,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: Colors.blue.shade200),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Icon(Icons.info_outline, color: Colors.blue.shade700),
+                                const SizedBox(width: 8),
+                                const Text(
+                                  'Attendance Engine Activity',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            const Text(
+                              'This activity is managed automatically by the Attendance Engine.\nXP Rules:\n• Partial Day Penalty\n• Full Day Penalty\n• Weekly Reward\nare configured from Attendance Settings.',
+                              style: TextStyle(height: 1.5),
+                            ),
+                          ],
                         ),
                       ),
-                      subtitle: const Text(
-                        'Students can submit a completion request for this activity.',
-                        style: TextStyle(color: Colors.grey),
-                      ),
-                      value: _allowStudentRequest,
-                      activeColor: _primary,
-                      onChanged: (val) =>
-                          setState(() => _allowStudentRequest = val),
-                      contentPadding: EdgeInsets.zero,
                     ),
-                  ),
-                  const SizedBox(height: 16),
+                    const SizedBox(height: 16),
+                    ActivitySection(
+                      number: (stepNum++).toString(),
+                      title: 'Evidence',
+                      child: Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.blue.shade50,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: Colors.blue.shade200),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Icon(Icons.verified_user_outlined, color: Colors.blue.shade700),
+                                const SizedBox(width: 8),
+                                const Text(
+                                  'Evidence',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            const Text(
+                              'This activity is evaluated automatically using Attendance Records.\nNo manual evidence is required.\n\nEvidence Source:\n• Daily Attendance Records\n• Attendance Sessions\n• Attendance Engine',
+                              style: TextStyle(height: 1.5),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                  ],
                   ActivitySection(
                     number: (stepNum++).toString(),
                     title: 'Justification',

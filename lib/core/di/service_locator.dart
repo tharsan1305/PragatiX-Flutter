@@ -6,6 +6,7 @@ import 'package:pragatix/features/xp/providers/xp_provider.dart';
 import 'package:pragatix/features/badge/providers/badge_provider.dart';
 import 'package:pragatix/features/activity/providers/activity_provider.dart';
 import 'package:pragatix/features/activity/providers/activity_completion_provider.dart';
+import 'package:pragatix/features/analytics/providers/xp_analytics_provider.dart';
 
 // Services
 import 'package:pragatix/features/activity/services/activity_proxy_service.dart';
@@ -23,6 +24,7 @@ import 'package:pragatix/features/teacher/services/teacher_proxy_service.dart';
 import 'package:pragatix/features/teacher/services/teacher_service.dart';
 import 'package:pragatix/features/team/services/team_proxy_service.dart';
 import 'package:pragatix/features/leaderboard/services/leaderboard_service.dart';
+import 'package:pragatix/features/analytics/services/xp_analytics_service.dart';
 
 // Repositories
 import 'package:pragatix/features/activity/repository/activity_repository.dart';
@@ -44,6 +46,7 @@ void setupLocator() {
   getIt.registerLazySingleton(
     () => ActivityCompletionProvider(getIt<ActivityCompletionService>()),
   );
+  getIt.registerLazySingleton(() => XpAnalyticsProvider());
 
   // 2. Services
   getIt.registerLazySingleton(() => AuthService());
@@ -59,6 +62,7 @@ void setupLocator() {
   getIt.registerLazySingleton(() => StudentService(getIt<AuthProvider>()));
   getIt.registerLazySingleton(() => TeacherService(getIt<AuthProvider>()));
   getIt.registerLazySingleton(() => LeaderboardService(getIt<AuthProvider>()));
+  getIt.registerLazySingleton(() => XpAnalyticsService());
 
   // Proxy Services
   getIt.registerLazySingleton(() => ActivityProxyService());

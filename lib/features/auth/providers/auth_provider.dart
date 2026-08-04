@@ -17,6 +17,18 @@ class AuthProvider extends ChangeNotifier {
   String? get selectedAcademicYear => _selectedAcademicYear;
   bool get isAuthenticated => _token != null;
 
+  bool get isSuperAdmin {
+    final roles = _currentUser?['roles'] as List<dynamic>?;
+    if (roles == null) return false;
+    for (var r in roles) {
+      String roleName = '';
+      if (r is String) roleName = r;
+      if (r is Map) roleName = r['name']?.toString() ?? '';
+      if (roleName == 'ROLE_SUPER_ADMIN' || roleName == 'ROLE_SUPERADMIN') return true;
+    }
+    return false;
+  }
+
   // Setters
   Future<void> login(
     String token,

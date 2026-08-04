@@ -9,6 +9,7 @@ import 'package:pragatix/features/admin/pages/admin_dashboard.dart';
 import 'package:pragatix/features/admin/pages/super_admin_dashboard.dart';
 import 'package:pragatix/features/captain/pages/captain_dashboard_page.dart';
 import 'package:pragatix/shared/widgets/app_copyright_footer.dart';
+import 'package:pragatix/core/services/loading_service.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -29,6 +30,8 @@ class _LoginPageState extends State<LoginPage> {
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _isLoading = true);
+    LoadingService.show(message: "Loading...");
+    
     final String identity = _identityController.text.trim();
     final String password = _passwordController.text;
 
@@ -53,6 +56,7 @@ class _LoginPageState extends State<LoginPage> {
             roles.contains('ROLE_SUPER_ADMIN')) {
           if (!mounted) return;
           setState(() => _isLoading = false);
+          LoadingService.hide();
 
           final String? assignedYear = responseData['academicYear'];
           String welcomeMessage = 'Admin Access Granted. Welcome!';
@@ -93,6 +97,7 @@ class _LoginPageState extends State<LoginPage> {
             roles.contains('ROLE_DISCIPLINE_COMMITTEE')) {
           if (!mounted) return;
           setState(() => _isLoading = false);
+          LoadingService.hide();
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('Welcome to Teacher Portal!'),
@@ -108,6 +113,7 @@ class _LoginPageState extends State<LoginPage> {
 
         if (!mounted) return;
         setState(() => _isLoading = false);
+        LoadingService.hide();
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Invalid username or password'),
@@ -123,6 +129,7 @@ class _LoginPageState extends State<LoginPage> {
 
         if (!mounted) return;
         setState(() => _isLoading = false);
+        LoadingService.hide();
 
         final String token = responseData['token'] ?? '';
         final String userType = responseData['userType'] ?? '';
@@ -165,6 +172,7 @@ class _LoginPageState extends State<LoginPage> {
     } catch (e) {
       if (!mounted) return;
       setState(() => _isLoading = false);
+      LoadingService.hide();
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -239,7 +247,7 @@ class _LoginPageState extends State<LoginPage> {
                             ),
                             child: Center(
                               child: Image.asset(
-                                'assets/images/logo.png',
+                                'assets/images/logo.jpg',
                                 fit: BoxFit.contain,
                               ),
                             ),
@@ -251,7 +259,7 @@ class _LoginPageState extends State<LoginPage> {
                             text: const TextSpan(
                               children: [
                                 TextSpan(
-                                  text: 'pragatiX',
+                                  text: 'PragatiX',
                                   style: TextStyle(
                                     fontSize: 26,
                                     fontWeight: FontWeight.w900,

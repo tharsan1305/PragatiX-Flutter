@@ -118,11 +118,16 @@ class _ActivityDetailsScreenState extends State<ActivityDetailsScreen> {
 
     // evidence could be a List or a String in some backend setups, assuming List
     final dynamic evidenceRaw = activity['evidence'];
-    final List<String> evidence = evidenceRaw is List
+    List<String> evidence = evidenceRaw is List
         ? evidenceRaw.map((e) => e.toString()).toList()
         : (evidenceRaw != null && evidenceRaw.toString().isNotEmpty
               ? [evidenceRaw.toString()]
               : []);
+              
+    final manualEvidenceName = activity['manualEvidenceName']?.toString();
+    if (manualEvidenceName != null && manualEvidenceName.isNotEmpty) {
+      evidence = evidence.map((e) => e == 'Manual' ? manualEvidenceName : e).toList();
+    }
 
     final bool allowStudentRequest = activity['allowStudentRequest'] == true;
     final int activityId = activity['activityId'] ?? activity['id'] ?? 0;

@@ -32,11 +32,26 @@ class ActivityModel {
   final String? subgroup;
   final List<Map<String, dynamic>> mappedStages;
   final bool allowStudentRequest;
+  
+  // ── Attendance Engine Mapping ──────────────────────────────────────────────
+  final bool attendanceEngineEnabled;
+  final String? attendanceRule;
+  
+  final String? manualEvidenceName;
 
   String get frequency => awardFrequency;
   String get resetPeriod => awardFrequency;
   int get maximumAwards => cap;
   bool get repeatAllowed => awardFrequency.toLowerCase() != 'one time';
+
+  List<String> get displayEvidence {
+    return evidence.map((e) {
+      if (e == 'Manual' && manualEvidenceName != null && manualEvidenceName!.isNotEmpty) {
+        return manualEvidenceName!;
+      }
+      return e;
+    }).toList();
+  }
 
   const ActivityModel({
     required this.id,
@@ -67,6 +82,9 @@ class ActivityModel {
     this.subgroup,
     this.mappedStages = const [],
     this.allowStudentRequest = false,
+    this.attendanceEngineEnabled = false,
+    this.attendanceRule,
+    this.manualEvidenceName,
   });
   factory ActivityModel.fromJson(Map<String, dynamic> json) {
     final raw = json['evidence'];
@@ -199,6 +217,9 @@ class ActivityModel {
       subgroup: json['subgroup'] is Map ? json['subgroup']['name']?.toString() : json['subgroup']?.toString(),
       mappedStages: mappedStagesList,
       allowStudentRequest: json['allowStudentRequest'] as bool? ?? false,
+      attendanceEngineEnabled: json['attendanceEngineEnabled'] as bool? ?? false,
+      attendanceRule: json['attendanceRule']?.toString(),
+      manualEvidenceName: json['manualEvidenceName']?.toString(),
     );
   }
 
@@ -229,6 +250,9 @@ class ActivityModel {
     'assignmentMode': assignmentMode,
     'subgroup': subgroup,
     'allowStudentRequest': allowStudentRequest,
+    'attendanceEngineEnabled': attendanceEngineEnabled,
+    'attendanceRule': attendanceRule,
+    if (manualEvidenceName != null) 'manualEvidenceName': manualEvidenceName,
   };
   ActivityModel copyWith({
     int? id,
@@ -258,6 +282,9 @@ class ActivityModel {
     String? assignmentMode,
     String? subgroup,
     bool? allowStudentRequest,
+    bool? attendanceEngineEnabled,
+    String? attendanceRule,
+    String? manualEvidenceName,
   }) {
     return ActivityModel(
       id: id ?? this.id,
@@ -287,6 +314,9 @@ class ActivityModel {
       assignmentMode: assignmentMode ?? this.assignmentMode,
       subgroup: subgroup ?? this.subgroup,
       allowStudentRequest: allowStudentRequest ?? this.allowStudentRequest,
+      attendanceEngineEnabled: attendanceEngineEnabled ?? this.attendanceEngineEnabled,
+      attendanceRule: attendanceRule ?? this.attendanceRule,
+      manualEvidenceName: manualEvidenceName ?? this.manualEvidenceName,
     );
   }
 }

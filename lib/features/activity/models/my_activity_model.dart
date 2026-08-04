@@ -27,12 +27,22 @@ class MyActivityModel {
   final String awardFrequency; // One Time | Daily | Weekly | Monthly | Manual
   final List<String> awardDays; // working days (Weekly only)
   final String xpType;
+  final String? manualEvidenceName;
 
   // Backward-compat aliases
   String get frequency => awardFrequency;
   String get resetPeriod => awardFrequency;
   int get maximumAwards => cap;
   bool get repeatAllowed => awardFrequency.toLowerCase() != 'one time';
+
+  List<String> get displayEvidence {
+    return evidence.map((e) {
+      if (e == 'Manual' && manualEvidenceName != null && manualEvidenceName!.isNotEmpty) {
+        return manualEvidenceName!;
+      }
+      return e;
+    }).toList();
+  }
 
   const MyActivityModel({
     required this.activityId,
@@ -60,6 +70,7 @@ class MyActivityModel {
     required this.awardFrequency,
     required this.awardDays,
     required this.xpType,
+    this.manualEvidenceName,
   });
 
   factory MyActivityModel.fromJson(Map<String, dynamic> json) {
@@ -163,6 +174,7 @@ class MyActivityModel {
       awardFrequency: parsedFrequency,
       awardDays: parsedDays,
       xpType: json['xpType'] as String? ?? 'Reward',
+      manualEvidenceName: json['manualEvidenceName']?.toString(),
     );
   }
 

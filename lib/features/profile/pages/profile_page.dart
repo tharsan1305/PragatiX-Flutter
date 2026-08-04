@@ -63,9 +63,9 @@ class _ProfilePageState extends State<ProfilePage> {
     final authProvider = context.read<AuthProvider>();
     await authProvider.logout();
     if (mounted) {
-      Navigator.pushAndRemoveUntil(
+      Navigator.pushNamedAndRemoveUntil(
         context,
-        MaterialPageRoute(builder: (context) => const LoginPage()),
+        '/',
         (route) => false,
       );
     }
