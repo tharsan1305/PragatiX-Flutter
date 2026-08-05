@@ -83,6 +83,7 @@ class _ActivityListPageState extends State<ActivityListPage> {
           stageId: widget.stageId,
           subgroupId: widget.subgroupId,
           subgroupName: widget.subgroupName,
+          academicYear: widget.academicYear,
           isCc: widget.isCc,
         ),
       ),
@@ -122,6 +123,9 @@ class _ActivityListPageState extends State<ActivityListPage> {
           provider: _provider,
           activity: activity,
           isCc: widget.isCc,
+          stageId: widget.stageId,
+          subgroupName: widget.subgroupName,
+          academicYear: widget.academicYear,
         ),
       ),
     );
@@ -248,7 +252,11 @@ class _ActivityListPageState extends State<ActivityListPage> {
               Navigator.pop(ctx);
               if (!isGlobalDelete && widget.stageId != null) {
                 try {
-                  await _provider.unmapActivityFromStage(widget.stageId!, activity.id);
+                  await _provider.unmapActivityFromStage(
+                    widget.stageId!,
+                    activity.id,
+                    subgroupName: widget.subgroupName,
+                  );
                   if (!mounted) return;
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(

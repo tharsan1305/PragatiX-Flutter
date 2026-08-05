@@ -8,6 +8,7 @@ class XpProvider extends ChangeNotifier {
   Map<String, int> _xpByCategory = {};
   List<dynamic> _history = [];
   List<dynamic> _streaks = [];
+  List<dynamic> _activityStreaks = [];
   List<Map<String, dynamic>> _stages = [];
   Map<String, dynamic>? _progression;
   bool _isLoading = false;
@@ -15,6 +16,7 @@ class XpProvider extends ChangeNotifier {
   Map<String, int> get xpByCategory => _xpByCategory;
   List<dynamic> get history => _history;
   List<dynamic> get streaks => _streaks;
+  List<dynamic> get activityStreaks => _activityStreaks;
   List<Map<String, dynamic>> get stages => _stages;
   Map<String, dynamic>? get progression => _progression;
   bool get isLoading => _isLoading;
@@ -114,6 +116,34 @@ class XpProvider extends ChangeNotifier {
       }
     } catch (e) {
       _streaks = [];
+    }
+
+    _isLoading = false;
+    notifyListeners();
+  }
+
+  Future<void> fetchActivityStreaks(String token) async {
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      final response = await http.get(
+        Uri.parse('${ApiConfig.baseUrl}/api/v1/students/me/activity-streaks'),
+        headers: {'Authorization': 'Bearer $token'},
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['success'] == true && data['data'] != null) {
+          _activityStreaks = data['data'] ?? [];
+        } else {
+          _activityStreaks = [];
+        }
+      } else {
+        _activityStreaks = [];
+      }
+    } catch (e) {
+      _activityStreaks = [];
     }
 
     _isLoading = false;

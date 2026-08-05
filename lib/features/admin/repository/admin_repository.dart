@@ -344,6 +344,22 @@ class AdminRepository {
     _handleResponse(response);
   }
 
+  // CAPTAIN REWARD SETTINGS
+  Future<Map<String, dynamic>> getCaptainRewardSettings(String academicYear) async {
+    final response = await _adminService.get('/api/v1/admin/captain-reward/settings/$academicYear');
+    final data = _handleResponse(response);
+    return data['data'] ?? {};
+  }
+
+  Future<Map<String, dynamic>> updateCaptainRewardSettings(String academicYear, Map<String, dynamic> settings) async {
+    final response = await _adminService.put(
+      '/api/v1/admin/captain-reward/settings/$academicYear',
+      settings,
+    );
+    final data = _handleResponse(response);
+    return data['data'] ?? {};
+  }
+
   // Generic handler for JSON response mapping
   Map<String, dynamic> _handleResponse(dynamic response) {
     final data = jsonDecode(response.body);

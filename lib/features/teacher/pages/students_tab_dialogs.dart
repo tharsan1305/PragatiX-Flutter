@@ -75,104 +75,34 @@ extension StudentsTabDialogs on _StudentsTabState {
           builder: (context, setDialogState) {
             // Perform CC resolution inside builder if not resolved yet
             if (isCc) {
-              if (selectedDeptId == null) {
-                selectedDeptId = ccDeptId;
-                if (selectedDeptId == null &&
-                    ccDeptName != null &&
-                    ccDeptName!.isNotEmpty) {
-                  final dMatch = departments.firstWhere(
-                    (d) =>
-                        (d['name'] ?? '').toString().toLowerCase() ==
-                            ccDeptName!.toLowerCase() ||
-                        (d['code'] ?? '').toString().toLowerCase() ==
-                            ccDeptName!.toLowerCase(),
-                    orElse: () => null,
-                  );
-                  if (dMatch != null) selectedDeptId = dMatch['id'];
+              selectedDeptId ??= ccDeptId;
+              selectedSectionId ??= ccSectionId;
+
+              if (selectedYearId == null && ccYear != null) {
+                String normalizedCcYear = ccYear!;
+                switch (normalizedCcYear.toUpperCase().trim()) {
+                  case 'I': normalizedCcYear = '1'; break;
+                  case 'II': normalizedCcYear = '2'; break;
+                  case 'III': normalizedCcYear = '3'; break;
+                  case 'IV': normalizedCcYear = '4'; break;
+                  case 'V': normalizedCcYear = '5'; break;
                 }
-                // Fallback department from student list
-                if (selectedDeptId == null && studentsList.isNotEmpty) {
-                  final firstStudentDeptName =
-                      studentsList.first['departmentName'];
-                  if (firstStudentDeptName != null) {
-                    final dMatch = departments.firstWhere(
-                      (d) =>
-                          (d['name'] ?? '').toString().toLowerCase() ==
-                              firstStudentDeptName.toString().toLowerCase() ||
-                          (d['code'] ?? '').toString().toLowerCase() ==
-                              firstStudentDeptName.toString().toLowerCase() ||
-                          (d['deptName'] ?? '').toString().toLowerCase() ==
-                              firstStudentDeptName.toString().toLowerCase() ||
-                          (d['deptCode'] ?? '').toString().toLowerCase() ==
-                              firstStudentDeptName.toString().toLowerCase(),
-                      orElse: () => null,
-                    );
-                    if (dMatch != null) selectedDeptId = dMatch['id'];
-                  }
-                }
+                
+                final yMatch = years.firstWhere(
+                  (y) =>
+                      y['yearNo']?.toString() == normalizedCcYear ||
+                      "Year ${y["yearNo"]}" == normalizedCcYear,
+                  orElse: () => null,
+                );
+                if (yMatch != null) selectedYearId = yMatch['id'];
               }
 
-              if (selectedYearId == null) {
-                if (ccYear != null && ccYear!.isNotEmpty) {
-                  final yMatch = years.firstWhere(
-                    (y) =>
-                        y['yearNo']?.toString() == ccYear ||
-                        "Year ${y["yearNo"]}" == ccYear,
-                    orElse: () => null,
-                  );
-                  if (yMatch != null) selectedYearId = yMatch['id'];
-                }
-                // Fallback year from student list
-                if (selectedYearId == null && studentsList.isNotEmpty) {
-                  final firstStudentYear = studentsList.first['year'];
-                  if (firstStudentYear != null) {
-                    final yMatch = years.firstWhere(
-                      (y) =>
-                          y['yearNo']?.toString() ==
-                              firstStudentYear.toString() ||
-                          "Year ${y["yearNo"]}" == firstStudentYear.toString(),
-                      orElse: () => null,
-                    );
-                    if (yMatch != null) selectedYearId = yMatch['id'];
-                  }
-                }
-                if (selectedYearId == null && years.isNotEmpty)
-                  selectedYearId = years.first['id'];
-              }
-
-              if (selectedSectionId == null) {
-                if (ccSection != null && ccSection!.isNotEmpty) {
-                  final sMatch = sections.firstWhere((sec) {
-                    final depId = sec['department'] != null
-                        ? sec['department']['id']
-                        : sec['departmentId'];
-                    final sName = _normalizeSectionName(
-                      sec['sectionName'] ?? '',
-                    );
-                    final targetSec = _normalizeSectionName(ccSection!);
-                    return depId == selectedDeptId && sName == targetSec;
-                  }, orElse: () => null);
-                  if (sMatch != null) selectedSectionId = sMatch['id'];
-                }
-                // Fallback section from student list
-                if (selectedSectionId == null && studentsList.isNotEmpty) {
-                  final firstStudentSection = studentsList.first['section'];
-                  if (firstStudentSection != null) {
-                    final sMatch = sections.firstWhere((sec) {
-                      final depId = sec['department'] != null
-                          ? sec['department']['id']
-                          : sec['departmentId'];
-                      final sName = _normalizeSectionName(
-                        sec['sectionName'] ?? '',
-                      );
-                      final targetSec = _normalizeSectionName(
-                        firstStudentSection,
-                      );
-                      return depId == selectedDeptId && sName == targetSec;
-                    }, orElse: () => null);
-                    if (sMatch != null) selectedSectionId = sMatch['id'];
-                  }
-                }
+              if (selectedAcademicYearId == null && ccAcademicYear != null) {
+                final ayMatch = academicYears.firstWhere(
+                  (ay) => ay['academicYear'] == ccAcademicYear,
+                  orElse: () => null,
+                );
+                if (ayMatch != null) selectedAcademicYearId = ayMatch['id'];
               }
             } else {
               if (selectedDeptId == null && departments.isNotEmpty) {

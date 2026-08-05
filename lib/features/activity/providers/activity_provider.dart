@@ -70,6 +70,7 @@ class ActivityProvider extends ChangeNotifier {
   }) async {
     isLoadingActivities = true;
     error = null;
+    activities = [];
     _safeNotify();
     try {
       activities = await _repository.getActivities(
@@ -132,17 +133,20 @@ class ActivityProvider extends ChangeNotifier {
     Map<String, dynamic> body, {
     int? stageId,
     String? subgroupName,
+    String? academicYear,
   }) async {
     isSaving = true;
     error = null;
     _safeNotify();
     try {
-      final created = await _repository.create(
+      await _repository.create(
         body,
         stageId: stageId,
         subgroupName: subgroupName,
       );
-      activities = [...activities, created];
+      
+      // Full refresh
+      await loadActivities(stageId: stageId, subgroupName: subgroupName, academicYear: academicYear);
       return true;
     } catch (e) {
       error = e.toString();
@@ -170,15 +174,18 @@ class ActivityProvider extends ChangeNotifier {
     }
   }
 
-  Future<bool> updateActivity(int activityId, Map<String, dynamic> body) async {
+  Future<bool> updateActivity(int activityId, Map<String, dynamic> body, {
+    int? stageId,
+    String? subgroupName,
+    String? academicYear,
+  }) async {
     isSaving = true;
     error = null;
     _safeNotify();
     try {
-      final updated = await _repository.update(activityId, body);
-      activities = activities
-          .map((a) => a.id == activityId ? updated : a)
-          .toList();
+      await _repository.update(activityId, body);
+      // Full refresh
+      await loadActivities(stageId: stageId, subgroupName: subgroupName, academicYear: academicYear);
       return true;
     } catch (e) {
       error = e.toString();
@@ -221,14 +228,14 @@ class ActivityProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> unmapActivityFromStage(int stageId, int activityId) async {
+  Future<void> unmapActivityFromStage(int stageId, int activityId, {String? subgroupName}) async {
     try {
       await _repository.unmapActivityFromStage(stageId, activityId);
     } catch (e) {
       error = e.toString().replaceAll('Exception: ', '');
       rethrow;
     } finally {
-      await loadActivities(stageId: stageId); // Full refresh
+      await loadActivities(stageId: stageId, subgroupName: subgroupName); // Full refresh with subgroupName
     }
   }
 

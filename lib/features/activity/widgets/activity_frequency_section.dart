@@ -5,9 +5,7 @@ class ActivityFrequencySection extends StatelessWidget {
   final Set<String> selectedAwardDays;
   final TextEditingController capCtrl;
   final bool submitted;
-  final List<dynamic> customFrequencies;
   final ValueChanged<String?> onFrequencyChanged;
-  final VoidCallback onShowCustomFrequencyDialog;
   final ValueChanged<Set<String>> onDaysChanged;
 
   const ActivityFrequencySection({
@@ -16,9 +14,7 @@ class ActivityFrequencySection extends StatelessWidget {
     required this.selectedAwardDays,
     required this.capCtrl,
     required this.submitted,
-    required this.customFrequencies,
     required this.onFrequencyChanged,
-    required this.onShowCustomFrequencyDialog,
     required this.onDaysChanged,
   });
 
@@ -95,22 +91,10 @@ class ActivityFrequencySection extends StatelessWidget {
     final bool isEveryPeriod = selectedAwardFrequency == 'Every Period';
     final bool isPerAssignment = selectedAwardFrequency == 'Per Assignment';
 
-    final bool isCustom = customFrequencies.any(
-      (f) => f['name'] == selectedAwardFrequency,
-    );
-    bool isCustomUnlimited = false;
-    if (isCustom) {
-      final cf = customFrequencies.firstWhere(
-        (f) => f['name'] == selectedAwardFrequency,
-      );
-      isCustomUnlimited = cf['capType'] == 'UNLIMITED';
-    }
-
     final bool isCapDisabled =
         isOneTimeOrManual ||
         isEveryPeriod ||
-        isPerAssignment ||
-        (isCustom && isCustomUnlimited);
+        isPerAssignment;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -126,8 +110,8 @@ class ActivityFrequencySection extends StatelessWidget {
               'Monthly',
               'Per Assignment',
               'Every Period',
-              ...customFrequencies.map((f) => f['name'] as String),
-              'Manual',
+              'Week 1 (Once)',
+              'Week 2 (Once)',
             }.contains(selectedAwardFrequency)
                 ? selectedAwardFrequency
                 : 'One Time',
@@ -141,8 +125,8 @@ class ActivityFrequencySection extends StatelessWidget {
               'Monthly',
               'Per Assignment',
               'Every Period',
-              ...customFrequencies.map((f) => f['name'] as String),
-              'Manual',
+              'Week 1 (Once)',
+              'Week 2 (Once)',
             }.toList().map((f) {
                   return DropdownMenuItem<String>(
                     value: f,
@@ -152,13 +136,7 @@ class ActivityFrequencySection extends StatelessWidget {
                     ),
                   );
                 }).toList(),
-            onChanged: (val) {
-              if (val == 'Manual') {
-                onShowCustomFrequencyDialog();
-              } else {
-                onFrequencyChanged(val);
-              }
-            },
+            onChanged: onFrequencyChanged,
           ),
         ),
         const SizedBox(height: 6),

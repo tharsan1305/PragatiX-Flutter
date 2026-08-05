@@ -15,6 +15,7 @@ class CreateActivityPage extends StatefulWidget {
   final int? stageId;
   final int? subgroupId;
   final String? subgroupName;
+  final String? academicYear;
   final bool isCc;
 
   const CreateActivityPage({
@@ -23,6 +24,7 @@ class CreateActivityPage extends StatefulWidget {
     this.stageId,
     this.subgroupId,
     this.subgroupName,
+    this.academicYear,
     this.isCc = false,
   });
 
@@ -73,7 +75,12 @@ class _CreateActivityPageState extends State<CreateActivityPage>
     body['subgroup'] = widget.subgroupName;
     body['isMandatory'] = (widget.subgroupName?.toLowerCase().contains('must') == true);
 
-    final ok = await widget.provider.createActivity(body);
+    final ok = await widget.provider.createActivity(
+      body,
+      stageId: widget.stageId,
+      subgroupName: widget.subgroupName,
+      academicYear: widget.academicYear,
+    );
 
     if (!mounted) return;
 

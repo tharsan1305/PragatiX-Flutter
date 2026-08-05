@@ -8,6 +8,8 @@ import 'package:pragatix/core/di/service_locator.dart';
 import 'package:pragatix/shared/widgets/student_search/student_search_field.dart';
 
 import 'package:pragatix/features/team/pages/team_details_page.dart';
+import 'package:pragatix/features/admin/pages/captain_reward_settings_page.dart';
+import 'package:pragatix/features/admin/pages/captain_reward_year_selection_page.dart';
 
 // Dialogs removed from here
 
@@ -199,6 +201,29 @@ class _TeamGroupManagementTabState extends State<TeamGroupManagementTab> {
         title: const Text('View Groups'),
         backgroundColor: Colors.indigo,
         actions: [
+          if (isSuperAdmin || isAdmin)
+            IconButton(
+              icon: const Icon(Icons.military_tech_rounded, color: Colors.amber),
+              tooltip: 'Captain & Vice Captain Rewards',
+              onPressed: () {
+                final auth = Provider.of<AuthProvider>(context, listen: false);
+                if (auth.isSuperAdmin) {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const CaptainRewardYearSelectionPage(),
+                    ),
+                  );
+                } else {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const CaptainRewardSettingsPage(),
+                    ),
+                  );
+                }
+              },
+            ),
           IconButton(icon: const Icon(Icons.refresh), onPressed: _fetchGroups),
         ],
       ),

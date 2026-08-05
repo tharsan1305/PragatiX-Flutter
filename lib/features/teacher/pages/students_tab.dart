@@ -98,6 +98,8 @@ class _StudentsTabState extends State<StudentsTab> {
   int? ccDeptId;
   String? ccDeptName;
   String? ccSection;
+  int? ccSectionId;
+  String? ccAcademicYear;
 
   Future<void> _fetchMeProfile() async {
     try {
@@ -114,30 +116,15 @@ class _StudentsTabState extends State<StudentsTab> {
           setState(() {
             ccYear = profile['year']?.toString();
             ccDeptName = profile['department']?.toString();
+            ccDeptId = profile['departmentId'] as int?;
             ccSection = profile['section']?.toString();
-            _resolveCcDeptId();
+            ccSectionId = profile['sectionId'] as int?;
+            ccAcademicYear = profile['academicYear']?.toString();
           });
         }
       }
     } catch (_) {}
   }
-
-  void _resolveCcDeptId() {
-    if (ccDeptName != null && departments.isNotEmpty) {
-      final match = departments.firstWhere(
-        (d) =>
-            (d['name'] ?? '').toString().toLowerCase() ==
-                ccDeptName!.toLowerCase() ||
-            (d['code'] ?? '').toString().toLowerCase() ==
-                ccDeptName!.toLowerCase(),
-        orElse: () => null,
-      );
-      if (match != null) {
-        ccDeptId = match['id'];
-      }
-    }
-  }
-
   @override
   void initState() {
     super.initState();
@@ -200,7 +187,6 @@ class _StudentsTabState extends State<StudentsTab> {
         groups = jsonDecode(results[6].body)['data'] ?? [];
         isLoadingLookups = false;
 
-        _resolveCcDeptId();
 
         if (departments.isNotEmpty) selectedDeptId = departments.first['id'];
       });
@@ -442,29 +428,14 @@ class _StudentsTabState extends State<StudentsTab> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Added student locally'),
-          backgroundColor: Colors.orange,
+        SnackBar(
+          content: Text('Registration Failed: $e'),
+          backgroundColor: Colors.redAccent,
         ),
       );
       setState(() {
-        studentsList.add({
-          'id': studentsList.length + 1,
-          'regNo': regNoController.text.trim(),
-          'fullName': nameController.text.trim(),
-          'email': emailController.text.trim(),
-          'phone': phoneController.text.trim(),
-          'departmentName': departments.firstWhere(
-            (d) => d['id'] == departmentId,
-            orElse: () => {'name': 'CSE'},
-          )['name'],
-          'semester': '1',
-          'sprNo': sprNoController.text.trim(),
-          'dateOfBirth': formattedDob,
-        });
+        isLoading = false;
       });
-      _clearControllers();
-      Navigator.pop(context);
     }
   }
 

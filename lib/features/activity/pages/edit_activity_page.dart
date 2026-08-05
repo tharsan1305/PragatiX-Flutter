@@ -15,12 +15,18 @@ class EditActivityPage extends StatefulWidget {
   final ActivityProvider provider;
   final ActivityModel activity;
   final bool isCc;
+  final int? stageId;
+  final String? subgroupName;
+  final String? academicYear;
 
   const EditActivityPage({
     super.key,
     required this.provider,
     required this.activity,
     this.isCc = false,
+    this.stageId,
+    this.subgroupName,
+    this.academicYear,
   });
 
   @override
@@ -66,7 +72,13 @@ class _EditActivityPageState extends State<EditActivityPage>
       return;
     }
 
-    final ok = await widget.provider.updateActivity(widget.activity.id, body);
+    final ok = await widget.provider.updateActivity(
+      widget.activity.id, 
+      body,
+      stageId: widget.stageId,
+      subgroupName: widget.subgroupName,
+      academicYear: widget.academicYear,
+    );
 
     if (!mounted) return;
 

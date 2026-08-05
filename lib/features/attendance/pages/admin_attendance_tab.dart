@@ -11,7 +11,6 @@ import '../models/admin_attendance_summary.dart';
 import '../services/attendance_service.dart';
 import '../../admin/pages/attendance_settings_page.dart';
 import '../../admin/pages/attendance_settings_year_selection_page.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 class AdminAttendanceTab extends StatefulWidget {
   const AdminAttendanceTab({Key? key}) : super(key: key);

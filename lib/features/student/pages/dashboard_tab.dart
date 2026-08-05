@@ -10,6 +10,7 @@ import 'package:pragatix/features/xp/providers/xp_provider.dart';
 import 'package:pragatix/features/badge/providers/badge_provider.dart';
 import 'package:pragatix/features/attendance/providers/attendance_provider.dart';
 import 'package:pragatix/features/attendance/widgets/fire_streak_icon.dart';
+import 'package:pragatix/features/student/pages/activity_streaks_page.dart';
 import 'package:pragatix/features/captain/pages/student_group_tab.dart';
 import 'package:pragatix/core/di/service_locator.dart';
 import 'package:pragatix/features/team/services/team_proxy_service.dart';
@@ -72,6 +73,7 @@ class _DashboardTabState extends State<DashboardTab> {
           xpProv.fetchSummary(regNo, token),
           xpProv.fetchHistory(regNo, token),
           xpProv.fetchStreaks(regNo, token),
+          xpProv.fetchActivityStreaks(token),
           xpProv.fetchProgression(token),
         ]);
       } else {
@@ -236,7 +238,18 @@ class _DashboardTabState extends State<DashboardTab> {
               return Center(
                 child: Padding(
                   padding: const EdgeInsets.only(right: 8.0),
-                  child: FireStreakIcon(streakCount: maxStreak),
+                  child: InkWell(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const ActivityStreaksPage(),
+                        ),
+                      );
+                    },
+                    borderRadius: BorderRadius.circular(20),
+                    child: FireStreakIcon(streakCount: maxStreak),
+                  ),
                 ),
               );
             },
@@ -268,6 +281,8 @@ class _DashboardTabState extends State<DashboardTab> {
           await xpProv.fetchHistory(regNo, context.read<AuthProvider>().token!);
           if (!mounted) return;
           await xpProv.fetchStreaks(regNo, context.read<AuthProvider>().token!);
+          if (!mounted) return;
+          await xpProv.fetchActivityStreaks(context.read<AuthProvider>().token!);
           if (!mounted) return;
           await xpProv.fetchProgression(context.read<AuthProvider>().token!);
         },
@@ -597,6 +612,20 @@ class _DashboardTabState extends State<DashboardTab> {
                 ),
                 const SizedBox(height: 12),
                 _buildStreaksRow(xpProvider.streaks),
+
+                const SizedBox(height: 24),
+
+                // Activity Streaks
+                const Text(
+                  'Activity Streaks',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF1E293B),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                _buildActivityStreaksRow(xpProvider.activityStreaks),
 
                 const SizedBox(height: 24),
                 _buildXpSummaryGrid(xpProvider.xpByCategory, totalXp),
@@ -946,6 +975,78 @@ class _DashboardTabState extends State<DashboardTab> {
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
                     color: isBroken ? Colors.red : Colors.green,
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildActivityStreaksRow(List<dynamic> streaks) {
+    if (streaks.isEmpty) {
+      return const Text('No active activity streaks recorded.');
+    }
+    return SizedBox(
+      height: 90,
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        physics: const BouncingScrollPhysics(),
+        itemCount: streaks.length,
+        itemBuilder: (context, index) {
+          final streak = streaks[index];
+          final String name = streak['activityName']?.toString() ?? 'Activity';
+          final int count = streak['currentStreak'] ?? 0;
+          final int longest = streak['longestStreak'] ?? 0;
+          final bool isBroken = count == 0;
+
+          return Container(
+            width: 130,
+            margin: const EdgeInsets.only(right: 12),
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: isBroken ? Colors.red.shade200 : Colors.orange.shade200,
+                width: 1.5,
+              ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        name,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 10,
+                          color: Color(0xFF1E293B),
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      isBroken ? '💤' : '⚡',
+                      style: const TextStyle(fontSize: 12),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  isBroken ? 'No Streak' : '$count Times',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: isBroken ? Colors.red : Colors.orange.shade700,
                   ),
                 ),
               ],

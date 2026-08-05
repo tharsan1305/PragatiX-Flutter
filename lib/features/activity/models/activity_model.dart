@@ -38,6 +38,7 @@ class ActivityModel {
   final String? attendanceRule;
   
   final String? manualEvidenceName;
+  final bool streakEnabled;
 
   String get frequency => awardFrequency;
   String get resetPeriod => awardFrequency;
@@ -85,6 +86,7 @@ class ActivityModel {
     this.attendanceEngineEnabled = false,
     this.attendanceRule,
     this.manualEvidenceName,
+    this.streakEnabled = false,
   });
   factory ActivityModel.fromJson(Map<String, dynamic> json) {
     final raw = json['evidence'];
@@ -220,6 +222,7 @@ class ActivityModel {
       attendanceEngineEnabled: json['attendanceEngineEnabled'] as bool? ?? false,
       attendanceRule: json['attendanceRule']?.toString(),
       manualEvidenceName: json['manualEvidenceName']?.toString(),
+      streakEnabled: json['streakEnabled'] as bool? ?? false,
     );
   }
 

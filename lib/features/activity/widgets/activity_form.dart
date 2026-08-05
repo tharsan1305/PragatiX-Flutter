@@ -63,6 +63,7 @@ class ActivityFormState extends State<ActivityForm> {
   final _penaltyXpCtrl = TextEditingController(text: '0');
   String _selectedStatus = 'ACTIVE';
   bool _allowStudentRequest = false;
+  bool _streakEnabled = false;
   String? _selectedSubgroup;
 
   // ── Selection state ───────────────────────────────────────────────────────
@@ -270,6 +271,7 @@ class ActivityFormState extends State<ActivityForm> {
       _awardEnabled = d.awardEnabled;
       _penaltyEnabled = d.penaltyEnabled;
       _allowStudentRequest = d.allowStudentRequest;
+      _streakEnabled = d.streakEnabled;
       _awardXpCtrl.text = d.awardXp.toString();
       _penaltyXpCtrl.text = d.penaltyXp.toString();
       _selectedAwardType = d.awardType.isNotEmpty ? d.awardType : 'Fixed XP';
@@ -574,6 +576,7 @@ class ActivityFormState extends State<ActivityForm> {
       'manualEvidenceName': _manualEvidenceNameCtrl.text.trim(),
       'attendanceEngineEnabled': widget.initialData?.attendanceEngineEnabled ?? false,
       'attendanceRule': widget.initialData?.attendanceRule,
+      'streakEnabled': _streakEnabled,
     };
     debugPrint('Award Enabled : ${payload['awardEnabled']}');
     debugPrint('Award XP : ${payload['awardXp']}');
@@ -678,24 +681,11 @@ class ActivityFormState extends State<ActivityForm> {
                             selectedAwardDays: _selectedAwardDays,
                             capCtrl: _capCtrl,
                             submitted: _submitted,
-                            customFrequencies: widget.provider.customFrequencies,
                             onFrequencyChanged: (val) {
                               if (val != null) {
                                 setState(() {
                                   _selectedAwardFrequency = val;
-                                  final customMatch = widget
-                                      .provider
-                                      .customFrequencies
-                                      .where((f) => f['name'] == val)
-                                      .toList();
-                                  if (customMatch.isNotEmpty) {
-                                    final cf = customMatch.first;
-                                    if (cf['capType'] == 'UNLIMITED') {
-                                      _capCtrl.text = '1';
-                                    } else {
-                                      _capCtrl.text = cf['defaultCap'].toString();
-                                    }
-                                  } else if (val == 'One Time') {
+                                  if (val == 'One Time') {
                                     _capCtrl.text = '1';
                                     _selectedAwardDays = {};
                                   } else if (val == 'Per Assignment') {
@@ -714,14 +704,15 @@ class ActivityFormState extends State<ActivityForm> {
                                   } else if (val == 'Every Period') {
                                     _capCtrl.text = '8';
                                     _selectedAwardDays = {};
+                                  } else if (val == 'Week 1 (Once)' || val == 'Week 2 (Once)') {
+                                    _capCtrl.text = '1';
+                                    _selectedAwardDays = {};
                                   } else {
                                     if (_capCtrl.text == '1') _capCtrl.text = '1';
                                   }
                                 });
                               }
                             },
-                            onShowCustomFrequencyDialog:
-                                _showCustomFrequencyDialog,
                             onDaysChanged: (val) {
                               setState(() => _selectedAwardDays = val);
                             },
@@ -805,6 +796,40 @@ class ActivityFormState extends State<ActivityForm> {
                         activeColor: _primary,
                         onChanged: (val) =>
                             setState(() => _allowStudentRequest = val),
+                        contentPadding: EdgeInsets.zero,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: Colors.grey.shade200),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.02),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: SwitchListTile(
+                        title: const Text(
+                          'Enable Streak',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 16,
+                          ),
+                        ),
+                        subtitle: const Text(
+                          'Track consecutive streaks for this activity automatically.',
+                          style: TextStyle(color: Colors.grey),
+                        ),
+                        value: _streakEnabled,
+                        activeColor: _primary,
+                        onChanged: (val) =>
+                            setState(() => _streakEnabled = val),
                         contentPadding: EdgeInsets.zero,
                       ),
                     ),
