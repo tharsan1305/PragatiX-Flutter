@@ -3,8 +3,8 @@ import 'package:provider/provider.dart';
 import 'package:pragatix/features/auth/providers/auth_provider.dart';
 import 'package:pragatix/features/badge/providers/badge_provider.dart';
 import 'package:pragatix/features/badge/models/badge_request.dart';
+import 'package:pragatix/core/utils/proof_viewer_utils.dart';
 import 'package:intl/intl.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 class AdminBadgeRequestsPage extends StatefulWidget {
   const AdminBadgeRequestsPage({super.key});
@@ -142,30 +142,35 @@ class _AdminBadgeRequestsPageState extends State<AdminBadgeRequestsPage> {
               'Requested: ${_formatDate(req.requestedAt)}',
               style: const TextStyle(fontSize: 12),
             ),
-            if (req.proofLink != null && req.proofLink!.isNotEmpty)
+            if (req.proofLink != null && req.proofLink!.trim().isNotEmpty)
               Padding(
                 padding: const EdgeInsets.only(top: 8.0),
-                child: Row(
-                  children: [
-                    const Icon(Icons.link, size: 16, color: Colors.blue),
-                    const SizedBox(width: 4),
-                    InkWell(
-                      onTap: () async {
-                        final uri = Uri.parse(req.proofLink!);
-                        if (await canLaunchUrl(uri)) {
-                          await launchUrl(uri);
-                        }
-                      },
-                      child: const Text(
-                        'View Proof Link',
-                        style: TextStyle(
-                          color: Colors.blue,
-                          decoration: TextDecoration.underline,
-                          fontSize: 13,
+                child: InkWell(
+                  onTap: () => ProofViewerUtils.openProof(
+                    context,
+                    req.proofLink,
+                    title: '${req.badgeName} Proof - ${req.studentName}',
+                  ),
+                  borderRadius: BorderRadius.circular(6),
+                  child: const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 4.0, horizontal: 2.0),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.link, size: 16, color: Colors.blue),
+                        SizedBox(width: 6),
+                        Text(
+                          'View Proof Link',
+                          style: TextStyle(
+                            color: Colors.blue,
+                            decoration: TextDecoration.underline,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
-                      ),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
               ),
             if (req.reviewedBy != null) ...[

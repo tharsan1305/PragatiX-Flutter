@@ -9,18 +9,38 @@ class PenaltyProvider with ChangeNotifier {
 
   List<PenaltyRequest> _ccInbox = [];
   List<PenaltyRequest> _myRequests = [];
+  int _pendingCount = 0;
   bool _isLoading = false;
   String? _error;
 
   List<PenaltyRequest> get ccInbox => _ccInbox;
   List<PenaltyRequest> get myRequests => _myRequests;
+  int get pendingCount => _pendingCount;
   bool get isLoading => _isLoading;
   String? get error => _error;
+
+  Future<void> fetchPendingCount() async {
+    try {
+      final count = await _penaltyService.getPendingCount();
+      _pendingCount = count;
+      notifyListeners();
+    } catch (e) {
+      // ignore
+    }
+  }
+
+  void setPendingCount(int count) {
+    _pendingCount = count;
+    notifyListeners();
+  }
 
   Future<void> loadCcInbox() async {
     _setLoading(true);
     try {
       _ccInbox = await _penaltyService.getCcInbox();
+      _pendingCount = _ccInbox
+          .where((r) => r.status.toUpperCase() == 'PENDING')
+          .length;
       _error = null;
     } catch (e) {
       _error = e.toString();

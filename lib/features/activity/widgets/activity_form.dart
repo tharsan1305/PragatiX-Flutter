@@ -910,7 +910,7 @@ class ActivityFormState extends State<ActivityForm> {
                   ],
                   ActivitySection(
                     number: (stepNum++).toString(),
-                    title: 'Justification',
+                    title: 'Justification (Optional)',
                     child: TextFormField(
                       controller: _justCtrl,
                       maxLines: 3,
@@ -919,7 +919,7 @@ class ActivityFormState extends State<ActivityForm> {
                         fontSize: 15,
                       ),
                       decoration: InputDecoration(
-                        labelText: 'Justification',
+                        labelText: 'Justification (Optional)',
                         prefixIcon: const Icon(
                           Icons.notes_rounded,
                           color: Color(0xFFEA4335),

@@ -156,11 +156,11 @@ class ActivityBasicInformationSection extends StatelessWidget {
           maxLines: 3,
           style: const TextStyle(color: _dark, fontSize: 15),
           decoration: _deco(
-            'Description',
+            'Description (Optional)',
             Icons.notes_rounded,
             alignHint: true,
           ),
-          validator: ActivityValidators.validateDescription,
+          // No validator — description is optional.
         ),
         const SizedBox(height: 16),
         TextFormField(

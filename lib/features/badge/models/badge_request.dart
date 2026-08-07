@@ -35,21 +35,24 @@ class BadgeRequest {
 
   factory BadgeRequest.fromJson(Map<String, dynamic> json) {
     return BadgeRequest(
-      id: json['id'],
-      studentId: json['studentId'],
-      studentName: json['studentName'] ?? '',
-      regNo: json['regNo'] ?? '',
-      badgeId: json['badgeId'],
-      badgeName: json['badgeName'] ?? '',
-      badgeIcon: json['badgeIcon'] ?? '',
-      departmentName: json['departmentName'] ?? '',
-      sectionName: json['sectionName'] ?? '',
-      status: json['status'] ?? 'PENDING',
-      requestedAt: json['requestedAt'] ?? '',
-      reviewedAt: json['reviewedAt'],
-      reviewedBy: json['reviewedBy'],
-      remarks: json['remarks'],
-      proofLink: json['proofLink'],
+      id: json['id'] is int ? json['id'] : int.tryParse(json['id']?.toString() ?? '0') ?? 0,
+      studentId: json['studentId'] is int ? json['studentId'] : int.tryParse(json['studentId']?.toString() ?? '0') ?? 0,
+      studentName: json['studentName']?.toString() ?? '',
+      regNo: json['regNo']?.toString() ?? '',
+      badgeId: json['badgeId'] is int ? json['badgeId'] : int.tryParse(json['badgeId']?.toString() ?? '0') ?? 0,
+      badgeName: json['badgeName']?.toString() ?? '',
+      badgeIcon: json['badgeIcon']?.toString() ?? '',
+      departmentName: json['departmentName']?.toString() ?? '',
+      sectionName: json['sectionName']?.toString() ?? '',
+      status: json['status']?.toString() ?? 'PENDING',
+      requestedAt: json['requestedAt']?.toString() ?? '',
+      reviewedAt: json['reviewedAt']?.toString(),
+      reviewedBy: json['reviewedBy']?.toString(),
+      remarks: json['remarks']?.toString(),
+      proofLink: json['proofLink']?.toString() ??
+          json['proofUrl']?.toString() ??
+          json['proofFile']?.toString() ??
+          json['attachmentUrl']?.toString(),
     );
   }
 }

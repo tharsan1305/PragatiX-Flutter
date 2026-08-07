@@ -17,16 +17,12 @@ class ActivityValidators {
   }
 
   static String? validateDescription(String? value) {
-    if (value == null || value.trim().isEmpty) {
-      return 'Description is required';
-    }
+    // Description is optional – no validation required.
     return null;
   }
 
   static String? validateJustification(String? value) {
-    if (value == null || value.trim().isEmpty) {
-      return 'Justification is required';
-    }
+    // Justification is optional – no validation required.
     return null;
   }
 

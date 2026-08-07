@@ -16,6 +16,7 @@ import 'package:pragatix/core/di/service_locator.dart';
 import 'package:pragatix/shared/providers/student_search_provider.dart';
 import 'package:pragatix/features/attendance/providers/attendance_provider.dart';
 import 'package:pragatix/features/analytics/providers/xp_analytics_provider.dart';
+import 'package:pragatix/features/penalty/providers/penalty_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -34,6 +35,7 @@ void main() async {
         ChangeNotifierProvider(create: (_) => authProvider),
         ChangeNotifierProvider(create: (_) => getIt<XpProvider>()),
         ChangeNotifierProvider(create: (_) => getIt<BadgeProvider>()),
+        ChangeNotifierProvider(create: (_) => getIt<PenaltyProvider>()),
         ChangeNotifierProvider(create: (_) => StudentSearchProvider()),
         ChangeNotifierProvider(create: (_) => AttendanceProvider()),
         ChangeNotifierProvider(

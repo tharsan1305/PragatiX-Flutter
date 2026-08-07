@@ -7,14 +7,15 @@ class GroupActivitySecPage extends StatelessWidget {
   final dynamic selectedYear;
   final dynamic selectedDept;
   final List<dynamic> availableSections;
+  final int? stageId;
 
   const GroupActivitySecPage({
     super.key,
-
     required this.activityId,
     required this.selectedYear,
     required this.selectedDept,
     required this.availableSections,
+    this.stageId,
   });
 
   // Theme constants
@@ -31,6 +32,7 @@ class GroupActivitySecPage extends StatelessWidget {
           selectedYear: selectedYear,
           selectedDept: selectedDept,
           selectedSection: section,
+          stageId: stageId,
         ),
       ),
     );

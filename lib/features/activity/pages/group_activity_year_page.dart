@@ -10,8 +10,13 @@ import 'package:pragatix/core/di/service_locator.dart';
 
 class GroupActivityYearPage extends StatefulWidget {
   final int activityId;
+  final int? stageId;
 
-  const GroupActivityYearPage({super.key, required this.activityId});
+  const GroupActivityYearPage({
+    super.key,
+    required this.activityId,
+    this.stageId,
+  });
 
   @override
   State<GroupActivityYearPage> createState() => _GroupActivityYearPageState();
@@ -97,6 +102,7 @@ class _GroupActivityYearPageState extends State<GroupActivityYearPage> {
         builder: (_) => GroupActivityDeptPage(
           activityId: widget.activityId,
           selectedYear: year,
+          stageId: widget.stageId,
         ),
       ),
     );

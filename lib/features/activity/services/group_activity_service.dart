@@ -11,11 +11,16 @@ class GroupActivityService {
 
   String get token => authProvider.token ?? '';
 
-  Future<List<Team>> getTeamsForAssignment(int assignmentId) async {
+  Future<List<Team>> getTeamsForAssignment(int assignmentId, {int? stageId}) async {
+    final uri = stageId != null
+        ? Uri.parse(
+            '${ApiConfig.baseUrl}/api/v1/group-activities/assignments/$assignmentId/teams?stageId=$stageId',
+          )
+        : Uri.parse(
+            '${ApiConfig.baseUrl}/api/v1/group-activities/assignments/$assignmentId/teams',
+          );
     final response = await http.get(
-      Uri.parse(
-        '${ApiConfig.baseUrl}/api/v1/group-activities/assignments/$assignmentId/teams',
-      ),
+      uri,
       headers: {
         'Authorization': 'Bearer $token',
         'Content-Type': 'application/json',

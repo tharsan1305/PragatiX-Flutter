@@ -12,6 +12,7 @@ import 'package:pragatix/features/badge/pages/cc_badge_requests_page.dart';
 import 'package:pragatix/features/teacher/pages/performance_activities_tab.dart';
 import 'package:pragatix/features/teacher/pages/students_tab.dart';
 import 'package:pragatix/features/attendance/pages/teacher_attendance_tab.dart';
+import 'package:pragatix/features/penalty/providers/penalty_provider.dart';
 
 class CCOverviewTab extends StatefulWidget {
   final List<String> subRoles;
@@ -26,6 +27,7 @@ class _CCOverviewTabState extends State<CCOverviewTab> {
   int totalStudents = 0;
   int totalAttendance = 0;
   int pendingBadgeRequests = 0;
+  int pendingPenaltyRequests = 0;
   bool isLoading = true;
   bool hasError = false;
 
@@ -48,6 +50,7 @@ class _CCOverviewTabState extends State<CCOverviewTab> {
           totalStudents = 120;
           totalAttendance = 95;
           pendingBadgeRequests = 5;
+          pendingPenaltyRequests = 2;
           isLoading = false;
         });
         return;
@@ -67,8 +70,12 @@ class _CCOverviewTabState extends State<CCOverviewTab> {
             totalStudents = stats['totalStudents'] ?? 0;
             totalAttendance = stats['totalAttendance'] ?? 0;
             pendingBadgeRequests = stats['pendingBadgeRequests'] ?? 0;
+            pendingPenaltyRequests = stats['pendingPenaltyRequests'] ?? 0;
             isLoading = false;
           });
+          if (mounted) {
+            context.read<PenaltyProvider>().setPendingCount(pendingPenaltyRequests);
+          }
         } else {
           setState(() {
             hasError = true;

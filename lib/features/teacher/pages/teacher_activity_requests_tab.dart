@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:pragatix/features/activity/providers/activity_completion_provider.dart';
 import 'package:pragatix/features/activity/models/activity_completion_request.dart';
+import 'package:pragatix/core/utils/proof_viewer_utils.dart';
 import 'package:intl/intl.dart';
 
 class TeacherActivityRequestsTab extends StatefulWidget {
@@ -213,9 +214,11 @@ class _TeacherActivityRequestsTabState extends State<TeacherActivityRequestsTab>
                   ],
                   if (req.proofUrl != null && req.proofUrl!.isNotEmpty) ...[
                     InkWell(
-                      onTap: () {
-                        /* Open URL in a real app */
-                      },
+                      onTap: () => ProofViewerUtils.openProof(
+                        context,
+                        req.proofUrl,
+                        title: '${req.activityName} Proof - ${req.studentName}',
+                      ),
                       child: Row(
                         children: [
                           const Icon(Icons.link, color: Colors.blue, size: 16),

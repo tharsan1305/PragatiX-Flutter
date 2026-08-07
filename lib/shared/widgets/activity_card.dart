@@ -61,7 +61,7 @@ class ActivityCard extends StatelessWidget {
                     ),
                   ),
                   if (!isReadOnly) ...[
-                    if (onAssign != null)
+                    if (onAssign != null && !isCc)
                       IconButton(
                         icon: const Icon(
                           Icons.assignment_ind_outlined,

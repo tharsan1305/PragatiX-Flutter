@@ -12,12 +12,13 @@ import 'package:pragatix/core/di/service_locator.dart';
 class GroupActivityDeptPage extends StatefulWidget {
   final int activityId;
   final dynamic selectedYear;
+  final int? stageId;
 
   const GroupActivityDeptPage({
     super.key,
-
     required this.activityId,
     required this.selectedYear,
+    this.stageId,
   });
 
   @override
@@ -124,6 +125,7 @@ class _GroupActivityDeptPageState extends State<GroupActivityDeptPage> {
                     selectedYear: widget.selectedYear,
                     selectedDept: dept,
                     availableSections: list,
+                    stageId: widget.stageId,
                   ),
                 ),
               );
@@ -139,6 +141,7 @@ class _GroupActivityDeptPageState extends State<GroupActivityDeptPage> {
                     selectedYear: widget.selectedYear,
                     selectedDept: dept,
                     selectedSection: null, // skipped
+                    stageId: widget.stageId,
                   ),
                 ),
               );

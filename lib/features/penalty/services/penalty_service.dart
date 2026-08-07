@@ -11,6 +11,22 @@ class PenaltyService {
   String get token => authProvider.token ?? '';
   static const String baseUrl = ApiConfig.baseUrl;
 
+  Future<int> getPendingCount() async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/api/penalties/pending-count'),
+        headers: {'Authorization': 'Bearer $token'},
+      );
+      if (response.statusCode == 200) {
+        final json = jsonDecode(response.body);
+        return json['data']?['pendingCount'] ?? 0;
+      }
+    } catch (e) {
+      // ignore
+    }
+    return 0;
+  }
+
   Future<List<PenaltyRequest>> getCcInbox() async {
     final response = await http.get(
       Uri.parse('$baseUrl/api/penalties/cc-inbox'),

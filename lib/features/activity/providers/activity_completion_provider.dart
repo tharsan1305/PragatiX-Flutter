@@ -9,13 +9,30 @@ class ActivityCompletionProvider with ChangeNotifier {
 
   List<ActivityCompletionRequest> _myRequests = [];
   List<ActivityCompletionRequest> _inbox = [];
+  int _pendingCount = 0;
   bool _isLoading = false;
   String? _error;
 
   List<ActivityCompletionRequest> get myRequests => _myRequests;
   List<ActivityCompletionRequest> get inbox => _inbox;
+  int get pendingCount => _pendingCount;
   bool get isLoading => _isLoading;
   String? get error => _error;
+
+  Future<void> fetchPendingCount() async {
+    try {
+      final count = await _service.getPendingCount();
+      _pendingCount = count;
+      notifyListeners();
+    } catch (e) {
+      // Ignore
+    }
+  }
+
+  void setPendingCount(int count) {
+    _pendingCount = count;
+    notifyListeners();
+  }
 
   Future<void> loadMyRequests() async {
     _setLoading(true);
@@ -41,6 +58,9 @@ class ActivityCompletionProvider with ChangeNotifier {
       _inbox = data
           .map((json) => ActivityCompletionRequest.fromJson(json))
           .toList();
+      _pendingCount = _inbox
+          .where((r) => r.status.toUpperCase() == 'PENDING')
+          .length;
       _error = null;
     } catch (e) {
       _error = e.toString();
@@ -57,16 +77,22 @@ class ActivityCompletionProvider with ChangeNotifier {
   }) async {
     _setLoading(true);
     try {
-      await _service.submitRequest(
+      final res = await _service.submitRequest(
         activityId,
         teamId: teamId,
         proofUrl: proofUrl,
         reason: reason,
       );
+      if (res['success'] == false) {
+        _error = res['message'] ?? 'Failed to submit request';
+        _setLoading(false);
+        return false;
+      }
+      _error = null;
       await loadMyRequests();
       return true;
     } catch (e) {
-      _error = e.toString();
+      _error = e.toString().replaceAll('Exception: ', '');
       _setLoading(false);
       return false;
     }

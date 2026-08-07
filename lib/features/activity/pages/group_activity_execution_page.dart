@@ -14,14 +14,15 @@ class GroupActivityExecutionPage extends StatefulWidget {
   final dynamic selectedYear;
   final dynamic selectedDept;
   final dynamic selectedSection;
+  final int? stageId;
 
   const GroupActivityExecutionPage({
     super.key,
-
     required this.activityId,
     required this.selectedYear,
     required this.selectedDept,
     this.selectedSection,
+    this.stageId,
   });
 
   @override
@@ -82,12 +83,14 @@ class _GroupActivityExecutionPageState
         year: yearParam,
         departmentId: deptId,
         sectionId: secId,
+        stageId: widget.stageId,
       );
       final model = MyActivityStudentsResponseModel.fromJson(actData);
 
       // 2. Fetch the groups for this specific assignment
       final teams = await _groupService.getTeamsForAssignment(
         model.assignment.id,
+        stageId: widget.stageId,
       );
 
       setState(() {

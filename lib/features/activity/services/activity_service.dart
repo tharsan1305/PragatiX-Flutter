@@ -420,6 +420,7 @@ class ActivityService {
     String? year,
     int? departmentId,
     int? sectionId,
+    int? stageId,
   }) async {
     final rootUrl = ActivityConstants.baseUrl.replaceAll('/admin', '');
 
@@ -429,6 +430,7 @@ class ActivityService {
     if (departmentId != null)
       queryParams['departmentId'] = departmentId.toString();
     if (sectionId != null) queryParams['sectionId'] = sectionId.toString();
+    if (stageId != null) queryParams['stageId'] = stageId.toString();
 
     final uri = Uri.parse(
       '$rootUrl/my-activities/$activityId/students',

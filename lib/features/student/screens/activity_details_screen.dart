@@ -36,7 +36,7 @@ class _ActivityDetailsScreenState extends State<ActivityDetailsScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Request Completion'),
+        title: const Text('Request Activity'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -80,7 +80,7 @@ class _ActivityDetailsScreenState extends State<ActivityDetailsScreen> {
                 if (success) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
-                      content: Text('Request submitted successfully!'),
+                      content: Text('Activity Request Submitted Successfully'),
                       backgroundColor: Colors.green,
                     ),
                   );
@@ -132,15 +132,19 @@ class _ActivityDetailsScreenState extends State<ActivityDetailsScreen> {
     final bool allowStudentRequest = activity['allowStudentRequest'] == true;
     final int activityId = activity['activityId'] ?? activity['id'] ?? 0;
 
-    // Use fields provided directly by backend
-    final bool buttonEnabled = activity['buttonEnabled'] == true;
-    final String buttonText = activity['buttonText'] ?? 'Request Completion';
-    final String requestStatus = activity['requestStatus'] ?? '';
-    final bool categoryCapReached = activity['categoryCapReached'] == true;
-
     return Consumer<ActivityCompletionProvider>(
       builder: (context, provider, _) {
         final existingRequest = provider.getMyRequestForActivity(activityId);
+        final String reqStatus = existingRequest?.status.toUpperCase() ?? '';
+
+        final bool hasCompleted = isCompleted || reqStatus == 'APPROVED';
+        final bool isPending = reqStatus == 'PENDING';
+        final bool isRejected = reqStatus == 'REJECTED';
+
+        final bool buttonEnabled = !hasCompleted && !isPending && !_isSubmitting;
+        final String buttonText = hasCompleted
+            ? 'Completed'
+            : (isPending ? 'Request Pending' : 'Request Activity');
 
         return Scaffold(
           backgroundColor: Colors.white,
@@ -325,9 +329,7 @@ class _ActivityDetailsScreenState extends State<ActivityDetailsScreen> {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        if (!buttonEnabled &&
-                            (buttonText == 'Already Completed' ||
-                                buttonText == 'Completed'))
+                        if (hasCompleted)
                           Container(
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
@@ -350,33 +352,8 @@ class _ActivityDetailsScreenState extends State<ActivityDetailsScreen> {
                               ],
                             ),
                           )
-                        else if (!buttonEnabled &&
-                            buttonText == 'Category Cap Reached')
-                          Container(
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: Colors.amber.shade50,
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: const Row(
-                              children: [
-                                Icon(Icons.block, color: Colors.amber),
-                                SizedBox(width: 8),
-                                Expanded(
-                                  child: Text(
-                                    'Category Cap Reached',
-                                    style: TextStyle(
-                                      color: Colors.amber,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          )
                         else ...[
-                          if (requestStatus == 'REJECTED' &&
-                              existingRequest != null)
+                          if (isRejected && existingRequest != null)
                             Container(
                               margin: const EdgeInsets.only(bottom: 12),
                               padding: const EdgeInsets.all(12),
@@ -407,21 +384,24 @@ class _ActivityDetailsScreenState extends State<ActivityDetailsScreen> {
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: !buttonEnabled
                                     ? Colors.grey
-                                    : (requestStatus == 'REJECTED'
-                                          ? Colors.red
-                                          : const Color(0xFFEA4335)),
+                                    : const Color(0xFFEA4335),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                               ),
-                              onPressed: (!buttonEnabled || _isSubmitting)
-                                  ? null
-                                  : () => _showRequestCompletionDialog(
-                                      activityId,
-                                    ),
+                              onPressed: buttonEnabled
+                                  ? () => _showRequestCompletionDialog(
+                                        activityId,
+                                      )
+                                  : null,
                               child: _isSubmitting
-                                  ? const CircularProgressIndicator(
-                                      color: Colors.white,
+                                  ? const SizedBox(
+                                      width: 24,
+                                      height: 24,
+                                      child: CircularProgressIndicator(
+                                        color: Colors.white,
+                                        strokeWidth: 2.5,
+                                      ),
                                     )
                                   : Text(
                                       buttonText,

@@ -226,6 +226,15 @@ class _ActivityExecutionPageState extends State<ActivityExecutionPage> {
       final idMatches = student.regNo.toLowerCase().contains(q);
       return nameMatches || regMatches || idMatches;
     }).toList();
+    filteredStudents.sort((a, b) {
+      final nameA = a.fullName.trim().toLowerCase();
+      final nameB = b.fullName.trim().toLowerCase();
+      final comp = nameA.compareTo(nameB);
+      if (comp != 0) return comp;
+      final regA = a.regNo.trim().toLowerCase();
+      final regB = b.regNo.trim().toLowerCase();
+      return regA.compareTo(regB);
+    });
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),

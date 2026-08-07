@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:pragatix/core/utils/error_handler.dart';
 
@@ -56,21 +54,23 @@ class _StudentsTabState extends State<StudentsTab> {
   }
 
   bool isLoading = true;
-
   bool isLoadingLookups = true;
 
-  String searchQuery = '';
+  // Pagination & Infinite Scroll State
+  final ScrollController _scrollController = ScrollController();
+  int _currentPage = 0;
+  final int _pageSize = 1000;
+  bool _hasMore = false;
+  bool _isLoadingMore = false;
+  int _totalStudentsCount = 0;
 
+  String searchQuery = '';
   final TextEditingController _searchController = TextEditingController();
 
   // Controllers
-
   final TextEditingController nameController = TextEditingController();
-
   final TextEditingController emailController = TextEditingController();
-
   final TextEditingController phoneController = TextEditingController();
-
   final TextEditingController sprNoController = TextEditingController();
   final TextEditingController regNoController = TextEditingController();
   final TextEditingController guardianNameController = TextEditingController();
@@ -90,10 +90,20 @@ class _StudentsTabState extends State<StudentsTab> {
   void initState() {
     super.initState();
 
+    _scrollController.addListener(_onScroll);
     _fetchStudents();
     _fetchPendingBadges();
-
     _loadAllLookups();
+  }
+
+  void _onScroll() {
+    if (_scrollController.hasClients &&
+        _scrollController.position.pixels >=
+            _scrollController.position.maxScrollExtent - 200) {
+      if (!_isLoadingMore && _hasMore && !isLoading) {
+        _fetchNextPage();
+      }
+    }
   }
 
   Future<void> _fetchPendingBadges() async {
@@ -111,14 +121,12 @@ class _StudentsTabState extends State<StudentsTab> {
 
   @override
   void dispose() {
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
     _searchController.dispose();
-
     nameController.dispose();
-
     emailController.dispose();
-
     phoneController.dispose();
-
     sprNoController.dispose();
     regNoController.dispose();
     guardianNameController.dispose();
@@ -160,20 +168,81 @@ class _StudentsTabState extends State<StudentsTab> {
     }
   }
 
-  Future<void> _fetchStudents() async {
+  Future<void> _fetchStudents({bool isRefresh = false}) async {
+    if (!isRefresh) {
+      setState(() => isLoading = true);
+    }
+    _currentPage = 0;
     try {
-      final fetchedStudents = await getIt<AdminRepository>().getStudents();
+      final pageResult = await getIt<AdminRepository>().getStudentsPaginated(
+        page: 0,
+        size: _pageSize,
+        sortBy: 'fullName',
+      );
+      final List<dynamic> fetchedStudents = pageResult['content'] ?? [];
+      final int totalPages = pageResult['totalPages'] ?? 1;
+      final int totalElements = pageResult['totalElements'] ?? fetchedStudents.length;
+      final bool last = pageResult['last'] ?? true;
+
+      debugPrint(
+        'Students Directory: Loaded ${fetchedStudents.length} of total $totalElements students',
+      );
+
       if (!mounted) return;
       setState(() {
         studentsList = fetchedStudents;
+        _currentPage = 0;
+        _hasMore = !last && (_currentPage + 1 < totalPages);
+        _totalStudentsCount = totalElements;
         isLoading = false;
+        _isLoadingMore = false;
       });
     } catch (e) {
-      // Fallback
+      debugPrint('Error fetching students: $e');
       if (!mounted) return;
       setState(() {
         studentsList = [];
         isLoading = false;
+        _isLoadingMore = false;
+        _hasMore = false;
+      });
+    }
+  }
+
+  Future<void> _fetchNextPage() async {
+    if (_isLoadingMore || !_hasMore) return;
+    setState(() {
+      _isLoadingMore = true;
+    });
+    try {
+      final nextPage = _currentPage + 1;
+      final pageResult = await getIt<AdminRepository>().getStudentsPaginated(
+        page: nextPage,
+        size: _pageSize,
+        sortBy: 'fullName',
+      );
+      final List<dynamic> newStudents = pageResult['content'] ?? [];
+      final int totalPages = pageResult['totalPages'] ?? 1;
+      final bool last = pageResult['last'] ?? true;
+
+      if (!mounted) return;
+      setState(() {
+        final existingIds = studentsList.map((s) => s['id']).toSet();
+        for (final s in newStudents) {
+          if (!existingIds.contains(s['id'])) {
+            studentsList.add(s);
+            existingIds.add(s['id']);
+          }
+        }
+        _currentPage = nextPage;
+        _hasMore = !last && (_currentPage + 1 < totalPages);
+        _isLoadingMore = false;
+      });
+    } catch (e) {
+      debugPrint('Error loading next page of students: $e');
+      if (!mounted) return;
+      setState(() {
+        _isLoadingMore = false;
       });
     }
   }
@@ -515,9 +584,19 @@ class _StudentsTabState extends State<StudentsTab> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          'Students Directory',
-          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Students Directory',
+              style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 18),
+            ),
+            if (!isLoading && studentsList.isNotEmpty)
+              Text(
+                'Showing ${studentsList.length}${_totalStudentsCount > studentsList.length ? ' of $_totalStudentsCount' : ''} students',
+                style: const TextStyle(fontSize: 12, color: Colors.white70),
+              ),
+          ],
         ),
         backgroundColor: const Color(0xFF1E293B),
         elevation: 0,
@@ -545,8 +624,7 @@ class _StudentsTabState extends State<StudentsTab> {
           IconButton(
             icon: const Icon(Icons.refresh, color: Colors.white),
             onPressed: () {
-              setState(() => isLoading = true);
-              _fetchStudents();
+              _fetchStudents(isRefresh: true);
               _fetchPendingBadges();
             },
           ),
@@ -554,28 +632,34 @@ class _StudentsTabState extends State<StudentsTab> {
       ),
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
-          : Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                children: [
-                  StudentFilterPanel(
-                    searchController: _searchController,
-                    onChanged: (value) {
-                      setState(() {
-                        searchQuery = value.toLowerCase();
-                      });
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  Expanded(
-                    child: StudentList(
-                      studentsList: studentsList,
-                      searchQuery: searchQuery,
-                      onEdit: _showEditStudentDialog,
-                      onDelete: _deleteStudent,
+          : RefreshIndicator(
+              onRefresh: () => _fetchStudents(isRefresh: true),
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  children: [
+                    StudentFilterPanel(
+                      searchController: _searchController,
+                      onChanged: (value) {
+                        setState(() {
+                          searchQuery = value.toLowerCase();
+                        });
+                      },
                     ),
-                  ),
-                ],
+                    const SizedBox(height: 16),
+                    Expanded(
+                      child: StudentList(
+                        studentsList: studentsList,
+                        searchQuery: searchQuery,
+                        scrollController: _scrollController,
+                        isLoadingMore: _isLoadingMore,
+                        hasMore: _hasMore,
+                        onEdit: _showEditStudentDialog,
+                        onDelete: _deleteStudent,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
       floatingActionButton: StudentFab(onPressed: _showAddStudentDialog),

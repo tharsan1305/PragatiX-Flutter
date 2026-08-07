@@ -33,7 +33,17 @@ class StudentSearchProvider extends ChangeNotifier {
         if (data['success'] == true &&
             data['data'] != null &&
             data['data']['content'] != null) {
-          _allStudents = data['data']['content'];
+          final List<dynamic> list = List.from(data['data']['content']);
+          list.sort((a, b) {
+            final nameA = (a['fullName'] ?? '').toString().trim().toLowerCase();
+            final nameB = (b['fullName'] ?? '').toString().trim().toLowerCase();
+            final comp = nameA.compareTo(nameB);
+            if (comp != 0) return comp;
+            final regA = (a['regNo'] ?? '').toString().trim().toLowerCase();
+            final regB = (b['regNo'] ?? '').toString().trim().toLowerCase();
+            return regA.compareTo(regB);
+          });
+          _allStudents = list;
           _filteredStudents = _allStudents;
         } else {
           _error = 'Failed to load students format';
@@ -67,6 +77,16 @@ class StudentSearchProvider extends ChangeNotifier {
             email.contains(_searchQuery);
       }).toList();
     }
+
+    _filteredStudents.sort((a, b) {
+      final nameA = (a['fullName'] ?? '').toString().trim().toLowerCase();
+      final nameB = (b['fullName'] ?? '').toString().trim().toLowerCase();
+      final comp = nameA.compareTo(nameB);
+      if (comp != 0) return comp;
+      final regA = (a['regNo'] ?? '').toString().trim().toLowerCase();
+      final regB = (b['regNo'] ?? '').toString().trim().toLowerCase();
+      return regA.compareTo(regB);
+    });
 
     notifyListeners();
   }

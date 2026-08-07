@@ -7,10 +7,12 @@ import 'package:pragatix/features/badge/providers/badge_provider.dart';
 import 'package:pragatix/features/activity/providers/activity_provider.dart';
 import 'package:pragatix/features/activity/providers/activity_completion_provider.dart';
 import 'package:pragatix/features/analytics/providers/xp_analytics_provider.dart';
+import 'package:pragatix/features/penalty/providers/penalty_provider.dart';
 
 // Services
 import 'package:pragatix/features/activity/services/activity_proxy_service.dart';
 import 'package:pragatix/features/activity/services/activity_service.dart';
+import 'package:pragatix/features/activity/services/cc_activity_service.dart';
 import 'package:pragatix/features/activity/services/group_activity_service.dart';
 import 'package:pragatix/features/activity/services/activity_completion_service.dart';
 import 'package:pragatix/features/admin/services/admin_proxy_service.dart';
@@ -18,6 +20,7 @@ import 'package:pragatix/features/admin/services/admin_service.dart';
 import 'package:pragatix/features/auth/services/auth_service.dart';
 import 'package:pragatix/features/captain/services/captain_proxy_service.dart';
 import 'package:pragatix/features/captain/services/captain_service.dart';
+import 'package:pragatix/features/penalty/services/penalty_service.dart';
 import 'package:pragatix/features/student/services/student_proxy_service.dart';
 import 'package:pragatix/features/student/services/student_service.dart';
 import 'package:pragatix/features/teacher/services/teacher_proxy_service.dart';
@@ -42,6 +45,7 @@ void setupLocator() {
   getIt.registerLazySingleton(() => AuthProvider());
   getIt.registerLazySingleton(() => XpProvider());
   getIt.registerLazySingleton(() => BadgeProvider());
+  getIt.registerLazySingleton(() => PenaltyProvider(getIt<PenaltyService>()));
   getIt.registerFactory(() => ActivityProvider(getIt<ActivityRepository>()));
   getIt.registerLazySingleton(
     () => ActivityCompletionProvider(getIt<ActivityCompletionService>()),
@@ -52,10 +56,12 @@ void setupLocator() {
   getIt.registerLazySingleton(() => AuthService());
   getIt.registerLazySingleton(() => AdminService(getIt<AuthProvider>()));
   getIt.registerLazySingleton(() => ActivityService(getIt<AuthProvider>()));
+  getIt.registerLazySingleton(() => CCActivityService(getIt<AuthProvider>()));
   getIt.registerLazySingleton(
     () => ActivityCompletionService(getIt<AuthProvider>()),
   );
   getIt.registerLazySingleton(() => CaptainService(getIt<AuthProvider>()));
+  getIt.registerLazySingleton(() => PenaltyService(getIt<AuthProvider>()));
   getIt.registerLazySingleton(
     () => GroupActivityService(getIt<AuthProvider>()),
   );

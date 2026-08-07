@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:pragatix/features/admin/services/admin_service.dart';
 import 'package:pragatix/core/exceptions/api_exception.dart';
 
@@ -204,19 +205,95 @@ class AdminRepository {
   }
 
   // STUDENTS
-  Future<List<dynamic>> getStudents() async {
-    final response = await _adminService.get('/api/v1/students');
+  Future<Map<String, dynamic>> getStudentsPaginated({
+    int page = 0,
+    int size = 1000,
+    String sortBy = 'fullName',
+  }) async {
+    final response = await _adminService.get(
+      '/api/v1/students?page=$page&size=$size&sortBy=$sortBy',
+    );
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
       if (data['success'] == true) {
         final content = data['data'];
-        if (content is Map<String, dynamic> && content.containsKey('content')) {
-          return content['content'] ?? [];
+        if (content is Map<String, dynamic>) {
+          final List<dynamic> list = content['content'] as List<dynamic>? ?? [];
+          final int totalElements = content['totalElements'] ?? list.length;
+          final int totalPages = content['totalPages'] ?? 1;
+          final bool last = content['last'] ?? true;
+          final int number = content['number'] ?? page;
+          debugPrint(
+            'AdminRepository: Loaded ${list.length} students (Page $number of $totalPages, Total in DB: $totalElements)',
+          );
+          return {
+            'content': list,
+            'totalPages': totalPages,
+            'totalElements': totalElements,
+            'last': last,
+            'number': number,
+          };
+        } else if (content is List) {
+          debugPrint('AdminRepository: Loaded ${content.length} students');
+          return {
+            'content': content,
+            'totalPages': 1,
+            'totalElements': content.length,
+            'last': true,
+            'number': 0,
+          };
         }
-        return content ?? [];
       }
     }
     throw Exception('Failed to load students');
+  }
+
+  Future<List<dynamic>> getStudents({
+    int page = 0,
+    int size = 1000,
+    String sortBy = 'fullName',
+  }) async {
+    final res = await getStudentsPaginated(page: page, size: size, sortBy: sortBy);
+    return res['content'] as List<dynamic>;
+  }
+
+  Future<Map<String, dynamic>> searchStudents(
+    String keyword, {
+    int page = 0,
+    int size = 1000,
+  }) async {
+    final response = await _adminService.get(
+      '/api/v1/students/search?keyword=${Uri.encodeComponent(keyword)}&page=$page&size=$size',
+    );
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      if (data['success'] == true) {
+        final content = data['data'];
+        if (content is Map<String, dynamic>) {
+          final List<dynamic> list = content['content'] as List<dynamic>? ?? [];
+          final int totalElements = content['totalElements'] ?? list.length;
+          final int totalPages = content['totalPages'] ?? 1;
+          final bool last = content['last'] ?? true;
+          final int number = content['number'] ?? page;
+          return {
+            'content': list,
+            'totalPages': totalPages,
+            'totalElements': totalElements,
+            'last': last,
+            'number': number,
+          };
+        } else if (content is List) {
+          return {
+            'content': content,
+            'totalPages': 1,
+            'totalElements': content.length,
+            'last': true,
+            'number': 0,
+          };
+        }
+      }
+    }
+    throw Exception('Failed to search students');
   }
 
   Future<Map<String, dynamic>> addStudent(

@@ -10,6 +10,7 @@ import 'package:pragatix/core/di/service_locator.dart';
 import 'package:pragatix/features/badge/pages/cc_badge_requests_page.dart';
 import 'package:pragatix/features/penalty/pages/penalty_requests_page.dart'
     as spdms_penalty;
+import 'package:pragatix/features/penalty/providers/penalty_provider.dart';
 
 class PerformanceActivitiesTab extends StatefulWidget {
   final List<String> subRoles;
@@ -33,6 +34,7 @@ class _PerformanceActivitiesTabState extends State<PerformanceActivitiesTab> {
   String? _selectedCategory;
   List<dynamic> _myActivities = [];
   int _pendingBadgeRequests = 0;
+  int _pendingPenaltyRequests = 0;
   bool _isLoadingActivities = false;
 
   dynamic _selectedEvent; // Activity representation
@@ -82,7 +84,7 @@ class _PerformanceActivitiesTabState extends State<PerformanceActivitiesTab> {
     },
     'LEADERSHIP': {
       'color': Colors.amber,
-      'icon': Icons.gavel_rounded,
+      'icon': Icons.emoji_events_rounded,
       'label': 'Leadership',
     },
     'INNOVATION': {
@@ -147,9 +149,13 @@ class _PerformanceActivitiesTabState extends State<PerformanceActivitiesTab> {
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data['success'] == true && mounted) {
+          final pBadges = data['data']['pendingBadgeRequests'] ?? 0;
+          final pPenalties = data['data']['pendingPenaltyRequests'] ?? 0;
           setState(() {
-            _pendingBadgeRequests = data['data']['pendingBadgeRequests'] ?? 0;
+            _pendingBadgeRequests = pBadges;
+            _pendingPenaltyRequests = pPenalties;
           });
+          context.read<PenaltyProvider>().setPendingCount(pPenalties);
         }
       }
     } catch (e) {
@@ -229,13 +235,27 @@ class _PerformanceActivitiesTabState extends State<PerformanceActivitiesTab> {
   }
 
   List<dynamic> get _filteredStudentsList {
-    if (_studentSearchQuery.trim().isEmpty) return _eligibleStudents;
-    final query = _studentSearchQuery.toLowerCase();
-    return _eligibleStudents.where((s) {
-      final name = (s['fullName'] as String? ?? '').toLowerCase();
-      final sId = (s['regNo'] as String? ?? '').toLowerCase();
-      return name.contains(query) || sId.contains(query);
-    }).toList();
+    List<dynamic> list;
+    if (_studentSearchQuery.trim().isEmpty) {
+      list = List.from(_eligibleStudents);
+    } else {
+      final query = _studentSearchQuery.toLowerCase();
+      list = _eligibleStudents.where((s) {
+        final name = (s['fullName'] as String? ?? '').toLowerCase();
+        final regNo = (s['regNo'] as String? ?? '').toLowerCase();
+        return name.contains(query) || regNo.contains(query);
+      }).toList();
+    }
+    list.sort((a, b) {
+      final nameA = (a['fullName'] as String? ?? '').trim().toLowerCase();
+      final nameB = (b['fullName'] as String? ?? '').trim().toLowerCase();
+      final comp = nameA.compareTo(nameB);
+      if (comp != 0) return comp;
+      final regA = (a['regNo'] as String? ?? '').trim().toLowerCase();
+      final regB = (b['regNo'] as String? ?? '').trim().toLowerCase();
+      return regA.compareTo(regB);
+    });
+    return list;
   }
 
   Future<void> _fetchMyActivities() async {
@@ -423,7 +443,17 @@ class _PerformanceActivitiesTabState extends State<PerformanceActivitiesTab> {
         final data = jsonDecode(response.body);
         if (data['success'] == true) {
           setState(() {
-            _eligibleStudents = data['data']['students'] ?? [];
+            final List<dynamic> list = List.from(data['data']['students'] ?? []);
+            list.sort((a, b) {
+              final nameA = (a['fullName'] as String? ?? '').trim().toLowerCase();
+              final nameB = (b['fullName'] as String? ?? '').trim().toLowerCase();
+              final comp = nameA.compareTo(nameB);
+              if (comp != 0) return comp;
+              final regA = (a['regNo'] as String? ?? '').trim().toLowerCase();
+              final regB = (b['regNo'] as String? ?? '').trim().toLowerCase();
+              return regA.compareTo(regB);
+            });
+            _eligibleStudents = list;
             final assignData = data['data']['assignment'];
             _assignmentId = assignData != null
                 ? (assignData['id'] as num?)?.toInt()
@@ -721,22 +751,37 @@ class _PerformanceActivitiesTabState extends State<PerformanceActivitiesTab> {
                   ),
                 ],
               ),
-            IconButton(
-              icon: const Icon(Icons.gavel_rounded, color: Colors.white),
-              tooltip: 'Penalty Requests',
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => spdms_penalty.PenaltyRequestsPage(
-                      isCC: widget.subRoles.any(
-                        (r) =>
-                            r.toUpperCase() == 'CC' ||
-                            r.toUpperCase() == 'CLASS_COORDINATOR' ||
-                            r.toUpperCase() == 'ROLE_CC',
-                      ),
+            Consumer<PenaltyProvider>(
+              builder: (context, penaltyProvider, _) {
+                final count = penaltyProvider.pendingCount > 0
+                    ? penaltyProvider.pendingCount
+                    : _pendingPenaltyRequests;
+                return IconButton(
+                  icon: Badge(
+                    isLabelVisible: count > 0,
+                    label: Text(
+                      count.toString(),
+                      style: const TextStyle(color: Colors.white),
                     ),
+                    backgroundColor: Colors.red,
+                    child: const Icon(Icons.gavel_rounded, color: Colors.white),
                   ),
+                  tooltip: 'Penalty Requests',
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => spdms_penalty.PenaltyRequestsPage(
+                          isCC: widget.subRoles.any(
+                            (r) =>
+                                r.toUpperCase() == 'CC' ||
+                                r.toUpperCase() == 'CLASS_COORDINATOR' ||
+                                r.toUpperCase() == 'ROLE_CC',
+                          ),
+                        ),
+                      ),
+                    ).then((_) => _fetchPendingBadges());
+                  },
                 );
               },
             ),

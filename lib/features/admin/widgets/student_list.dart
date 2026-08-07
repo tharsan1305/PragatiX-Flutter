@@ -6,6 +6,9 @@ class StudentList extends StatelessWidget {
   final String searchQuery;
   final void Function(Map<String, dynamic>) onEdit;
   final void Function(int) onDelete;
+  final ScrollController? scrollController;
+  final bool isLoadingMore;
+  final bool hasMore;
 
   const StudentList({
     super.key,
@@ -13,23 +16,75 @@ class StudentList extends StatelessWidget {
     required this.searchQuery,
     required this.onEdit,
     required this.onDelete,
+    this.scrollController,
+    this.isLoadingMore = false,
+    this.hasMore = false,
   });
 
   @override
   Widget build(BuildContext context) {
+    final filteredList = searchQuery.trim().isEmpty
+        ? studentsList
+        : studentsList.where((s) {
+            final String sId = (s['regNo'] ?? '').toString().toLowerCase();
+            final String sprNo = (s['sprNo'] ?? '').toString().toLowerCase();
+            final String name = (s['fullName'] ?? '').toString().toLowerCase();
+            final String deptName =
+                (s['departmentName'] ?? s['department'] ?? '').toString().toLowerCase();
+            final String email = (s['email'] ?? '').toString().toLowerCase();
+            final q = searchQuery.trim().toLowerCase();
+            return sId.contains(q) ||
+                sprNo.contains(q) ||
+                name.contains(q) ||
+                deptName.contains(q) ||
+                email.contains(q);
+          }).toList();
+
+    if (filteredList.isEmpty) {
+      return Center(
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.person_search_outlined, size: 64, color: Colors.grey.shade400),
+              const SizedBox(height: 12),
+              Text(
+                searchQuery.trim().isEmpty
+                    ? 'No students available'
+                    : 'No students found matching "$searchQuery"',
+                style: TextStyle(color: Colors.grey.shade600, fontSize: 16),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    final totalItemCount = filteredList.length + (isLoadingMore ? 1 : 0);
+
     return ListView.builder(
-      itemCount: studentsList.length,
+      controller: scrollController,
+      physics: const AlwaysScrollableScrollPhysics(),
+      itemCount: totalItemCount,
       itemBuilder: (context, index) {
-        final s = studentsList[index];
+        if (index == filteredList.length) {
+          return const Padding(
+            padding: EdgeInsets.symmetric(vertical: 16.0),
+            child: Center(
+              child: SizedBox(
+                width: 24,
+                height: 24,
+                child: CircularProgressIndicator(strokeWidth: 2.5),
+              ),
+            ),
+          );
+        }
+
+        final s = filteredList[index];
         final String sId = s['regNo'] ?? '';
         final String name = s['fullName'] ?? '';
-        final String deptName = s['departmentName'] ?? 'No Department';
-
-        if (searchQuery.isNotEmpty &&
-            !sId.toLowerCase().contains(searchQuery) &&
-            !name.toLowerCase().contains(searchQuery)) {
-          return const SizedBox.shrink();
-        }
+        final String deptName = s['departmentName'] ?? s['department'] ?? 'No Department';
 
         return Card(
           shape: RoundedRectangleBorder(

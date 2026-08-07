@@ -2,7 +2,7 @@ import 'package:pragatix/features/auth/providers/auth_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:pragatix/features/badge/providers/badge_provider.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:pragatix/core/utils/proof_viewer_utils.dart';
 
 class TeamBadgeClaimsTab extends StatefulWidget {
   const TeamBadgeClaimsTab({super.key});
@@ -28,24 +28,7 @@ class _TeamBadgeClaimsTabState extends State<TeamBadgeClaimsTab> {
   }
 
   Future<void> openUrl(String url) async {
-    try {
-      final uri = Uri.parse(url);
-      if (await canLaunchUrl(uri)) {
-        await launchUrl(uri, mode: LaunchMode.externalApplication);
-      } else {
-        if (mounted) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(const SnackBar(content: Text('Unable to open link.')));
-        }
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Unable to open link.')));
-      }
-    }
+    await ProofViewerUtils.openProof(context, url, title: 'Badge Evidence');
   }
 
   @override

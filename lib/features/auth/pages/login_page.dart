@@ -227,57 +227,14 @@ class _LoginPageState extends State<LoginPage> {
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          // Portal Branding Logo (Premium Circular Badge)
-                          Container(
-                            width: 120,
-                            height: 120,
-                            padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.95),
-                              // Exact match to card background
-                              shape: BoxShape.circle,
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.08),
-                                  blurRadius: 20,
-                                  spreadRadius: 2,
-                                  offset: const Offset(0, 8),
-                                ),
-                              ],
-                            ),
-                            child: Center(
-                              child: Image.asset(
-                                'assets/images/logo.jpg',
-                                fit: BoxFit.contain,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 20),
-
-                          // Main Title
-                          RichText(
-                            text: const TextSpan(
-                              children: [
-                                TextSpan(
-                                  text: 'PragatiX',
-                                  style: TextStyle(
-                                    fontSize: 26,
-                                    fontWeight: FontWeight.w900,
-                                    fontStyle: FontStyle.italic,
-                                    color: primaryColor,
-                                    letterSpacing: 1.1,
-                                  ),
-                                ),
-                                TextSpan(
-                                  text: ' Login',
-                                  style: TextStyle(
-                                    fontSize: 26,
-                                    fontWeight: FontWeight.bold,
-                                    color: Color(0xFF1E293B),
-                                    letterSpacing: 1.1,
-                                  ),
-                                ),
-                              ],
+                          // Login heading (logo and app name hidden for demo)
+                          const Text(
+                            'Login',
+                            style: TextStyle(
+                              fontSize: 26,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF1E293B),
+                              letterSpacing: 1.1,
                             ),
                           ),
                           const SizedBox(height: 6),

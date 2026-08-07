@@ -618,8 +618,20 @@ class _StudentsTabState extends State<StudentsTab> {
 
   @override
   Widget build(BuildContext context) {
+    final filteredStudents = studentsList.where((s) {
+      if (searchQuery.isEmpty) return true;
+      final String sId = (s['regNo'] ?? '').toString().toLowerCase();
+      final String name = (s['fullName'] ?? '').toString().toLowerCase();
+      final String spr = (s['sprNo'] ?? '').toString().toLowerCase();
+      final String deptName = (s['departmentName'] ?? '').toString().toLowerCase();
+      return sId.contains(searchQuery) ||
+          name.contains(searchQuery) ||
+          spr.contains(searchQuery) ||
+          deptName.contains(searchQuery);
+    }).toList();
+
     return Scaffold(
-      backgroundColor: Colors.transparent,
+      backgroundColor: const Color(0xFFF1F5F9),
       appBar: AppBar(
         title: const Text(
           'Students Directory',
@@ -650,7 +662,7 @@ class _StudentsTabState extends State<StudentsTab> {
         ],
       ),
       body: isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? const Center(child: CircularProgressIndicator(color: Color(0xFF11998e)))
           : Padding(
               padding: const EdgeInsets.all(16.0),
               child: Column(
@@ -661,7 +673,7 @@ class _StudentsTabState extends State<StudentsTab> {
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      color: const Color(0xFF1E293B).withValues(alpha: 0.05),
+                      color: Colors.white,
                       child: Padding(
                         padding: const EdgeInsets.all(12.0),
                         child: Column(
@@ -687,6 +699,8 @@ class _StudentsTabState extends State<StudentsTab> {
                                         horizontal: 10,
                                         vertical: 8,
                                       ),
+                                      filled: true,
+                                      fillColor: Colors.white,
                                     ),
                                     items: const [
                                       DropdownMenuItem(
@@ -726,6 +740,8 @@ class _StudentsTabState extends State<StudentsTab> {
                                         horizontal: 10,
                                         vertical: 8,
                                       ),
+                                      filled: true,
+                                      fillColor: Colors.white,
                                     ),
                                     onChanged: (value) {
                                       setState(() => isLoading = true);
@@ -745,138 +761,199 @@ class _StudentsTabState extends State<StudentsTab> {
                     controller: _searchController,
                     decoration: InputDecoration(
                       hintText: 'Search by student name or reg no...',
-                      prefixIcon: const Icon(Icons.search),
-                      suffixIcon: IconButton(
-                        icon: const Icon(Icons.clear),
-                        onPressed: () {
-                          _searchController.clear();
-                          _fetchStudents();
-                        },
-                      ),
+                      prefixIcon: const Icon(Icons.search, color: Color(0xFF64748B)),
+                      suffixIcon: _searchController.text.isNotEmpty
+                          ? IconButton(
+                              icon: const Icon(Icons.clear, color: Color(0xFF64748B)),
+                              onPressed: () {
+                                _searchController.clear();
+                                setState(() {
+                                  searchQuery = '';
+                                });
+                                _fetchStudents();
+                              },
+                            )
+                          : null,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: Colors.grey.shade300),
                       ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: Colors.grey.shade300),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: Color(0xFF11998e), width: 1.5),
+                      ),
+                      filled: true,
+                      fillColor: Colors.white,
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                     ),
+                    onChanged: (value) {
+                      setState(() {
+                        searchQuery = value.trim().toLowerCase();
+                      });
+                    },
                     onSubmitted: (value) {
                       _searchStudents(value);
                     },
                   ),
                   const SizedBox(height: 16),
                   Expanded(
-                    child: ListView.builder(
-                      itemCount: studentsList.length,
-                      itemBuilder: (context, index) {
-                        final s = studentsList[index];
-                        final String sId = s['regNo'] ?? '';
-                        final String name = s['fullName'] ?? '';
-                        final String deptName =
-                            s['departmentName'] ?? 'No Department';
-                        final String spr = s['sprNo'] ?? 'N/A';
-
-                        if (searchQuery.isNotEmpty &&
-                            !sId.toLowerCase().contains(searchQuery) &&
-                            !name.toLowerCase().contains(searchQuery)) {
-                          return const SizedBox.shrink();
-                        }
-
-                        final int score = s['score'] ?? 0;
-
-                        final String yearStr =
-                            s['year'] != null && s['year'].toString().isNotEmpty
-                            ? " • Year: ${s["year"]}"
-                            : '';
-                        final String sectionStr =
-                            s['section'] != null &&
-                                s['section'].toString().isNotEmpty
-                            ? " • Section: ${s["section"]}"
-                            : '';
-
-                        return SharedStudentCard(
-                          name: name,
-                          themeColor: const Color(0xFF11998e),
-                          subtitle:
-                              'Reg No: $sId • SPR: $spr$yearStr$sectionStr\nDept: $deptName',
-                          score: score,
-                          trailingContent: isCc
-                              ? Row(
-                                  mainAxisSize: MainAxisSize.min,
+                    child: filteredStudents.isEmpty
+                        ? RefreshIndicator(
+                            color: const Color(0xFF11998e),
+                            backgroundColor: Colors.white,
+                            onRefresh: () async {
+                              await _fetchStudents();
+                            },
+                            child: SingleChildScrollView(
+                              physics: const AlwaysScrollableScrollPhysics(),
+                              child: Container(
+                                height: 350,
+                                alignment: Alignment.center,
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
-                                    IconButton(
-                                      icon: const Icon(
-                                        Icons.edit_outlined,
-                                        color: Colors.blue,
-                                      ),
-                                      onPressed: () =>
-                                          _showEditStudentDialog(s),
-                                      tooltip: 'Edit student',
+                                    Icon(
+                                      Icons.people_outline,
+                                      size: 56,
+                                      color: Colors.grey.shade400,
                                     ),
-                                    IconButton(
-                                      icon: const Icon(
-                                        Icons.delete_outline,
-                                        color: Colors.red,
+                                    const SizedBox(height: 12),
+                                    Text(
+                                      searchQuery.isNotEmpty
+                                          ? 'No students match "$searchQuery"'
+                                          : 'No students found',
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        color: Colors.grey.shade600,
+                                        fontWeight: FontWeight.w500,
                                       ),
-                                      onPressed: () {
-                                        showDialog(
-                                          context: context,
-                                          builder: (context) => AlertDialog(
-                                            title: const Text('Delete Student'),
-                                            content: Text(
-                                              'Are you sure you want to delete student $name?',
-                                            ),
-                                            actions: [
-                                              TextButton(
-                                                onPressed: () =>
-                                                    Navigator.pop(context),
-                                                child: const Text('Cancel'),
-                                              ),
-                                              TextButton(
-                                                onPressed: () {
-                                                  Navigator.pop(context);
-                                                  _deleteStudent(s['id']);
-                                                },
-                                                child: const Text(
-                                                  'Delete',
-                                                  style: TextStyle(
-                                                    color: Colors.red,
-                                                  ),
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        );
-                                      },
-                                      tooltip: 'Delete student',
                                     ),
                                   ],
-                                )
-                              : null,
-                          onTap: () {
-                            final mappedStudent = {
-                              'id': s['id'],
-                              'name': name,
-                              'regNo': sId,
-                              'dept': deptName,
-                              'score': score,
-                              'teamRole': s['teamRole'] ?? 'MEMBER',
-                            };
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => TeacherStudentDetail(
-                                  student: mappedStudent,
                                 ),
                               ),
-                            ).then((_) {
-                              if (_searchController.text.trim().isNotEmpty) {
-                                _searchStudents(_searchController.text.trim());
-                              } else {
-                                _fetchStudents();
-                              }
-                            });
-                          },
-                        );
-                      },
-                    ),
+                            ),
+                          )
+                        : RefreshIndicator(
+                            color: const Color(0xFF11998e),
+                            backgroundColor: Colors.white,
+                            onRefresh: () async {
+                              await _fetchStudents();
+                            },
+                            child: ListView.builder(
+                              physics: const AlwaysScrollableScrollPhysics(),
+                              itemCount: filteredStudents.length,
+                              itemBuilder: (context, index) {
+                                final s = filteredStudents[index];
+                                final String sId = s['regNo'] ?? '';
+                                final String name = s['fullName'] ?? '';
+                                final String deptName =
+                                    s['departmentName'] ?? 'No Department';
+                                final String spr = s['sprNo'] ?? 'N/A';
+                                final int score = s['score'] ?? 0;
+
+                                final String yearStr =
+                                    s['year'] != null &&
+                                            s['year'].toString().isNotEmpty
+                                        ? " • Year: ${s["year"]}"
+                                        : '';
+                                final String sectionStr =
+                                    s['section'] != null &&
+                                            s['section'].toString().isNotEmpty
+                                        ? " • Section: ${s["section"]}"
+                                        : '';
+
+                                return SharedStudentCard(
+                                  name: name,
+                                  themeColor: const Color(0xFF11998e),
+                                  subtitle:
+                                      'Reg No: $sId • SPR: $spr$yearStr$sectionStr\nDept: $deptName',
+                                  score: score,
+                                  trailingContent: isCc
+                                      ? Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            IconButton(
+                                              icon: const Icon(
+                                                Icons.edit_outlined,
+                                                color: Colors.blue,
+                                              ),
+                                              onPressed: () =>
+                                                  _showEditStudentDialog(s),
+                                              tooltip: 'Edit student',
+                                            ),
+                                            IconButton(
+                                              icon: const Icon(
+                                                Icons.delete_outline,
+                                                color: Colors.red,
+                                              ),
+                                              onPressed: () {
+                                                showDialog(
+                                                  context: context,
+                                                  builder: (context) => AlertDialog(
+                                                    title: const Text('Delete Student'),
+                                                    content: Text(
+                                                      'Are you sure you want to delete student $name?',
+                                                    ),
+                                                    actions: [
+                                                      TextButton(
+                                                        onPressed: () =>
+                                                            Navigator.pop(context),
+                                                        child: const Text('Cancel'),
+                                                      ),
+                                                      TextButton(
+                                                        onPressed: () {
+                                                          Navigator.pop(context);
+                                                          _deleteStudent(s['id']);
+                                                        },
+                                                        child: const Text(
+                                                          'Delete',
+                                                          style: TextStyle(
+                                                            color: Colors.red,
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                );
+                                              },
+                                              tooltip: 'Delete student',
+                                            ),
+                                          ],
+                                        )
+                                      : null,
+                                  onTap: () {
+                                    final mappedStudent = {
+                                      'id': s['id'],
+                                      'name': name,
+                                      'regNo': sId,
+                                      'dept': deptName,
+                                      'score': score,
+                                      'teamRole': s['teamRole'] ?? 'MEMBER',
+                                    };
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) =>
+                                            TeacherStudentDetail(
+                                          student: mappedStudent,
+                                        ),
+                                      ),
+                                    ).then((_) {
+                                      if (_searchController.text.trim().isNotEmpty) {
+                                        _searchStudents(_searchController.text.trim());
+                                      } else {
+                                        _fetchStudents();
+                                      }
+                                    });
+                                  },
+                                );
+                              },
+                            ),
+                          ),
                   ),
                 ],
               ),
@@ -1026,7 +1103,7 @@ class _BulkVerificationScreenState extends State<BulkVerificationScreen> {
     final anyChecked = _checkedStates.any((e) => e);
 
     return Scaffold(
-      backgroundColor: Colors.transparent,
+      backgroundColor: const Color(0xFFF1F5F9),
       appBar: AppBar(
         title: const Text(
           'Verify Spreadsheet Data',

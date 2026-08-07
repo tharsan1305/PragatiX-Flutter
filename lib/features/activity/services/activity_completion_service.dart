@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'package:pragatix/core/utils/api_client.dart' as http;
-import 'package:pragatix/features/activity/utils/constants.dart';
 import 'package:pragatix/core/config/api_config.dart';
 import 'package:pragatix/features/auth/providers/auth_provider.dart';
 
@@ -28,8 +27,8 @@ class ActivityCompletionService {
     final body = jsonEncode({
       'activityId': activityId,
       if (teamId != null) 'teamId': teamId,
-      if (proofUrl != null) 'proofUrl': proofUrl,
-      if (reason != null) 'reason': reason,
+      if (proofUrl != null && proofUrl.isNotEmpty) 'proofUrl': proofUrl,
+      if (reason != null && reason.isNotEmpty) 'reason': reason,
     });
 
     print('Complete URL: $url');
@@ -42,8 +41,20 @@ class ActivityCompletionService {
     print('Response Body: ${response.body}');
 
     if (response.statusCode >= 200 && response.statusCode < 300) {
-      return jsonDecode(response.body);
+      final decoded = jsonDecode(response.body);
+      if (decoded is Map<String, dynamic> && decoded['success'] == false) {
+        throw Exception(decoded['message'] ?? 'Failed to submit request');
+      }
+      return decoded is Map<String, dynamic> ? decoded : <String, dynamic>{};
     } else {
+      try {
+        final decoded = jsonDecode(response.body);
+        if (decoded is Map<String, dynamic> && decoded['message'] != null) {
+          throw Exception(decoded['message']);
+        }
+      } catch (e) {
+        if (e is! FormatException) rethrow;
+      }
       throw Exception('Failed to submit request: ${response.body}');
     }
   }
@@ -89,6 +100,22 @@ class ActivityCompletionService {
     } else {
       throw Exception('Failed to fetch inbox: ${response.body}');
     }
+  }
+
+  Future<int> getPendingCount() async {
+    try {
+      final url = Uri.parse(
+        '${ApiConfig.baseUrl}/api/activity-requests/pending-count',
+      );
+      final response = await http.get(url, headers: _authHeaders);
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        final json = jsonDecode(response.body);
+        return json['data']?['pendingCount'] ?? 0;
+      }
+    } catch (e) {
+      // Ignore
+    }
+    return 0;
   }
 
   Future<Map<String, dynamic>> approveRequest(int id) async {

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:pragatix/core/di/service_locator.dart';
 import 'package:pragatix/features/activity/models/activity_model.dart';
 import 'package:pragatix/features/activity/providers/activity_provider.dart';
+import 'package:pragatix/features/auth/providers/auth_provider.dart';
 import 'package:pragatix/core/theme/app_colors.dart';
 import 'package:pragatix/core/utils/error_handler.dart';
 
@@ -8,12 +10,14 @@ class AssignStaffPage extends StatefulWidget {
   final ActivityProvider provider;
   final ActivityModel activity;
   final int? stageId;
+  final bool isCc;
 
   const AssignStaffPage({
     super.key,
     required this.provider,
     required this.activity,
     this.stageId,
+    this.isCc = false,
   });
 
   @override
@@ -23,6 +27,59 @@ class AssignStaffPage extends StatefulWidget {
 class _AssignStaffPageState extends State<AssignStaffPage> {
   static const Color _dark = AppColors.darkSlate;
   bool _isLoading = false;
+
+  Map<String, dynamic>? get _currentUser {
+    try {
+      final authProvider = getIt<AuthProvider>();
+      return authProvider.currentUser;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  int? get _ccDeptId {
+    final val = _currentUser?['departmentId'];
+    if (val != null) return int.tryParse(val.toString());
+    return null;
+  }
+
+  String? get _ccDeptName {
+    return _currentUser?['departmentName'] ?? _currentUser?['department'];
+  }
+
+  String? get _ccYear {
+    return _currentUser?['year']?.toString();
+  }
+
+  int? get _ccSectionId {
+    final val = _currentUser?['sectionId'];
+    if (val != null) return int.tryParse(val.toString());
+    return null;
+  }
+
+  String? get _ccSectionName {
+    return _currentUser?['sectionName'] ?? _currentUser?['section']?.toString();
+  }
+
+  bool _isYearMatch(dynamic y1, dynamic y2) {
+    if (y1 == null || y2 == null) return true;
+    final s1 = y1.toString().trim().toUpperCase().replaceAll(' ', '').replaceAll('_', '').replaceAll('YEAR', '');
+    final s2 = y2.toString().trim().toUpperCase().replaceAll(' ', '').replaceAll('_', '').replaceAll('YEAR', '');
+    if (s1.isEmpty || s2.isEmpty) return true;
+    if (s1 == s2) return true;
+
+    final first = {'1', 'I', 'FIRST', '1ST'};
+    final second = {'2', 'II', 'SECOND', '2ND'};
+    final third = {'3', 'III', 'THIRD', '3RD'};
+    final fourth = {'4', 'IV', 'FOURTH', '4TH'};
+
+    if (first.contains(s1) && first.contains(s2)) return true;
+    if (second.contains(s1) && second.contains(s2)) return true;
+    if (third.contains(s1) && third.contains(s2)) return true;
+    if (fourth.contains(s1) && fourth.contains(s2)) return true;
+
+    return false;
+  }
 
   bool _globalAssignment = false;
   bool _ccAssignment = false;
@@ -105,21 +162,23 @@ class _AssignStaffPageState extends State<AssignStaffPage> {
         widget.stageId,
       );
 
-      final updateSuccess = await widget.provider.updateActivity(
-        widget.activity.id,
-        {
-          ...widget.activity.toJson(),
-          'attendanceEngineEnabled': _attendanceEngineEnabled,
-          'attendanceRule': _attendanceRule,
-        },
-      );
+      if (!widget.isCc) {
+        final updateSuccess = await widget.provider.updateActivity(
+          widget.activity.id,
+          {
+            ...widget.activity.toJson(),
+            'attendanceEngineEnabled': _attendanceEngineEnabled,
+            'attendanceRule': _attendanceRule,
+          },
+        );
 
-      if (!updateSuccess) {
-        throw Exception(widget.provider.error ?? 'Failed to update attendance engine configuration');
+        if (!updateSuccess) {
+          throw Exception(widget.provider.error ?? 'Failed to update attendance engine configuration');
+        }
       }
       ErrorHandler.showSnackBar(context, 'Assignments saved successfully!');
       if (mounted) {
-        Navigator.pop(context);
+        Navigator.pop(context, true);
       }
     } catch (e) {
       if (mounted) ErrorHandler.showSnackBar(context, e);
@@ -249,8 +308,47 @@ class _AssignStaffPageState extends State<AssignStaffPage> {
     String deptName,
     String? secName,
   ) {
-    // Show ALL active teachers across the entire system. Do not filter by department.
-    final availableTeachers = widget.provider.allTeachers;
+    final availableTeachers = widget.provider.allTeachers.where((t) {
+      if (!widget.isCc) return true;
+
+      // 1. Department match: Teacher must belong to CC's department
+      final tDeptId = t['departmentId'];
+      final tDeptName = t['departmentName'] ?? t['department'];
+      bool deptMatches = false;
+      if (_ccDeptId != null && tDeptId != null) {
+        deptMatches = tDeptId.toString() == _ccDeptId.toString();
+      } else if (_ccDeptName != null && tDeptName != null) {
+        deptMatches = tDeptName.toString().trim().toLowerCase() == _ccDeptName!.trim().toLowerCase();
+      } else if (tDeptId != null) {
+        deptMatches = tDeptId.toString() == deptId.toString();
+      } else if (tDeptName != null && deptName.isNotEmpty) {
+        deptMatches = tDeptName.toString().trim().toLowerCase() == deptName.trim().toLowerCase();
+      }
+      if (!deptMatches) return false;
+
+      // 2. Year match: If teacher has a year specified, must match CC's year
+      final tYear = t['year'];
+      if (tYear != null && tYear.toString().trim().isNotEmpty && _ccYear != null && _ccYear!.trim().isNotEmpty) {
+        if (!_isYearMatch(tYear, _ccYear)) {
+          return false;
+        }
+      }
+
+      // 3. Section match: If teacher has a section specified, must match CC's section
+      final tSecId = t['sectionId'];
+      final tSecName = t['sectionName'] ?? t['section'];
+      if (tSecId != null && _ccSectionId != null) {
+        if (tSecId.toString() != _ccSectionId.toString()) {
+          return false;
+        }
+      } else if (tSecName != null && tSecName.toString().trim().isNotEmpty && _ccSectionName != null && _ccSectionName!.trim().isNotEmpty) {
+        if (tSecName.toString().trim().toLowerCase() != _ccSectionName!.trim().toLowerCase()) {
+          return false;
+        }
+      }
+
+      return true;
+    }).toList();
 
     String searchQuery = '';
 
@@ -461,7 +559,9 @@ class _AssignStaffPageState extends State<AssignStaffPage> {
                                             _addAssignment(
                                               teacher['id'],
                                               deptId,
-                                              '1',
+                                              (widget.isCc && _ccYear != null)
+                                                  ? _ccYear!
+                                                  : '1',
                                               secId,
                                             );
                                           },
@@ -536,6 +636,9 @@ class _AssignStaffPageState extends State<AssignStaffPage> {
   }
 
   Widget _buildConfigurationToggles() {
+    if (widget.isCc) {
+      return const SizedBox.shrink();
+    }
     return Column(
       children: [
         Card(
@@ -869,7 +972,57 @@ class _AssignStaffPageState extends State<AssignStaffPage> {
   }
 
   Widget _buildDepartmentList() {
-    final depts = widget.provider.departments;
+    List<dynamic> depts = widget.provider.departments;
+    if (widget.isCc) {
+      final ccDeptId = _ccDeptId;
+      final ccDeptName = _ccDeptName;
+      final ccSecId = _ccSectionId;
+      final ccSecName = _ccSectionName;
+
+      final filteredDepts = <dynamic>[];
+      for (final d in depts) {
+        bool deptMatches = false;
+        if (ccDeptId != null && d['id'] != null) {
+          deptMatches = d['id'].toString() == ccDeptId.toString();
+        } else if (ccDeptName != null && d['name'] != null) {
+          deptMatches = d['name'].toString().trim().toLowerCase() == ccDeptName.trim().toLowerCase();
+        }
+        if (deptMatches) {
+          final dCopy = Map<String, dynamic>.from(d);
+          if (dCopy['sections'] is List) {
+            final secs = (dCopy['sections'] as List).where((s) {
+              if (ccSecId != null && s['id'] != null) {
+                return s['id'].toString() == ccSecId.toString();
+              }
+              if (ccSecName != null && s['sectionName'] != null) {
+                return s['sectionName'].toString().trim().toLowerCase() == ccSecName.trim().toLowerCase();
+              }
+              return true;
+            }).toList();
+            dCopy['sections'] = secs;
+          }
+          filteredDepts.add(dCopy);
+        }
+      }
+
+      if (filteredDepts.isEmpty && (ccDeptId != null || ccDeptName != null)) {
+        filteredDepts.add({
+          'id': ccDeptId ?? 1,
+          'name': ccDeptName ?? 'My Department',
+          'hasSections': ccSecId != null || ccSecName != null,
+          'sections': ccSecId != null || ccSecName != null
+              ? [
+                  {
+                    'id': ccSecId ?? 1,
+                    'sectionName': ccSecName ?? 'Section A',
+                  }
+                ]
+              : [],
+        });
+      }
+      depts = filteredDepts;
+    }
+
     if (depts.isEmpty) {
       return const Padding(
         padding: EdgeInsets.all(32.0),
@@ -1052,15 +1205,26 @@ class _AssignStaffPageState extends State<AssignStaffPage> {
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
-        title: const Text(
-          'Assign Faculty',
-          style: TextStyle(
+        title: Text(
+          widget.isCc ? 'Assign Teachers' : 'Assign Faculty',
+          style: const TextStyle(
             color: Colors.white,
             fontWeight: FontWeight.bold,
             fontSize: 18,
           ),
         ),
-        backgroundColor: _dark,
+        flexibleSpace: widget.isCc
+            ? Container(
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [Color(0xFF11998E), Color(0xFF38EF7D)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                ),
+              )
+            : null,
+        backgroundColor: widget.isCc ? null : _dark,
         iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: AnimatedBuilder(
@@ -1083,15 +1247,21 @@ class _AssignStaffPageState extends State<AssignStaffPage> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           _buildActivitySummary(),
+                          if (!widget.isCc) ...[
+                            const SizedBox(height: 24),
+                            _buildConfigurationToggles(),
+                          ],
                           const SizedBox(height: 24),
-                          _buildConfigurationToggles(),
-                          const SizedBox(height: 32),
-                          const Text(
-                            'CLASS COORDINATOR ASSIGNMENTS (Auto-Resolved)',
+                          Text(
+                            widget.isCc
+                                ? 'TEACHER ASSIGNMENTS (${_ccDeptName ?? "Department"}${_ccSectionName != null ? " - Section $_ccSectionName" : ""})'
+                                : 'CLASS COORDINATOR ASSIGNMENTS (Auto-Resolved)',
                             style: TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.w800,
-                              color: Colors.blue,
+                              color: widget.isCc
+                                  ? const Color(0xFF11998E)
+                                  : Colors.blue,
                               letterSpacing: 0.5,
                             ),
                           ),
@@ -1168,7 +1338,9 @@ class _AssignStaffPageState extends State<AssignStaffPage> {
                           child: ElevatedButton(
                             onPressed: _isLoading ? null : _saveConfiguration,
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.adminPrimary,
+                              backgroundColor: widget.isCc
+                                  ? const Color(0xFF11998E)
+                                  : AppColors.adminPrimary,
                               foregroundColor: Colors.white,
                               padding: const EdgeInsets.symmetric(vertical: 16),
                               shape: RoundedRectangleBorder(
