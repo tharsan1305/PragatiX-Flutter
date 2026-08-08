@@ -40,6 +40,13 @@ class _TeacherDashboardState extends State<TeacherDashboard> {
         return clean == 'CC' || clean == 'CLASS_COORDINATOR' || clean == 'ROLE_CLASS_COORDINATOR';
       });
 
+  bool get _isHod => subRoles.any((r) {
+        final clean = r.trim().toUpperCase();
+        return clean == 'HOD' || clean == 'ROLE_HOD';
+      });
+
+  bool get _canManageGroups => _isCc || _isHod;
+
   Future<void> _fetchProfile() async {
     if (context.read<AuthProvider>().token! == 'debug_token') {
       setState(() {
@@ -89,27 +96,15 @@ class _TeacherDashboardState extends State<TeacherDashboard> {
 
   void _initializeScreens() {
     setState(() {
-      if (_isCc) {
-        _screens = [
-          TeacherStageListPage(subRoles: subRoles),
-          const TeacherAttendanceTab(),
-          const LeaderboardTab(),
-          const TeacherActivityRequestsTab(),
-          const TeamGroupManagementTab(),
-          if (subRoles.contains('HOD')) const HodPerformanceTab(),
-          const ProfilePage(),
-        ];
-      } else {
-        _screens = [
-          TeacherStageListPage(subRoles: subRoles),
-          const TeacherAttendanceTab(),
-          const LeaderboardTab(),
-          const TeacherActivityRequestsTab(),
-          const TeamGroupManagementTab(),
-          if (subRoles.contains('HOD')) const HodPerformanceTab(),
-          const ProfilePage(),
-        ];
-      }
+      _screens = [
+        TeacherStageListPage(subRoles: subRoles),
+        const TeacherAttendanceTab(),
+        const LeaderboardTab(),
+        const TeacherActivityRequestsTab(),
+        if (_canManageGroups) const TeamGroupManagementTab(),
+        if (_isHod) const HodPerformanceTab(),
+        const ProfilePage(),
+      ];
       if (_currentIndex >= _screens.length) {
         _currentIndex = 0;
       }
@@ -122,92 +117,48 @@ class _TeacherDashboardState extends State<TeacherDashboard> {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
-    final List<BottomNavigationBarItem> barItems;
-    if (_isCc) {
-      barItems = [
-        const BottomNavigationBarItem(
-          icon: Icon(Icons.assignment_turned_in_rounded),
-          label: 'Activities',
-        ),
-        const BottomNavigationBarItem(
-          icon: Icon(Icons.co_present_rounded),
-          label: 'Attendance',
-        ),
-        const BottomNavigationBarItem(
-          icon: Icon(Icons.leaderboard_rounded),
-          label: 'Leaderboard',
-        ),
-        BottomNavigationBarItem(
-          icon: Consumer<ActivityCompletionProvider>(
-            builder: (context, actCompletion, _) => Badge(
-              isLabelVisible: actCompletion.pendingCount > 0,
-              label: Text(
-                actCompletion.pendingCount.toString(),
-                style: const TextStyle(color: Colors.white, fontSize: 10),
-              ),
-              backgroundColor: Colors.red,
-              child: const Icon(Icons.mark_email_unread_rounded),
+    final List<BottomNavigationBarItem> barItems = [
+      const BottomNavigationBarItem(
+        icon: Icon(Icons.assignment_turned_in_rounded),
+        label: 'Activities',
+      ),
+      const BottomNavigationBarItem(
+        icon: Icon(Icons.co_present_rounded),
+        label: 'Attendance',
+      ),
+      const BottomNavigationBarItem(
+        icon: Icon(Icons.leaderboard_rounded),
+        label: 'Leaderboard',
+      ),
+      BottomNavigationBarItem(
+        icon: Consumer<ActivityCompletionProvider>(
+          builder: (context, actCompletion, _) => Badge(
+            isLabelVisible: actCompletion.pendingCount > 0,
+            label: Text(
+              actCompletion.pendingCount.toString(),
+              style: const TextStyle(color: Colors.white, fontSize: 10),
             ),
+            backgroundColor: Colors.red,
+            child: const Icon(Icons.mark_email_unread_rounded),
           ),
-          label: 'Requests',
         ),
+        label: 'Requests',
+      ),
+      if (_canManageGroups)
         const BottomNavigationBarItem(
           icon: Icon(Icons.groups_rounded),
           label: 'Groups',
         ),
-        if (subRoles.contains('HOD'))
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.analytics_outlined),
-            label: 'HOD Report',
-          ),
+      if (_isHod)
         const BottomNavigationBarItem(
-          icon: Icon(Icons.person_rounded),
-          label: 'Profile',
+          icon: Icon(Icons.analytics_outlined),
+          label: 'HOD Report',
         ),
-      ];
-    } else {
-      barItems = [
-        const BottomNavigationBarItem(
-          icon: Icon(Icons.assignment_turned_in_rounded),
-          label: 'Activities',
-        ),
-        const BottomNavigationBarItem(
-          icon: Icon(Icons.co_present_rounded),
-          label: 'Attendance',
-        ),
-        const BottomNavigationBarItem(
-          icon: Icon(Icons.leaderboard_rounded),
-          label: 'Leaderboard',
-        ),
-        BottomNavigationBarItem(
-          icon: Consumer<ActivityCompletionProvider>(
-            builder: (context, actCompletion, _) => Badge(
-              isLabelVisible: actCompletion.pendingCount > 0,
-              label: Text(
-                actCompletion.pendingCount.toString(),
-                style: const TextStyle(color: Colors.white, fontSize: 10),
-              ),
-              backgroundColor: Colors.red,
-              child: const Icon(Icons.mark_email_unread_rounded),
-            ),
-          ),
-          label: 'Requests',
-        ),
-        const BottomNavigationBarItem(
-          icon: Icon(Icons.groups_rounded),
-          label: 'Groups',
-        ),
-        if (subRoles.contains('HOD'))
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.analytics_outlined),
-            label: 'HOD Report',
-          ),
-        const BottomNavigationBarItem(
-          icon: Icon(Icons.person_rounded),
-          label: 'Profile',
-        ),
-      ];
-    }
+      const BottomNavigationBarItem(
+        icon: Icon(Icons.person_rounded),
+        label: 'Profile',
+      ),
+    ];
 
     return Scaffold(
       body: _screens.isEmpty

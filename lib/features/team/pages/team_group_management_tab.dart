@@ -22,6 +22,7 @@ class TeamGroupManagementTab extends StatefulWidget {
 
 class _TeamGroupManagementTabState extends State<TeamGroupManagementTab> {
   bool _isLoading = true;
+  String? _errorMessage;
   List<dynamic> _groups = [];
 
   // Lookups
@@ -38,6 +39,9 @@ class _TeamGroupManagementTabState extends State<TeamGroupManagementTab> {
   bool isSuperAdmin = false;
   bool isAdmin = false;
   bool isCC = false;
+  bool isHOD = false;
+
+  bool get canManage => isSuperAdmin || isAdmin || isCC || isHOD;
 
   @override
   void initState() {
@@ -50,66 +54,113 @@ class _TeamGroupManagementTabState extends State<TeamGroupManagementTab> {
   Future<void> _initRolesAndLookups() async {
     final auth = context.read<AuthProvider>();
     final currentUser = auth.currentUser;
-    final role = auth.role;
-    final subroles = currentUser?['subRoles'] as List<dynamic>? ?? [];
-    final roles = currentUser?['roles'] as List<dynamic>? ?? [];
+    final role = auth.role ?? '';
+    final subroles = (currentUser?['subRoles'] as List<dynamic>? ?? [])
+        .map((e) => (e is Map ? (e['name'] ?? '') : e.toString()).trim().toUpperCase())
+        .toList();
+    final roles = (currentUser?['roles'] as List<dynamic>? ?? [])
+        .map((e) => (e is Map ? (e['name'] ?? '') : e.toString()).trim().toUpperCase())
+        .toList();
 
-    isSuperAdmin = roles.contains('ROLE_SUPER_ADMIN');
-    isCC = subroles.any((r) => r == 'CC' || (r is Map && r['name'] == 'CC'));
-    isAdmin = !isSuperAdmin && (role == 'ROLE_ADMIN' || role == 'ADMIN' || roles.contains('ROLE_ADMIN'));
+    isSuperAdmin = auth.isSuperAdmin ||
+        roles.contains('ROLE_SUPER_ADMIN') ||
+        roles.contains('ROLE_SUPERADMIN') ||
+        roles.contains('SUPER_ADMIN');
+    isAdmin = !isSuperAdmin &&
+        (role == 'ROLE_ADMIN' ||
+            role == 'ADMIN' ||
+            roles.contains('ROLE_ADMIN') ||
+            roles.contains('ADMIN'));
+    isCC = subroles.contains('CC') ||
+        subroles.contains('CLASS_COORDINATOR') ||
+        subroles.contains('ROLE_CLASS_COORDINATOR') ||
+        subroles.contains('ROLE_CC');
+    isHOD = subroles.contains('HOD') ||
+        subroles.contains('ROLE_HOD') ||
+        roles.contains('ROLE_HOD') ||
+        roles.contains('HOD');
 
-    setState(() => _isLoading = true);
+    if (!canManage) {
+      if (mounted) setState(() => _isLoading = false);
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
 
     try {
       final headers = {
         'Authorization': 'Bearer ${auth.token!}',
       };
 
-      final results = await Future.wait([
-        getIt<TeamProxyService>().get(
-          Uri.parse('${ApiConfig.baseUrl}/api/v1/admin/departments'),
-          headers: headers,
-        ),
-        getIt<TeamProxyService>().get(
-          Uri.parse('${ApiConfig.baseUrl}/api/v1/admin/years'),
-          headers: headers,
-        ),
-      ]);
+      try {
+        final results = await Future.wait([
+          getIt<TeamProxyService>().get(
+            Uri.parse('${ApiConfig.baseUrl}/api/v1/admin/departments'),
+            headers: headers,
+          ),
+          getIt<TeamProxyService>().get(
+            Uri.parse('${ApiConfig.baseUrl}/api/v1/admin/years'),
+            headers: headers,
+          ),
+        ]);
+
+        if (results[0].statusCode == 200) {
+          final deptData = jsonDecode(results[0].body);
+          if (deptData['data'] is List) {
+            _departments = deptData['data'];
+          }
+        }
+
+        if (results[1].statusCode == 200) {
+          final yearData = jsonDecode(results[1].body);
+          if (yearData['data'] is List) {
+            _academicYears = yearData['data'];
+          }
+        }
+      } catch (lookupErr) {
+        debugPrint('Non-fatal error fetching lookups: $lookupErr');
+      }
 
       if (!mounted) return;
 
-      List<dynamic> allDepts = jsonDecode(results[0].body)['data'] ?? [];
-      List<dynamic> allYears = jsonDecode(results[1].body)['data'] ?? [];
+      if (isCC || isHOD) {
+        final String? userDeptName =
+            currentUser?['department']?['name'] ?? currentUser?['departmentName'];
+        final String? ccSectionName =
+            currentUser?['section']?['sectionName'] ?? currentUser?['section'];
 
-      _academicYears = allYears;
-      
-      _departments = allDepts;
-      if (isCC) {
-         final String? ccDeptName = currentUser?['department']?['name'] ?? currentUser?['departmentName'];
-         final String? ccSectionName = currentUser?['section']?['sectionName'] ?? currentUser?['section'];
+        if (userDeptName != null && _departments.isNotEmpty) {
+          final dMatch = _departments
+              .where((d) => (d['name'] ?? d['deptName']) == userDeptName)
+              .toList();
+          if (dMatch.isNotEmpty) {
+            selectedDeptId = dMatch.first['id'];
+          }
+        } else if (currentUser?['department']?['id'] != null) {
+          selectedDeptId = currentUser!['department']['id'];
+        }
 
-         if (ccDeptName != null) {
-           final dMatch = allDepts.where((d) => (d['name'] ?? d['deptName']) == ccDeptName).toList();
-           if (dMatch.isNotEmpty) selectedDeptId = dMatch.first['id'];
-         }
+        if (selectedDeptId != null) {
+          await _fetchSectionsForDept(selectedDeptId!);
+        }
 
-         if (selectedDeptId != null) {
-           await _fetchSectionsForDept(selectedDeptId!);
-         }
-
-         if (ccSectionName != null) {
-           final sMatch = _sections.where((s) => s['sectionName'] == ccSectionName).toList();
-           if (sMatch.isNotEmpty) {
-              selectedSectionId = sMatch.first['id'];
-           }
-         }
+        if (isCC && ccSectionName != null) {
+          final sMatch = _sections
+              .where((s) => s['sectionName'] == ccSectionName)
+              .toList();
+          if (sMatch.isNotEmpty) {
+            selectedSectionId = sMatch.first['id'];
+          }
+        }
       }
-
-      await _fetchGroups();
     } catch (e) {
-      debugPrint('Error fetching lookups: $e');
-      if (mounted) setState(() => _isLoading = false);
+      debugPrint('Error in initialization: $e');
     }
+
+    await _fetchGroups();
   }
 
   Future<void> _fetchSectionsForDept(int deptId) async {
@@ -136,8 +187,12 @@ class _TeamGroupManagementTabState extends State<TeamGroupManagementTab> {
   }
 
   Future<void> _fetchGroups() async {
-    setState(() => _isLoading = true);
-    
+    if (!mounted) return;
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
     List<String> queryParams = [];
     if (selectedYear != null && selectedYear != 'All') {
       queryParams.add('academicYear=$selectedYear');
@@ -148,19 +203,32 @@ class _TeamGroupManagementTabState extends State<TeamGroupManagementTab> {
     if (selectedSectionId != null) {
       queryParams.add('sectionId=$selectedSectionId');
     }
-    
+
     String queryString = queryParams.isNotEmpty ? '?${queryParams.join('&')}' : '';
     String url = '${ApiConfig.baseUrl}/api/v1/teams$queryString';
-    
+
     debugPrint('API URL: $url');
     try {
+      final auth = context.read<AuthProvider>();
+      if (auth.token == null) {
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+            _errorMessage = 'Authentication required';
+          });
+        }
+        return;
+      }
+
       final response = await getIt<TeamProxyService>().get(
         Uri.parse(url),
         headers: {
-          'Authorization': 'Bearer ${context.read<AuthProvider>().token!}',
+          'Authorization': 'Bearer ${auth.token!}',
         },
       );
-      
+
+      if (!mounted) return;
+
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data['success'] == true) {
@@ -168,25 +236,90 @@ class _TeamGroupManagementTabState extends State<TeamGroupManagementTab> {
           setState(() {
             _groups = groups;
             _isLoading = false;
+            _errorMessage = null;
+          });
+          return;
+        } else {
+          setState(() {
+            _errorMessage = data['message'] ?? 'Failed to load teams';
+            _isLoading = false;
           });
           return;
         }
+      } else if (response.statusCode == 403) {
+        setState(() {
+          _errorMessage = 'Access denied: You do not have permission to view teams.';
+          _isLoading = false;
+        });
+        return;
+      } else {
+        setState(() {
+          _errorMessage = 'Error ${response.statusCode}: Failed to load teams';
+          _isLoading = false;
+        });
+        return;
       }
     } catch (e) {
       debugPrint('Error fetching teams: $e');
+      if (mounted) {
+        setState(() {
+          _errorMessage = 'Network error: Failed to connect to server';
+          _isLoading = false;
+        });
+      }
     }
-    if (mounted) setState(() => _isLoading = false);
   }
 
   @override
   Widget build(BuildContext context) {
-    final canManage = isCC || isAdmin || isSuperAdmin;
+    if (!canManage) {
+      return Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: AppBar(
+          title: const Text('View Groups'),
+          backgroundColor: Colors.indigo,
+        ),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: const [
+                Icon(
+                  Icons.lock_outline_rounded,
+                  size: 64,
+                  color: Colors.redAccent,
+                ),
+                SizedBox(height: 16),
+                Text(
+                  'Access Denied',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
+                  ),
+                ),
+                SizedBox(height: 8),
+                Text(
+                  'You do not have permission to view or manage groups.',
+                  style: TextStyle(fontSize: 14, color: Colors.grey),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
     final Set<String> seenNames = {};
     final List<dynamic> filteredSections = [];
     for (var s in _sections) {
       final name = s['sectionName'];
       if (name != null && name.toString().trim().isNotEmpty) {
-        if (selectedDeptId == null || s['departmentId'] == selectedDeptId || s['department']?['id'] == selectedDeptId) {
+        if (selectedDeptId == null ||
+            s['departmentId'] == selectedDeptId ||
+            s['department']?['id'] == selectedDeptId) {
           if (!seenNames.contains(name)) {
             seenNames.add(name);
             filteredSections.add(s);
@@ -229,125 +362,161 @@ class _TeamGroupManagementTabState extends State<TeamGroupManagementTab> {
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : Column(
-              children: [
-                // FILTERS
-                Container(
-                  padding: const EdgeInsets.all(8.0),
-                  color: Colors.indigo.shade50,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      if (isSuperAdmin)
-                        _buildDropdown<String>(
-                          'Year',
-                          _academicYears.map((y) => y['yearName'].toString()).toList(),
-                          (y) => y,
-                          selectedYear,
-                          (val) {
-                            setState(() {
-                              selectedYear = val;
-                              selectedDeptId = null;
-                              selectedSectionId = null;
-                              _sections = [];
-                            });
-                            _fetchGroups();
-                          },
+          : _errorMessage != null
+              ? Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24.0),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(
+                          Icons.error_outline_rounded,
+                          size: 64,
+                          color: Colors.redAccent,
                         ),
-                      if (isSuperAdmin || isAdmin)
-                        _buildDropdown<int>(
-                          'Dept',
-                          _departments,
-                          (d) => d['name'] ?? d['deptName'],
-                          selectedDeptId,
-                          (val) async {
-                            setState(() {
-                              selectedDeptId = val;
-                              selectedSectionId = null;
-                            });
-                            if (val != null) {
-                              await _fetchSectionsForDept(val);
-                            } else {
-                              setState(() {
-                                _sections = [];
-                              });
-                            }
-                            _fetchGroups();
-                          },
+                        const SizedBox(height: 12),
+                        Text(
+                          _errorMessage!,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            color: Colors.black87,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
-                      if (isSuperAdmin || isAdmin || (isCC && filteredSections.length > 1))
-                        _buildDropdown<int>(
-                          'Section',
-                          filteredSections,
-                          (s) => s['sectionName'],
-                          selectedSectionId,
-                          (val) {
-                            setState(() {
-                              selectedSectionId = val;
-                            });
-                            _fetchGroups();
-                          },
+                        const SizedBox(height: 16),
+                        ElevatedButton.icon(
+                          onPressed: _fetchGroups,
+                          icon: const Icon(Icons.refresh),
+                          label: const Text('Retry'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.indigo,
+                            foregroundColor: Colors.white,
+                          ),
                         ),
-                    ],
-                  ),
-                ),
-                if (canManage)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16.0,
-                      vertical: 8.0,
+                      ],
                     ),
-                    child: SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton.icon(
-                        onPressed: _showCreateGroupDialog,
-                        icon: const Icon(Icons.add_circle_outline),
-                        label: const Text(
-                          'Create Team',
-                          style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                )
+              : Column(
+                  children: [
+                    // FILTERS
+                    Container(
+                      padding: const EdgeInsets.all(8.0),
+                      color: Colors.indigo.shade50,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          if (isSuperAdmin)
+                            _buildDropdown<String>(
+                              'Year',
+                              _academicYears.map((y) => y['yearName'].toString()).toList(),
+                              (y) => y,
+                              selectedYear,
+                              (val) {
+                                setState(() {
+                                  selectedYear = val;
+                                  selectedDeptId = null;
+                                  selectedSectionId = null;
+                                  _sections = [];
+                                });
+                                _fetchGroups();
+                              },
+                            ),
+                          if (isSuperAdmin || isAdmin)
+                            _buildDropdown<int>(
+                              'Dept',
+                              _departments,
+                              (d) => d['name'] ?? d['deptName'],
+                              selectedDeptId,
+                              (val) async {
+                                setState(() {
+                                  selectedDeptId = val;
+                                  selectedSectionId = null;
+                                });
+                                if (val != null) {
+                                  await _fetchSectionsForDept(val);
+                                } else {
+                                  setState(() {
+                                    _sections = [];
+                                  });
+                                }
+                                _fetchGroups();
+                              },
+                            ),
+                          if (isSuperAdmin || isAdmin || isHOD || (isCC && filteredSections.length > 1))
+                            _buildDropdown<int>(
+                              'Section',
+                              filteredSections,
+                              (s) => s['sectionName'],
+                              selectedSectionId,
+                              (val) {
+                                setState(() {
+                                  selectedSectionId = val;
+                                });
+                                _fetchGroups();
+                              },
+                            ),
+                        ],
+                      ),
+                    ),
+                    if (canManage)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16.0,
+                          vertical: 8.0,
                         ),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.indigo,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
+                        child: SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton.icon(
+                            onPressed: _showCreateGroupDialog,
+                            icon: const Icon(Icons.add_circle_outline),
+                            label: const Text(
+                              'Create Team',
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.indigo,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                  ),
-                // GROUPS LIST
-                Expanded(
-                  child: _groups.isEmpty
-                      ? Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const Icon(
-                                Icons.group_off_rounded,
-                                size: 64,
-                                color: Colors.grey,
+                    // GROUPS LIST
+                    Expanded(
+                      child: _groups.isEmpty
+                          ? Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  const Icon(
+                                    Icons.group_off_rounded,
+                                    size: 64,
+                                    color: Colors.grey,
+                                  ),
+                                  const SizedBox(height: 12),
+                                  const Text(
+                                    'No groups found',
+                                    style: TextStyle(color: Colors.grey),
+                                  ),
+                                  const SizedBox(height: 12),
+                                  ElevatedButton.icon(
+                                    onPressed: _fetchGroups,
+                                    icon: const Icon(Icons.refresh),
+                                    label: const Text('Refresh'),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.indigo,
+                                    ),
+                                  ),
+                                ],
                               ),
-                              const SizedBox(height: 12),
-                              const Text(
-                                'No groups found',
-                                style: TextStyle(color: Colors.grey),
-                              ),
-                              const SizedBox(height: 12),
-                              ElevatedButton.icon(
-                                onPressed: _fetchGroups,
-                                icon: const Icon(Icons.refresh),
-                                label: const Text('Refresh'),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.indigo,
-                                ),
-                              ),
-                            ],
-                          ),
-                        )
-                      : ListView.builder(
-                          padding: const EdgeInsets.symmetric(vertical: 8),
+                            )
+                          : ListView.builder(
+                              padding: const EdgeInsets.symmetric(vertical: 8),
                           itemCount: _groups.length,
                           itemBuilder: (context, index) {
                             final g = _groups[index];

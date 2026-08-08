@@ -61,6 +61,12 @@ class _TeamDetailsPageState extends State<TeamDetailsPage> {
             _isLoading = false;
           });
         }
+      } else if (response.statusCode == 403) {
+        setState(() {
+          _errorMessage =
+              'Access Denied: You do not have permission to view this team.';
+          _isLoading = false;
+        });
       } else {
         setState(() {
           _errorMessage =
